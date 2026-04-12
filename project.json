@@ -1,0 +1,26 @@
+{
+  "overview": "Tinkro Robotics is a premium ecommerce platform for robotics and STEM lab solutions targeting schools, students, and institutions. Features a cinematic frontend, full admin control panel, Firebase-powered dynamic content, PWA support, and advanced ecommerce with Razorpay payments.",
+  "features": [
+    "Full admin dashboard with Firebase Authentication, Firestore, and Storage",
+    "Multi-category product assignment with checkbox multi-select UI",
+    "Category management with image upload to Firebase Storage",
+    "Dynamic frontend filtering by category using Firestore array-contains queries",
+    "Multi-image product upload with preview, delete, and replace",
+    "Razorpay payment integration with order tracking",
+    "User dashboard with order history, tracking, addresses, and profile",
+    "PWA with offline support and installable app",
+    "Real-time Firestore listeners for live content updates",
+    "Glassmorphism UI with smooth Framer Motion animations"
+  ],
+  "category": "ecommerce",
+  "tags": [
+    "robotics",
+    "ecommerce",
+    "admin-panel",
+    "firebase",
+    "stem",
+    "pwa",
+    "razorpay"
+  ],
+  "last_updated": "2026-04-11T10:44:06.314Z"
+}

@@ -1,10 +1,10 @@
 import { AdminLayout } from "@/components/admin/AdminLayout";
-// import {
-//   deleteMedia,
-//   subscribeToMedia,
-//   updateMedia,
-//   uploadMedia,
-// } from "@/lib/adminService";
+import {
+  deleteMedia,
+  subscribeToMedia,
+  updateMedia,
+  uploadMedia,
+} from "@/lib/adminService";
 import type { AdminMedia } from "@/types/admin";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import * as Dialog from "@radix-ui/react-dialog";

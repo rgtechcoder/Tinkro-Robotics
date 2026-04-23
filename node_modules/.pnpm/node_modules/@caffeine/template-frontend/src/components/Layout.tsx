@@ -21,10 +21,10 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-
   const { toasts, addToast, dismiss } = useToast();
   // Use router state to get current location
   const location = useRouterState({ select: (s) => s.location });
+  const isDashboardRoute = location.pathname.startsWith("/dashboard");
 
   // Scroll to top on every route change (by location)
   useEffect(() => {
@@ -34,9 +34,11 @@ export function Layout({ children }: LayoutProps) {
   return (
     <ToastContext.Provider value={{ addToast }}>
       <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        {!isDashboardRoute && <Navbar />}
+        <main className={`flex-1 ${isDashboardRoute ? "" : "pt-20 lg:pt-24"}`}>
+          {children}
+        </main>
+        {!isDashboardRoute && <Footer />}
         <ToastContainer toasts={toasts} onDismiss={dismiss} />
         <PWAInstallBanner />
       </div>

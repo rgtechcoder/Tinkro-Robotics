@@ -127,6 +127,9 @@ export interface AdminCoupon {
   usageLimit: number;
   usedCount: number;
   description?: string;
+  audience?: "all" | "new" | "inactive" | "active";
+  activityDays?: number;
+  oneTimePerUser?: boolean;
   createdAt: string;
 }
 

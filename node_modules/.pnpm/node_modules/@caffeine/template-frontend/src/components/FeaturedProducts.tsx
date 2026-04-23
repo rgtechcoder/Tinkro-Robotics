@@ -39,7 +39,8 @@ const ProductCard = memo(function ProductCard({
   onBuyNow,
 }: ProductCardProps) {
   const productImage =
-    product.images[0] || product.image || "/assets/images/placeholder.svg";
+    product.images?.[0] || product.image || "/dp.jpg";
+  const hasMultipleImages = (product.images?.length ?? 0) > 1;
   const discountPct =
     product.discount > 0
       ? product.discount
@@ -59,7 +60,7 @@ const ProductCard = memo(function ProductCard({
       layout={false}
       onMouseEnter={() => onHoverEnter(product.id)}
       onMouseLeave={onHoverLeave}
-      className="group bg-card rounded-2xl border border-border overflow-hidden transition-all duration-300"
+      className="group bg-card rounded-2xl border border-border overflow-hidden transition-all duration-300 flex flex-col"
       style={{
         willChange: "transform, opacity",
         boxShadow: isHovered
@@ -71,29 +72,38 @@ const ProductCard = memo(function ProductCard({
       data-ocid="product-card"
     >
       <Link to="/product/$id" params={{ id: product.id }} className="block">
-        <div className="relative overflow-hidden" style={{ height: "200px" }}>
-          <div
-            className="product-image-container w-full h-full"
-            style={{ borderRadius: "0", padding: "20px" }}
-          >
-            <img
-              src={productImage}
-              alt={product.name}
-              loading="lazy"
-              decoding="async"
-              width={200}
-              height={160}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
-                objectPosition: "center",
-                filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.12))",
-                transition: "transform 0.3s ease",
-                transform: isHovered ? "scale(1.06)" : "scale(1)",
-              }}
-            />
-          </div>
+        <div className="relative overflow-hidden flex items-center justify-center" style={{ height: "200px", background: "transparent" }}>
+          <img
+            src={productImage}
+            alt={product.name}
+            loading="lazy"
+            decoding="async"
+            width={200}
+            height={160}
+            style={{
+              width: "100%",
+              height: "100%",
+              maxWidth: "140px",
+              maxHeight: "140px",
+              objectFit: "contain",
+              objectPosition: "center",
+              boxShadow: "0 8px 32px 0 rgba(59,191,191,0.10)",
+              borderRadius: "16px",
+              transition: "transform 0.3s ease",
+              transform: isHovered ? "scale(1.06)" : "scale(1)",
+              background: "transparent"
+            }}
+          />
+          {hasMultipleImages && (
+            <div className="absolute bottom-3 right-3 z-10">
+              <Badge
+                className="border-0 text-[10px] font-semibold text-white"
+                style={{ background: "rgba(15, 23, 42, 0.65)" }}
+              >
+                +{(product.images?.length ?? 0) - 1}
+              </Badge>
+            </div>
+          )}
           {product.badge && (
             <div className="absolute top-3 left-3 z-10">
               <Badge
@@ -131,24 +141,24 @@ const ProductCard = memo(function ProductCard({
         <Heart className="w-4 h-4" />
       </button>
 
-      <div className="p-5 space-y-3">
+      <div className="p-5 flex flex-col gap-3 flex-1">
         <Link
           to="/product/$id"
           params={{ id: product.id }}
           className="block space-y-1 hover:no-underline"
         >
           <p
-            className="text-xs font-medium uppercase tracking-wide"
+            className="text-xs font-medium uppercase tracking-wide line-clamp-1 min-h-[16px]"
             style={{ color: "#3BBFBF" }}
           >
             {product.category}
           </p>
-          <h3 className="font-display font-semibold text-foreground leading-tight line-clamp-2 text-sm">
+          <h3 className="font-display font-semibold text-foreground leading-tight line-clamp-2 text-sm min-h-[40px]">
             {product.name}
           </h3>
         </Link>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 min-h-[18px]">
           <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
           <span className="text-sm font-semibold text-foreground">
             {product.rating?.toFixed(1) ?? "—"}
@@ -158,7 +168,7 @@ const ProductCard = memo(function ProductCard({
           </span>
         </div>
 
-        <div className="flex items-center justify-between pt-1">
+        <div className="mt-auto pt-1 flex items-center justify-between min-h-[40px]">
           <div className="flex items-baseline gap-2">
             <span
               className="font-display font-bold text-lg"
@@ -177,11 +187,11 @@ const ProductCard = memo(function ProductCard({
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-nowrap">
             <Link
               to="/product/$id"
               params={{ id: product.id }}
-              className="text-xs font-medium px-2 py-1 rounded-lg border transition-smooth hover:opacity-80"
+              className="text-xs font-medium px-2 h-8 rounded-lg border transition-smooth hover:opacity-80 flex items-center justify-center"
               style={{
                 borderColor: "rgba(46,109,164,0.3)",
                 color: "#2E6DA4",
@@ -195,7 +205,7 @@ const ProductCard = memo(function ProductCard({
               onClick={() => onBuyNow(product)}
               whileHover={{ scale: 1.06 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-1 text-white text-xs px-2.5 h-8 rounded-lg font-semibold"
+              className="flex items-center justify-center gap-1 text-white text-xs px-2.5 h-8 rounded-lg font-semibold"
               style={{
                 background: "linear-gradient(135deg, #F47B20 0%, #F5A623 100%)",
               }}

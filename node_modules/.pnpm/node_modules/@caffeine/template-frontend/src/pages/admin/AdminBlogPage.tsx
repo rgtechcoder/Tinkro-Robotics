@@ -28,13 +28,13 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-//import {
-  // addBlogPost,
-  // deleteBlogPost,
-  // subscribeToBlogPosts,
-  // updateBlogPost,
-  // uploadBlogImage,
-//} from "@/lib/adminService";
+import {
+  addBlogPost,
+  deleteBlogPost,
+  subscribeToBlogPosts,
+  updateBlogPost,
+  uploadBlogImage,
+} from "@/lib/adminService";
 import type { AdminBlogPost } from "@/types/admin";
 import {
   BookOpen,
@@ -346,6 +346,12 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const labelClass = "text-xs font-semibold text-white/60 uppercase tracking-widest";
+  const fieldStyle = {
+    background: "oklch(0.15 0.03 243 / 0.7)",
+    border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+    color: "white",
+  } as const;
 
   useEffect(() => {
     if (!open) return;
@@ -463,9 +469,16 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto border-border/60 bg-card/95 backdrop-blur-xl">
+      <DialogContent
+        className="max-h-[90vh] max-w-2xl overflow-y-auto border-0 shadow-2xl"
+        style={{
+          background:
+            "linear-gradient(180deg, oklch(0.12 0.04 243) 0%, oklch(0.10 0.03 250) 100%)",
+          border: "1px solid oklch(0.25 0.05 243 / 0.5)",
+        }}
+      >
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold">
+          <DialogTitle className="text-lg font-bold text-white">
             {editTarget ? "Edit Post" : "Create Post"}
           </DialogTitle>
         </DialogHeader>
@@ -473,12 +486,16 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
         <form onSubmit={handleSubmit} className="mt-2 space-y-5">
           {/* Title */}
           <div className="space-y-1.5">
-            <Label htmlFor="blog-title">Title *</Label>
+            <Label htmlFor="blog-title" className={labelClass}>
+              Title *
+            </Label>
             <Input
               id="blog-title"
               value={form.title}
               onChange={(e) => handleTitleChange(e.target.value)}
               placeholder="Enter post title"
+              className="h-10 text-sm text-white placeholder:text-white/40"
+              style={fieldStyle}
               data-ocid="blog-title-input"
             />
             {errors.title && (
@@ -488,12 +505,18 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
 
           {/* Slug (read-only) */}
           <div className="space-y-1.5">
-            <Label htmlFor="blog-slug">Slug (auto-generated)</Label>
+            <Label htmlFor="blog-slug" className={labelClass}>
+              Slug (auto-generated)
+            </Label>
             <Input
               id="blog-slug"
               value={form.slug}
               readOnly
-              className="bg-muted/40 font-mono text-sm text-muted-foreground"
+              className="h-10 font-mono text-sm text-white/60"
+              style={{
+                background: "oklch(0.15 0.03 243 / 0.5)",
+                border: "1px solid oklch(0.24 0.04 243 / 0.6)",
+              }}
               data-ocid="blog-slug-input"
             />
           </div>
@@ -501,17 +524,26 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
           {/* Category + Author */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label>Category *</Label>
+              <Label className={labelClass}>Category *</Label>
               <Select
                 value={form.category}
                 onValueChange={(v) => setField("category", v)}
               >
-                <SelectTrigger data-ocid="blog-category-select">
+                <SelectTrigger
+                  data-ocid="blog-category-select"
+                  className="h-10 text-sm text-white"
+                  style={fieldStyle}
+                >
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent
+                  style={{
+                    background: "oklch(0.14 0.04 243)",
+                    border: "1px solid oklch(0.25 0.05 243 / 0.5)",
+                  }}
+                >
                   {PRESET_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
+                    <SelectItem key={cat} value={cat} className="text-white/80">
                       {cat}
                     </SelectItem>
                   ))}
@@ -519,12 +551,16 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="blog-author">Author *</Label>
+              <Label htmlFor="blog-author" className={labelClass}>
+                Author *
+              </Label>
               <Input
                 id="blog-author"
                 value={form.author}
                 onChange={(e) => setField("author", e.target.value)}
                 placeholder="e.g. Tinkro Team"
+                className="h-10 text-sm text-white placeholder:text-white/40"
+                style={fieldStyle}
                 data-ocid="blog-author-input"
               />
               {errors.author && (
@@ -535,7 +571,7 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
 
           {/* Content */}
           <div className="space-y-1.5">
-            <Label htmlFor="blog-content">
+            <Label htmlFor="blog-content" className={labelClass}>
               Blog Content (HTML supported) *
             </Label>
             <Textarea
@@ -544,7 +580,8 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
               onChange={(e) => handleContentChange(e.target.value)}
               placeholder="Write your post content here. HTML tags are supported."
               rows={8}
-              className="resize-y font-mono text-sm"
+              className="resize-y font-mono text-sm text-white placeholder:text-white/40"
+              style={fieldStyle}
               data-ocid="blog-content-input"
             />
             {errors.content && (
@@ -555,7 +592,7 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
           {/* Excerpt */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label htmlFor="blog-excerpt">
+              <Label htmlFor="blog-excerpt" className={labelClass}>
                 Excerpt (auto-filled from content)
               </Label>
               <span
@@ -572,25 +609,31 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
               }
               placeholder="Short summary of the post (max 160 chars)"
               rows={3}
+              className="text-sm text-white placeholder:text-white/40"
+              style={fieldStyle}
               data-ocid="blog-excerpt-input"
             />
           </div>
 
           {/* Tags */}
           <div className="space-y-1.5">
-            <Label htmlFor="blog-tags">Tags (comma-separated)</Label>
+            <Label htmlFor="blog-tags" className={labelClass}>
+              Tags (comma-separated)
+            </Label>
             <Input
               id="blog-tags"
               value={form.tags}
               onChange={(e) => setField("tags", e.target.value)}
               placeholder="e.g. robotics, arduino, stem"
+              className="h-10 text-sm text-white placeholder:text-white/40"
+              style={fieldStyle}
               data-ocid="blog-tags-input"
             />
           </div>
 
           {/* Featured Image */}
           <div className="space-y-2">
-            <Label>Featured Image</Label>
+            <Label className={labelClass}>Featured Image</Label>
             <div className="flex items-start gap-3">
               {form.featuredImage && (
                 <img
@@ -645,7 +688,7 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
             />
             <Label
               htmlFor="blog-status"
-              className="cursor-pointer text-sm font-medium"
+              className="cursor-pointer text-sm font-medium text-white/70"
             >
               {form.status === "published"
                 ? "Published — visible on the website"
@@ -655,7 +698,7 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
 
           {/* Scheduled Date */}
           <div className="space-y-1.5">
-            <Label htmlFor="blog-scheduled">
+            <Label htmlFor="blog-scheduled" className={labelClass}>
               Scheduled Publish Date (optional)
             </Label>
             <Input
@@ -663,6 +706,11 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
               type="datetime-local"
               value={form.scheduledAt}
               onChange={(e) => setField("scheduledAt", e.target.value)}
+              className="h-10 text-sm text-white"
+              style={{
+                ...fieldStyle,
+                colorScheme: "dark",
+              }}
               data-ocid="blog-schedule-input"
             />
           </div>

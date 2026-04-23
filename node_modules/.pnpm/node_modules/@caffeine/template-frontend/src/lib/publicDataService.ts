@@ -564,10 +564,7 @@
 // Firebase ENABLED version — real data from Firestore
 
 import { useEffect, useState } from "react";
-import {
-  collection,
-  onSnapshot,
-} from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 import type {
@@ -581,30 +578,91 @@ import type {
 
 // ─── Hooks (NOW FIREBASE ENABLED) ─────────────────────────────────────────────
 
+type StoreState<T> = {
+  data: T[];
+  loading: boolean;
+  error: string | null;
+};
+
+function createCollectionStore<T>(collectionName: string) {
+  const store = {
+    data: [] as T[],
+    loading: true,
+    error: null as string | null,
+    initialized: false,
+    inflight: false,
+    listeners: new Set<(state: StoreState<T>) => void>(),
+  };
+
+  const notify = () => {
+    const state = {
+      data: store.data,
+      loading: store.loading,
+      error: store.error,
+    };
+    store.listeners.forEach((listener) => listener(state));
+  };
+
+  const load = async () => {
+    if (store.inflight) return;
+    store.inflight = true;
+    store.loading = true;
+    notify();
+    try {
+      const snapshot = await getDocs(collection(db, collectionName));
+      store.data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as T[];
+      store.error = null;
+      store.initialized = true;
+    } catch {
+      store.error = "Failed to load data";
+    } finally {
+      store.loading = false;
+      store.inflight = false;
+      notify();
+    }
+  };
+
+  const useCollection = (): StoreState<T> => {
+    const [state, setState] = useState<StoreState<T>>({
+      data: store.data,
+      loading: !store.initialized,
+      error: store.error,
+    });
+
+    useEffect(() => {
+      store.listeners.add(setState);
+      if (!store.initialized) {
+        void load();
+      }
+      return () => {
+        store.listeners.delete(setState);
+      };
+    }, []);
+
+    return state;
+  };
+
+  return { useCollection };
+}
+
+const productsStore = createCollectionStore<AdminProduct>("products");
+const categoriesStore = createCollectionStore<AdminCategory>("categories");
+const labSetupsStore = createCollectionStore<AdminLabSetup>("labSetups");
+const bannersStore = createCollectionStore<AdminBanner>("banners");
+const blogsStore = createCollectionStore<AdminBlogPost>("blogs");
+const couponsStore = createCollectionStore<AdminCoupon>("coupons");
+
 // PRODUCTS
 export function useProducts(): {
   products: AdminProduct[];
   loading: boolean;
   error: string | null;
 } {
-  const [products, setProducts] = useState<AdminProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, "products"), (snapshot) => {
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as AdminProduct[];
-
-      setProducts(data);
-      setLoading(false);
-    });
-
-    return () => unsub();
-  }, []);
-
-  return { products, loading, error: null };
+  const { data, loading, error } = productsStore.useCollection();
+  return { products: data, loading, error };
 }
 
 // PRODUCTS BY CATEGORY
@@ -628,24 +686,8 @@ export function useCategories(): {
   loading: boolean;
   error: string | null;
 } {
-  const [categories, setCategories] = useState<AdminCategory[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, "categories"), (snapshot) => {
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as AdminCategory[];
-
-      setCategories(data);
-      setLoading(false);
-    });
-
-    return () => unsub();
-  }, []);
-
-  return { categories, loading, error: null };
+  const { data, loading, error } = categoriesStore.useCollection();
+  return { categories: data, loading, error };
 }
 
 // LAB SETUPS
@@ -654,26 +696,8 @@ export function useLabSetups(): {
   loading: boolean;
   error: string | null;
 } {
-  const [labSetups, setLabSetups] = useState<AdminLabSetup[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, "labSetups"), (snapshot) => {
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as AdminLabSetup[];
-
-      console.log("🔥 labs:", data); // debug
-
-      setLabSetups(data);
-      setLoading(false);
-    });
-
-    return () => unsub();
-  }, []);
-
-  return { labSetups, loading, error: null };
+  const { data, loading, error } = labSetupsStore.useCollection();
+  return { labSetups: data, loading, error };
 }
 // BANNERS
 export function useBanners(): {
@@ -681,24 +705,8 @@ export function useBanners(): {
   loading: boolean;
   error: string | null;
 } {
-  const [banners, setBanners] = useState<AdminBanner[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, "banners"), (snapshot) => {
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as AdminBanner[];
-
-      setBanners(data);
-      setLoading(false);
-    });
-
-    return () => unsub();
-  }, []);
-
-  return { banners, loading, error: null };
+  const { data, loading, error } = bannersStore.useCollection();
+  return { banners: data, loading, error };
 }
 
 // BLOG POSTS
@@ -707,24 +715,8 @@ export function useBlogPosts(): {
   loading: boolean;
   error: string | null;
 } {
-  const [posts, setPosts] = useState<AdminBlogPost[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, "blogs"), (snapshot) => {
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as AdminBlogPost[];
-
-      setPosts(data);
-      setLoading(false);
-    });
-
-    return () => unsub();
-  }, []);
-
-  return { posts, loading, error: null };
+  const { data, loading, error } = blogsStore.useCollection();
+  return { posts: data, loading, error };
 }
 
 // COUPONS
@@ -733,24 +725,8 @@ export function useCoupons(): {
   loading: boolean;
   error: string | null;
 } {
-  const [coupons, setCoupons] = useState<AdminCoupon[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, "coupons"), (snapshot) => {
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as AdminCoupon[];
-
-      setCoupons(data);
-      setLoading(false);
-    });
-
-    return () => unsub();
-  }, []);
-
-  return { coupons, loading, error: null };
+  const { data, loading, error } = couponsStore.useCollection();
+  return { coupons: data, loading, error };
 }
 
 // SINGLE PRODUCT

@@ -678,6 +678,8 @@ export default function AdminOrdersPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
+  const [rowStatus, setRowStatus] = useState<Record<string, string>>({});
+  const [rowUpdating, setRowUpdating] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Subscribe to real-time orders
@@ -688,6 +690,19 @@ export default function AdminOrdersPage() {
     });
     return unsub;
   }, []);
+
+  useEffect(() => {
+    setRowStatus((prev) => {
+      const next = { ...prev };
+      orders.forEach((order) => {
+        const current = next[order.id];
+        if (!current || current !== order.status) {
+          next[order.id] = order.status;
+        }
+      });
+      return next;
+    });
+  }, [orders]);
 
   // Count per tab
   const tabCounts = useMemo(() => {
@@ -729,6 +744,20 @@ export default function AdminOrdersPage() {
   const handleTabChange = useCallback((tab: AllStatus) => {
     setActiveTab(tab);
   }, []);
+
+  const handleQuickStatusUpdate = useCallback(async (order: AdminOrder) => {
+    const nextStatus = rowStatus[order.id] ?? order.status;
+    if (nextStatus === order.status) return;
+    setRowUpdating(order.id);
+    try {
+      await updateOrderStatus(order.id, nextStatus as OrderStatus | "processing");
+      toast.success("Order status updated");
+    } catch {
+      toast.error("Failed to update order. Please try again.");
+    } finally {
+      setRowUpdating(null);
+    }
+  }, [rowStatus]);
 
   return (
     <AdminLayout>
@@ -977,31 +1006,93 @@ export default function AdminOrdersPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedOrder(order);
-                          }}
-                          className="p-1.5 rounded-lg transition-all"
-                          style={{ color: "oklch(0.55 0.05 243)" }}
-                          aria-label="View order details"
-                          data-ocid={`view-order-${order.id}`}
-                          onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLElement).style.background =
-                              "oklch(0.71 0.17 48 / 0.15)";
-                            (e.currentTarget as HTMLElement).style.color =
-                              "oklch(0.85 0.14 48)";
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLElement).style.background =
-                              "transparent";
-                            (e.currentTarget as HTMLElement).style.color =
-                              "oklch(0.55 0.05 243)";
-                          }}
+                        <div
+                          className="flex items-center gap-2"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          <Eye size={15} />
-                        </button>
+                          <Select
+                            value={rowStatus[order.id] ?? order.status}
+                            onValueChange={(value) =>
+                              setRowStatus((prev) => ({
+                                ...prev,
+                                [order.id]: value,
+                              }))
+                            }
+                          >
+                            <SelectTrigger
+                              data-ocid={`order-row-status-${order.id}`}
+                              className="h-8 w-[132px] text-xs border-slate-700/50"
+                              style={{
+                                background: "oklch(0.13 0.03 243 / 0.8)",
+                                color: "white",
+                              }}
+                            >
+                              <SelectValue placeholder="Status" />
+                            </SelectTrigger>
+                            <SelectContent
+                              style={{
+                                background: "oklch(0.13 0.03 243)",
+                                border: "1px solid oklch(0.22 0.05 243 / 0.5)",
+                              }}
+                            >
+                              {[
+                                "placed",
+                                "processing",
+                                "shipped",
+                                "delivered",
+                              ].map((status) => (
+                                <SelectItem
+                                  key={status}
+                                  value={status}
+                                  className="text-white/80 capitalize"
+                                >
+                                  {status.charAt(0).toUpperCase() +
+                                    status.slice(1)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <button
+                            type="button"
+                            onClick={() => void handleQuickStatusUpdate(order)}
+                            disabled={
+                              rowUpdating === order.id ||
+                              (rowStatus[order.id] ?? order.status) ===
+                                order.status
+                            }
+                            data-ocid={`order-row-update-${order.id}`}
+                            className="h-8 px-3 rounded-lg text-xs font-semibold text-white transition-all disabled:opacity-50"
+                            style={{
+                              background:
+                                "linear-gradient(135deg, oklch(0.71 0.17 48), oklch(0.76 0.16 72))",
+                              boxShadow: "0 0 10px oklch(0.71 0.17 48 / 0.3)",
+                            }}
+                          >
+                            {rowUpdating === order.id ? "Saving…" : "Update"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedOrder(order)}
+                            className="p-1.5 rounded-lg transition-all"
+                            style={{ color: "oklch(0.55 0.05 243)" }}
+                            aria-label="View order details"
+                            data-ocid={`view-order-${order.id}`}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLElement).style.background =
+                                "oklch(0.71 0.17 48 / 0.15)";
+                              (e.currentTarget as HTMLElement).style.color =
+                                "oklch(0.85 0.14 48)";
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLElement).style.background =
+                                "transparent";
+                              (e.currentTarget as HTMLElement).style.color =
+                                "oklch(0.55 0.05 243)";
+                            }}
+                          >
+                            <Eye size={15} />
+                          </button>
+                        </div>
                       </td>
                     </motion.tr>
                   ))

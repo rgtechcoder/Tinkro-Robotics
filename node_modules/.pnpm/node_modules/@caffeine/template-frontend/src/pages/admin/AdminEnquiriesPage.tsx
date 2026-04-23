@@ -1,9 +1,9 @@
 import { AdminLayout } from "@/components/admin/AdminLayout";
-// import {
-//   deleteEnquiry,
-//   subscribeToEnquiries,
-//   updateEnquiry,
-// } from "@/lib/adminService";
+import {
+  deleteEnquiry,
+  subscribeToEnquiries,
+  updateEnquiry,
+} from "@/lib/adminService";
 import type { AdminEnquiry } from "@/types/admin";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import * as Dialog from "@radix-ui/react-dialog";

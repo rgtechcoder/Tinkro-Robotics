@@ -446,7 +446,7 @@ import type {
 
 import type { OrderStatus } from "@/types/index";
 
-import { auth, db } from "@/lib/firebase";
+import { auth, db, functions } from "@/lib/firebase";
 
 import {
   signInWithEmailAndPassword,
@@ -461,10 +461,14 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  getDocs,
   onSnapshot,
+  query,
   serverTimestamp,
   updateDoc,
+  where,
 } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
 
 // ================= AUTH =================
 
@@ -546,6 +550,41 @@ export async function deleteCategory(id: string) {
   await deleteDoc(doc(db, "categories", id));
 }
 
+// ================= ENQUIRIES =================
+
+export function subscribeToEnquiries(
+  callback: (enquiries: AdminEnquiry[]) => void,
+): () => void {
+  return onSnapshot(collection(db, "enquiries"), (snap) => {
+    const data = snap.docs.map((docSnap) => {
+      const raw = { id: docSnap.id, ...docSnap.data() } as AdminEnquiry;
+      return normalizeDates(raw, ["createdAt", "respondedAt"]);
+    });
+    callback(data as AdminEnquiry[]);
+  });
+}
+
+export async function addEnquiry(
+  data: Omit<AdminEnquiry, "id" | "createdAt">,
+): Promise<string> {
+  const docRef = await addDoc(collection(db, "enquiries"), {
+    ...data,
+    createdAt: serverTimestamp(),
+  });
+  return docRef.id;
+}
+
+export async function updateEnquiry(
+  id: string,
+  data: Partial<AdminEnquiry>,
+): Promise<void> {
+  await updateDoc(doc(db, "enquiries", id), data);
+}
+
+export async function deleteEnquiry(id: string): Promise<void> {
+  await deleteDoc(doc(db, "enquiries", id));
+}
+
 // ================= ORDERS =================
 
 export function subscribeToAllOrders(callback: (orders: AdminOrder[]) => void) {
@@ -557,35 +596,55 @@ export function subscribeToAllOrders(callback: (orders: AdminOrder[]) => void) {
 
 export async function updateOrderStatus(
   id: string,
-  status: OrderStatus | "processing"
+  status: OrderStatus | "processing",
+  trackingId?: string,
+  estimatedDelivery?: string
 ) {
-  await updateDoc(doc(db, "orders", id), { status });
+  const payload: Record<string, unknown> = { status };
+  if (trackingId !== undefined) payload.trackingId = trackingId || null;
+  if (estimatedDelivery !== undefined)
+    payload.estimatedDelivery = estimatedDelivery || null;
+  await updateDoc(doc(db, "orders", id), payload);
 }
 
 // ================= BLOG =================
 
-// export function subscribeToBlogPosts(callback: (posts: AdminBlogPost[]) => void) {
-//   return onSnapshot(collection(db, "blogs"), (snap) => {
-//     const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-//     callback(data as AdminBlogPost[]);
-//   });
-// }
+export function subscribeToBlogPosts(callback: (posts: AdminBlogPost[]) => void) {
+  return onSnapshot(collection(db, "blogs"), (snap) => {
+    const data = snap.docs.map((doc) => {
+      const raw = { id: doc.id, ...doc.data() } as AdminBlogPost;
+      return normalizeDates(raw, [
+        "createdAt",
+        "publishedAt",
+        "scheduledAt",
+        "updatedAt",
+      ]);
+    });
+    callback(data as AdminBlogPost[]);
+  });
+}
 
-// export async function addBlogPost(data: any) {
-//   const docRef = await addDoc(collection(db, "blogs"), {
-//     ...data,
-//     createdAt: serverTimestamp(),
-//   });
-//   return docRef.id;
-// }
+export async function addBlogPost(
+  data: Omit<AdminBlogPost, "id" | "createdAt" | "views">,
+): Promise<string> {
+  const docRef = await addDoc(collection(db, "blogs"), {
+    ...data,
+    views: 0,
+    createdAt: serverTimestamp(),
+  });
+  return docRef.id;
+}
 
-// export async function updateBlogPost(id: string, data: any) {
-//   await updateDoc(doc(db, "blogs", id), data);
-// }
+export async function updateBlogPost(
+  id: string,
+  data: Partial<AdminBlogPost>,
+): Promise<void> {
+  await updateDoc(doc(db, "blogs", id), data);
+}
 
-// export async function deleteBlogPost(id: string) {
-//   await deleteDoc(doc(db, "blogs", id));
-// }
+export async function deleteBlogPost(id: string): Promise<void> {
+  await deleteDoc(doc(db, "blogs", id));
+}
 
 // ================= USERS =================
 
@@ -594,6 +653,19 @@ export function subscribeToUsers(callback: (users: AdminUserRecord[]) => void) {
     const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     callback(data as AdminUserRecord[]);
   });
+}
+
+export async function updateUser(
+  uid: string,
+  data: Partial<AdminUserRecord>,
+): Promise<void> {
+  await updateDoc(doc(db, "users", uid), data);
+}
+
+export async function getUserOrders(uid: string): Promise<AdminOrder[]> {
+  const q = query(collection(db, "orders"), where("userId", "==", uid));
+  const snap = await getDocs(q);
+  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as AdminOrder[];
 }
 
 // ================= DASHBOARD =================
@@ -640,7 +712,31 @@ export async function deleteLabSetup(id: string) {
   await deleteDoc(doc(db, "labSetups", id));
 }
 
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import {
+  deleteObject,
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from "firebase/storage";
+
+const toIsoString = (value: unknown) =>
+  value && typeof value === "object" && "toDate" in value
+    ? (value as { toDate: () => Date }).toDate().toISOString()
+    : value;
+
+const normalizeDates = <T extends Record<string, unknown>>(
+  data: T,
+  keys: Array<keyof T>,
+) => {
+  const next = { ...data };
+  keys.forEach((key) => {
+    if (key in next && next[key]) {
+      next[key] = toIsoString(next[key]) as T[keyof T];
+    }
+  });
+  return next;
+};
 
 const storage = getStorage();
 
@@ -651,4 +747,256 @@ export async function uploadCategoryImage(file: File) {
   
   const url = await getDownloadURL(storageRef);
   return url;
+}
+
+export async function uploadBlogImage(
+  file: File,
+  postId: string,
+): Promise<string> {
+  const storageRef = ref(
+    storage,
+    `blogs/${postId}/${Date.now()}_${file.name}`,
+  );
+
+  await uploadBytes(storageRef, file);
+  return getDownloadURL(storageRef);
+}
+
+// ================= COUPONS =================
+
+export function subscribeToCoupons(callback: (coupons: AdminCoupon[]) => void) {
+  return onSnapshot(collection(db, "coupons"), (snap) => {
+    const data = snap.docs.map((doc) => {
+      const raw = { id: doc.id, ...doc.data() } as AdminCoupon;
+      return normalizeDates(raw, ["createdAt", "expiresAt"]);
+    });
+    callback(data as AdminCoupon[]);
+  });
+}
+
+export async function addCoupon(
+  data: Omit<AdminCoupon, "id" | "createdAt" | "usedCount">,
+): Promise<string> {
+  const docRef = await addDoc(collection(db, "coupons"), {
+    ...data,
+    usedCount: 0,
+    createdAt: serverTimestamp(),
+  });
+  return docRef.id;
+}
+
+export async function updateCoupon(
+  id: string,
+  data: Partial<AdminCoupon>,
+): Promise<void> {
+  await updateDoc(doc(db, "coupons", id), data);
+}
+
+export async function deleteCoupon(id: string): Promise<void> {
+  await deleteDoc(doc(db, "coupons", id));
+}
+
+// ================= BANNERS =================
+
+export function subscribeToBanners(callback: (banners: AdminBanner[]) => void) {
+  return onSnapshot(collection(db, "banners"), (snap) => {
+    const data = snap.docs.map((doc) => {
+      const raw = { id: doc.id, ...doc.data() } as AdminBanner;
+      return normalizeDates(raw, [
+        "createdAt",
+        "scheduledFrom",
+        "scheduledTo",
+      ]);
+    });
+    callback(data as AdminBanner[]);
+  });
+}
+
+export async function addBanner(
+  data: Omit<AdminBanner, "id" | "createdAt">,
+): Promise<string> {
+  const docRef = await addDoc(collection(db, "banners"), {
+    ...data,
+    createdAt: serverTimestamp(),
+  });
+  return docRef.id;
+}
+
+export async function updateBanner(
+  id: string,
+  data: Partial<AdminBanner>,
+): Promise<void> {
+  await updateDoc(doc(db, "banners", id), data);
+}
+
+export async function deleteBanner(id: string): Promise<void> {
+  await deleteDoc(doc(db, "banners", id));
+}
+
+export async function uploadBannerImage(
+  file: File,
+  bannerId: string,
+): Promise<string> {
+  const storageRef = ref(
+    storage,
+    `banners/${bannerId}/${Date.now()}_${file.name}`,
+  );
+  await uploadBytes(storageRef, file);
+  return getDownloadURL(storageRef);
+}
+
+// ================= MEDIA =================
+
+export function subscribeToMedia(
+  callback: (media: AdminMedia[]) => void,
+): () => void {
+  return onSnapshot(collection(db, "media"), (snap) => {
+    const data = snap.docs.map((doc) => {
+      const raw = { id: doc.id, ...doc.data() } as AdminMedia;
+      return normalizeDates(raw, ["uploadedAt"]);
+    });
+    callback(data as AdminMedia[]);
+  });
+}
+
+export async function uploadMedia(file: File): Promise<AdminMedia> {
+  const storageRef = ref(storage, `media/${Date.now()}_${file.name}`);
+  await uploadBytes(storageRef, file);
+  const url = await getDownloadURL(storageRef);
+  const type: AdminMedia["type"] = file.type.startsWith("image/")
+    ? "image"
+    : file.type.startsWith("video/")
+      ? "video"
+      : "document";
+
+  const docRef = await addDoc(collection(db, "media"), {
+    filename: file.name,
+    url,
+    storagePath: storageRef.fullPath,
+    size: file.size,
+    type,
+    mimeType: file.type,
+    tags: [],
+    alt: "",
+    uploadedAt: serverTimestamp(),
+  });
+
+  return {
+    id: docRef.id,
+    filename: file.name,
+    url,
+    storagePath: storageRef.fullPath,
+    size: file.size,
+    type,
+    mimeType: file.type,
+    tags: [],
+    alt: "",
+    uploadedAt: new Date().toISOString(),
+  } as AdminMedia;
+}
+
+export async function updateMedia(
+  id: string,
+  data: Partial<AdminMedia>,
+): Promise<void> {
+  await updateDoc(doc(db, "media", id), data);
+}
+
+export async function deleteMedia(
+  id: string,
+  storagePath: string,
+): Promise<void> {
+  await deleteDoc(doc(db, "media", id));
+  if (storagePath) {
+    await deleteObject(ref(storage, storagePath));
+  }
+}
+
+// ================= SHIPPING RULES =================
+
+export function subscribeToShippingRules(
+  callback: (rules: AdminShippingRule[]) => void,
+): () => void {
+  return onSnapshot(collection(db, "shippingRules"), (snap) => {
+    const data = snap.docs.map((doc) => {
+      const raw = { id: doc.id, ...doc.data() } as AdminShippingRule;
+      return normalizeDates(raw, ["createdAt"]);
+    });
+    callback(data as AdminShippingRule[]);
+  });
+}
+
+export async function addShippingRule(
+  data: Omit<AdminShippingRule, "id" | "createdAt">,
+): Promise<string> {
+  const docRef = await addDoc(collection(db, "shippingRules"), {
+    ...data,
+    createdAt: serverTimestamp(),
+  });
+  return docRef.id;
+}
+
+export async function updateShippingRule(
+  id: string,
+  data: Partial<AdminShippingRule>,
+): Promise<void> {
+  await updateDoc(doc(db, "shippingRules", id), data);
+}
+
+export async function deleteShippingRule(id: string): Promise<void> {
+  await deleteDoc(doc(db, "shippingRules", id));
+}
+
+// ================= EMAIL TEMPLATES =================
+
+export function subscribeToEmailTemplates(
+  callback: (templates: AdminEmailTemplate[]) => void,
+): () => void {
+  return onSnapshot(collection(db, "emailTemplates"), (snap) => {
+    const data = snap.docs.map((doc) => {
+      const raw = { id: doc.id, ...doc.data() } as AdminEmailTemplate;
+      return normalizeDates(raw, ["createdAt", "updatedAt"]);
+    });
+    callback(data as AdminEmailTemplate[]);
+  });
+}
+
+export async function addEmailTemplate(
+  data: Omit<AdminEmailTemplate, "id" | "createdAt" | "updatedAt">,
+): Promise<string> {
+  const docRef = await addDoc(collection(db, "emailTemplates"), {
+    ...data,
+    createdAt: serverTimestamp(),
+  });
+  return docRef.id;
+}
+
+export async function updateEmailTemplate(
+  id: string,
+  data: Partial<AdminEmailTemplate>,
+): Promise<void> {
+  await updateDoc(doc(db, "emailTemplates", id), {
+    ...data,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function deleteEmailTemplate(id: string): Promise<void> {
+  await deleteDoc(doc(db, "emailTemplates", id));
+}
+
+// ================= PROMO EMAILS =================
+
+export interface PromoEmailPayload {
+  audience: "all" | "new" | "inactive" | "active";
+  activityDays?: number;
+  couponCode: string;
+  subject: string;
+  message: string;
+}
+
+export async function sendPromoEmail(payload: PromoEmailPayload) {
+  const fn = httpsCallable(functions, "sendPromoEmail");
+  const res = await fn(payload);
+  return res.data as { sent: number; skipped: number };
 }

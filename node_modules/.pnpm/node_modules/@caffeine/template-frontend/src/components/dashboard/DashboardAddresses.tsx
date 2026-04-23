@@ -4,11 +4,11 @@ import {
   saveAddress,
   updateAddress,
 } from "@/lib/addressService";
-import { getUserId } from "@/lib/firebase";
 import type { Address } from "@/types";
 import { Check, MapPin, Pencil, Plus, Star, Trash2, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
+import { useUserAuth } from "@/context/UserAuthContext";
 
 type FormData = Omit<Address, "id">;
 
@@ -302,6 +302,7 @@ function AddressForm({
 }
 
 export function DashboardAddresses() {
+  const { user } = useUserAuth();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -311,17 +312,22 @@ export function DashboardAddresses() {
   const [toast, setToast] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
-    const data = await getUserAddresses(getUserId());
+    if (!user?.uid) {
+      setAddresses([]);
+      return;
+    }
+    const data = await getUserAddresses(user.uid);
     setAddresses(data);
-  }, []);
+  }, [user?.uid]);
 
   useEffect(() => {
     reload().finally(() => setLoading(false));
   }, [reload]);
 
   async function handleAdd(data: FormData) {
+    if (!user?.uid) return;
     setSaving(true);
-    await saveAddress(getUserId(), data as Omit<Address, "id">);
+    await saveAddress(user.uid, data as Omit<Address, "id">);
     await reload();
     setSaving(false);
     setShowAddForm(false);
@@ -329,8 +335,13 @@ export function DashboardAddresses() {
   }
 
   async function handleEdit(id: string, data: FormData) {
+    if (!user?.uid) return;
     setSaving(true);
-    await updateAddress(getUserId(), id, data as Partial<Omit<Address, "id">>);
+    await updateAddress(
+      user.uid,
+      id,
+      data as Partial<Omit<Address, "id">>,
+    );
     await reload();
     setSaving(false);
     setEditId(null);
@@ -338,7 +349,8 @@ export function DashboardAddresses() {
   }
 
   async function handleDelete(id: string) {
-    await deleteAddress(getUserId(), id);
+    if (!user?.uid) return;
+    await deleteAddress(user.uid, id);
     await reload();
     setConfirmDeleteId(null);
     setToast("Address removed.");

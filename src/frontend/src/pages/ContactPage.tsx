@@ -2,6 +2,8 @@ import { useToastContext } from "@/components/Layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link, useSearch } from "@tanstack/react-router";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import {
   ArrowRight,
   BookOpen,
@@ -82,7 +84,7 @@ const socialLinks = [
   {
     icon: Linkedin,
     label: "LinkedIn",
-    href: "#",
+    href: "https://www.linkedin.com/company/tinkrokits/",
     hoverColor: "#0A66C2",
   },
   {
@@ -194,16 +196,24 @@ export function ContactPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      // Firebase disabled temporarily — log enquiry to console
-      console.info("[Contact] Enquiry submitted:", {
+      const labType = form.subject.startsWith("Lab Setup Enquiry")
+        ? form.subject.replace("Lab Setup Enquiry: ", "")
+        : "General";
+
+      await addDoc(collection(db, "enquiries"), {
         name: form.name,
         email: form.email,
+        phone: "",
+        labType,
         subject: form.subject,
         message: form.message,
-        schoolName: form.schoolName,
+        schoolName: form.schoolName ?? "",
+        status: "new",
+        priority: "medium",
+        createdAt: serverTimestamp(),
+        respondedAt: null,
       });
-      // Simulate a short delay for UX
-      await new Promise((resolve) => setTimeout(resolve, 600));
+
       addToast(
         "Your message has been sent! We'll reply within 24 hours.",
         "success",

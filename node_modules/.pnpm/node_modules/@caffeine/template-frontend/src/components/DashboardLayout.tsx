@@ -1,4 +1,5 @@
-import { getUserId } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
+import { useUserAuth } from "@/context/UserAuthContext";
 import {
   LayoutDashboard,
   LogOut,
@@ -13,6 +14,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import type { ReactNode } from "react";
 import { useState } from "react";
+import { signOut } from "firebase/auth";
 
 interface NavItem {
   id: string;
@@ -49,7 +51,17 @@ export function DashboardLayout({
   onSectionChange,
 }: DashboardLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const userId = getUserId();
+  const { user } = useUserAuth();
+  const displayName = user?.displayName || user?.email || "User";
+  const initials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  const userId = user?.uid ?? "";
+  const userEmail = user?.email ?? "";
 
   function handleNav(id: string) {
     onSectionChange(id);
@@ -76,14 +88,17 @@ export function DashboardLayout({
               boxShadow: "0 0 16px oklch(0.71 0.17 48 / 0.4)",
             }}
           >
-            {getInitials(userId)}
+            {initials || "TR"}
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs text-white/40 uppercase tracking-widest mb-0.5">
               My Account
             </p>
-            <p className="text-xs text-white/60 truncate font-mono">
-              {truncateId(userId)}
+            <p className="text-sm text-white/90 truncate font-semibold">
+              {displayName}
+            </p>
+            <p className="text-xs text-white/60 truncate">
+              {userEmail || (userId ? truncateId(userId) : "Signed out")}
             </p>
           </div>
         </div>
@@ -154,8 +169,8 @@ export function DashboardLayout({
           type="button"
           data-ocid="nav-logout"
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 group"
-          onClick={() => {
-            localStorage.removeItem("tinkro_user_id");
+          onClick={async () => {
+            await signOut(auth);
             window.location.href = "/";
           }}
         >
@@ -215,7 +230,7 @@ export function DashboardLayout({
       </AnimatePresence>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 relative">
         {/* Mobile topbar */}
         <div
           className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-white/5"
@@ -235,7 +250,27 @@ export function DashboardLayout({
           >
             Tinkro Dashboard
           </span>
+          <a
+            href="/"
+            data-ocid="mobile-exit-dashboard"
+            className="ml-auto inline-flex items-center justify-center w-8 h-8 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition"
+            aria-label="Exit dashboard"
+            title="Exit dashboard"
+          >
+            <X size={16} />
+          </a>
         </div>
+
+        {/* Desktop exit button */}
+        <a
+          href="/"
+          data-ocid="desktop-exit-dashboard"
+          className="hidden lg:inline-flex items-center justify-center w-9 h-9 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition absolute top-5 right-6"
+          aria-label="Exit dashboard"
+          title="Exit dashboard"
+        >
+          <X size={18} />
+        </a>
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">

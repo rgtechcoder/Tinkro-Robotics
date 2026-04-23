@@ -1,4 +1,7 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { useUserAuth } from "@/context/UserAuthContext";
+import { useEffect } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
   DashboardAddresses,
   DashboardCoupons,
@@ -30,6 +33,22 @@ const SECTION_COMPONENTS: Record<Section, ComponentType> = {
 
 export function DashboardPage() {
   const [activeSection, setActiveSection] = useState<Section>("overview");
+  const { user, isLoading } = useUserAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      navigate({ to: "/login" });
+    }
+  }, [user, isLoading, navigate]);
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center text-lg">Loading...</div>;
+  }
+  if (!user) {
+    // Optionally render nothing while redirecting
+    return null;
+  }
 
   const SectionComponent = SECTION_COMPONENTS[activeSection];
 

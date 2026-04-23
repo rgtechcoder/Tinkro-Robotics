@@ -1,9 +1,9 @@
-import { getUserId } from "@/lib/firebase";
 import { subscribeToUserOrders } from "@/lib/orderService";
 import type { Order } from "@/types";
 import { ArrowRight, MapPin, ShoppingBag, Truck } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { useUserAuth } from "@/context/UserAuthContext";
 
 const STATUS_COLORS: Record<string, string> = {
   placed: "bg-blue-500/20 text-blue-300 border border-blue-500/30",
@@ -52,15 +52,20 @@ interface Props {
 export function DashboardOverview({ addressCount = 0, onNavigate }: Props) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useUserAuth();
 
   useEffect(() => {
-    const userId = getUserId();
-    const unsub = subscribeToUserOrders(userId, (data) => {
+    if (!user?.uid) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
+    const unsub = subscribeToUserOrders(user.uid, (data) => {
       setOrders(data);
       setLoading(false);
     });
     return unsub;
-  }, []);
+  }, [user?.uid]);
 
   const recentOrder = orders[0];
   const recentOrders = orders.slice(0, 3);

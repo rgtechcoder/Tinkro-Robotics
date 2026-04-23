@@ -28,12 +28,12 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-// import {
-//   addCoupon,
-//   deleteCoupon,
-//   subscribeToCoupons,
-//   updateCoupon,
-// } from "@/lib/adminService";
+import {
+  addCoupon,
+  deleteCoupon,
+  subscribeToCoupons,
+  updateCoupon,
+} from "@/lib/adminService";
 import type { AdminCoupon } from "@/types/admin";
 import {
   CalendarDays,
@@ -61,6 +61,9 @@ interface CouponFormValues {
   expiresAt: string;
   description: string;
   isActive: boolean;
+  audience: "all" | "new" | "inactive" | "active";
+  activityDays: string;
+  oneTimePerUser: boolean;
 }
 
 interface FormErrors {
@@ -122,6 +125,9 @@ const DEFAULT_FORM: CouponFormValues = {
   expiresAt: "",
   description: "",
   isActive: true,
+  audience: "all",
+  activityDays: "60",
+  oneTimePerUser: true,
 };
 
 const SKELETON_KEYS = ["sk-a", "sk-b", "sk-c", "sk-d", "sk-e"];
@@ -311,6 +317,9 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
         expiresAt: editTarget.expiresAt ?? "",
         description: editTarget.description ?? "",
         isActive: editTarget.isActive,
+        audience: editTarget.audience ?? "all",
+        activityDays: String(editTarget.activityDays ?? 60),
+        oneTimePerUser: editTarget.oneTimePerUser ?? true,
       });
     } else {
       setForm(DEFAULT_FORM);
@@ -346,6 +355,12 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
         expiresAt: form.expiresAt || undefined,
         description: form.description || undefined,
         isActive: form.isActive,
+        audience: form.audience,
+        activityDays:
+          form.audience === "active" || form.audience === "inactive"
+            ? Number(form.activityDays) || 60
+            : undefined,
+        oneTimePerUser: form.oneTimePerUser,
       };
 
       if (editTarget) {
@@ -367,7 +382,7 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto border-border/60 bg-card/95 backdrop-blur-xl">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto border-border/60 bg-background/95 text-foreground backdrop-blur-xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold">
             {editTarget ? "Edit Coupon" : "Create Coupon"}
@@ -385,7 +400,7 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
                 handleChange("code", e.target.value.toUpperCase())
               }
               placeholder="e.g. SAVE20"
-              className="font-mono uppercase"
+              className="bg-background/60 font-mono uppercase"
               data-ocid="coupon-code-input"
             />
             {errors.code && (
@@ -401,7 +416,10 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
                 value={form.discountType}
                 onValueChange={(v) => handleChange("discountType", v)}
               >
-                <SelectTrigger data-ocid="coupon-type-select">
+                <SelectTrigger
+                  className="bg-background/60"
+                  data-ocid="coupon-type-select"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -424,6 +442,7 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
                 placeholder={
                   form.discountType === "percent" ? "1–100" : "e.g. 200"
                 }
+                className="bg-background/60"
                 data-ocid="coupon-value-input"
               />
               {errors.discountValue && (
@@ -444,6 +463,7 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
                 value={form.minOrderAmount}
                 onChange={(e) => handleChange("minOrderAmount", e.target.value)}
                 placeholder="0"
+                className="bg-background/60"
                 data-ocid="coupon-min-input"
               />
             </div>
@@ -455,6 +475,7 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
                 value={form.usageLimit}
                 onChange={(e) => handleChange("usageLimit", e.target.value)}
                 placeholder="0"
+                className="bg-background/60"
                 data-ocid="coupon-limit-input"
               />
             </div>
@@ -468,6 +489,7 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
               type="date"
               value={form.expiresAt}
               onChange={(e) => handleChange("expiresAt", e.target.value)}
+              className="bg-background/60"
               data-ocid="coupon-expiry-input"
             />
           </div>
@@ -481,8 +503,71 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
               onChange={(e) => handleChange("description", e.target.value)}
               placeholder="e.g. 20% off for first-time buyers"
               rows={2}
+              className="bg-background/60"
               data-ocid="coupon-desc-input"
             />
+          </div>
+
+          {/* Audience */}
+          <div className="space-y-1.5">
+            <Label>Audience</Label>
+            <Select
+              value={form.audience}
+              onValueChange={(v) => handleChange("audience", v)}
+            >
+              <SelectTrigger
+                className="bg-background/60"
+                data-ocid="coupon-audience-select"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All users</SelectItem>
+                <SelectItem value="new">New users (no orders)</SelectItem>
+                <SelectItem value="inactive">Inactive users</SelectItem>
+                <SelectItem value="active">Active users</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              New = no orders. Inactive/Active are based on last order date.
+            </p>
+          </div>
+
+          {(form.audience === "inactive" || form.audience === "active") && (
+            <div className="space-y-1.5">
+              <Label htmlFor="coupon-activity-days">
+                Activity window (days)
+              </Label>
+              <Input
+                id="coupon-activity-days"
+                type="number"
+                value={form.activityDays}
+                onChange={(e) => handleChange("activityDays", e.target.value)}
+                placeholder="60"
+                className="bg-background/60"
+                data-ocid="coupon-activity-days-input"
+              />
+              <p className="text-xs text-muted-foreground">
+                Active = ordered within last N days. Inactive = no order in last
+                N days.
+              </p>
+            </div>
+          )}
+
+          {/* One-time per user */}
+          <div className="flex items-center gap-3 rounded-lg border border-border/40 bg-muted/30 px-4 py-3">
+            <Switch
+              id="coupon-onetime"
+              checked={form.oneTimePerUser}
+              onCheckedChange={(v) => handleChange("oneTimePerUser", v)}
+              data-ocid="coupon-onetime-toggle"
+            />
+            <Label
+              htmlFor="coupon-onetime"
+              className="cursor-pointer text-sm font-medium"
+            >
+              One-time per user
+            </Label>
           </div>
 
           {/* Active toggle */}

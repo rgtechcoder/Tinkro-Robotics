@@ -1,3 +1,8 @@
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { AnimatePresence, motion, useScroll, useTransform } from "motion/react";
@@ -363,6 +368,44 @@ function HeroSection({
     return [];
   })();
 
+  // Prepare images for carousel
+  const heroImages = product.images && product.images.length > 0 ? product.images : [heroImage];
+  const [selected, setSelected] = useState(0);
+  const [api, setApi] = useState<any>(null);
+  const intervalRef = useRef<number | null>(null);
+
+  const stopAutoSlide = useCallback(() => {
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  const startAutoSlide = useCallback(() => {
+    if (!api || heroImages.length <= 1) return;
+    stopAutoSlide();
+    intervalRef.current = window.setInterval(() => {
+      api.scrollNext();
+    }, 3500);
+  }, [api, heroImages.length, stopAutoSlide]);
+
+  useEffect(() => {
+    startAutoSlide();
+    return () => stopAutoSlide();
+  }, [startAutoSlide, stopAutoSlide]);
+
+  useEffect(() => {
+    if (!api) return;
+    api.on("pointerDown", stopAutoSlide);
+    api.on("pointerUp", startAutoSlide);
+    api.on("select", startAutoSlide);
+    return () => {
+      api.off("pointerDown", stopAutoSlide);
+      api.off("pointerUp", startAutoSlide);
+      api.off("select", startAutoSlide);
+    };
+  }, [api, startAutoSlide, stopAutoSlide]);
+
   return (
     <section
       ref={ref}
@@ -667,21 +710,64 @@ function HeroSection({
             className="relative z-10 w-full max-w-lg"
           >
             <div
-              className="product-image-container aspect-square shadow-glow-primary"
+              className="product-image-container aspect-square shadow-glow-primary flex flex-col items-center"
               style={{
                 background: "oklch(0.98 0 0 / 0.06)",
                 backdropFilter: "blur(16px)",
                 border: "1px solid oklch(0.98 0 0 / 0.12)",
               }}
+              onMouseEnter={stopAutoSlide}
+              onMouseLeave={startAutoSlide}
             >
-              <img
-                src={heroImage}
-                alt={product.name}
-                className="w-full h-full object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/placeholder.jpg";
-                }}
-              />
+              {heroImages.length > 1 ? (
+                <>
+                  <Carousel
+                    className="w-full h-full"
+                    opts={{ loop: false }}
+                    setApi={(embla) => {
+                      if (!embla) return;
+                      setApi(embla);
+                      embla.on("select", () => setSelected(embla.selectedScrollSnap()));
+                    }}
+                  >
+                    <CarouselContent>
+                      {heroImages.map((img, idx) => (
+                        <CarouselItem key={img} className="flex items-center justify-center aspect-square">
+                          <img
+                            src={img}
+                            alt={product.name}
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/placeholder.jpg";
+                            }}
+                          />
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                  </Carousel>
+                  {/* Dots indicator */}
+                  <div className="flex justify-center gap-1 mt-2">
+                    {heroImages.map((_, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        aria-label={`View image ${idx + 1}`}
+                        onClick={() => api?.scrollTo?.(idx)}
+                        className={`w-2 h-2 rounded-full ${selected === idx ? "bg-primary" : "bg-muted-foreground/30"} inline-block`}
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <img
+                  src={heroImages[0]}
+                  alt={product.name}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/placeholder.jpg";
+                  }}
+                />
+              )}
             </div>
           </motion.div>
         </motion.div>

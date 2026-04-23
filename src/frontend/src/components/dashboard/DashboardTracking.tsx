@@ -1,9 +1,9 @@
-import { getUserId } from "@/lib/firebase";
 import { subscribeToUserOrders } from "@/lib/orderService";
 import type { Order, OrderStatus } from "@/types";
 import { CheckCircle, Home, MapPin, Package, Truck } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { useUserAuth } from "@/context/UserAuthContext";
 
 interface Stage {
   label: string;
@@ -189,16 +189,21 @@ export function DashboardTracking() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { user } = useUserAuth();
 
   useEffect(() => {
-    const userId = getUserId();
-    const unsub = subscribeToUserOrders(userId, (data) => {
+    if (!user?.uid) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
+    const unsub = subscribeToUserOrders(user.uid, (data) => {
       const active = data.filter((o) => o.status !== "delivered");
       setOrders(active.length > 0 ? active : data); // fall back to all if none active
       setLoading(false);
     });
     return unsub;
-  }, []);
+  }, [user?.uid]);
 
   useEffect(() => {
     if (orders.length > 0 && !selectedId) {

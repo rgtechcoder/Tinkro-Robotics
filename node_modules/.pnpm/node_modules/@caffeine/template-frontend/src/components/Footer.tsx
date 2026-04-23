@@ -27,18 +27,18 @@ const footerLinks: Record<string, FooterLinkItem[]> = {
     { label: "Contact", to: "/contact" },
   ],
   Support: [
-    { label: "FAQs", to: "/contact" },
-    { label: "Shipping Policy", to: "/contact" },
-    { label: "Returns", to: "/contact" },
-    { label: "Warranty", to: "/contact" },
-    { label: "Track Order", to: "/contact" },
+    { label: "FAQs", to: "/faq" },
+    { label: "Shipping Policy", to: "/shipping-policy" },
+    { label: "Returns", to: "/returns" },
+    { label: "Warranty", to: "/warranty" },
+    { label: "Track Order", to: "/track-order" },
   ],
 };
 
 const socialLinks = [
   { icon: SiInstagram, href: "https://www.instagram.com/tinkrokits?igsh=bmV4bmgzMHg0cjB5", label: "Instagram" },
   { icon: SiYoutube, href: "https://youtube.com/@tinkro?si=DqOVZXisKa4mbAxN", label: "YouTube" },
-  { icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },
+  { icon: Linkedin, href: "https://www.linkedin.com/company/tinkrokits/", label: "LinkedIn" },
   { icon: SiFacebook, href: "https://www.facebook.com/profile.php?id=61581192200900", label: "Facebook" },
 ];
 
@@ -53,8 +53,8 @@ export function Footer() {
   return (
     <footer className="bg-card border-t border-border" data-ocid="footer">
       {/* Main footer content */}
-      <div className="container max-w-7xl mx-auto px-4 sm:px-6 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
+      <div className="container max-w-7xl mx-auto px-4 sm:px-6 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-6 gap-10">
           {/* Brand column */}
           <div className="lg:col-span-2 space-y-5">
             <div className="flex items-center">
@@ -65,7 +65,7 @@ export function Footer() {
                 style={{ maxWidth: "160px" }}
               />
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
+            <p className="text-xs text-muted-foreground leading-relaxed max-w-xs">
               Empowering the next generation of innovators through robotics, AI,
               and STEM education. Quality kits, expert curriculum, and lifetime
               support.
@@ -143,27 +143,27 @@ export function Footer() {
 
           {/* Link columns */}
           {Object.entries(footerLinks).map(([title, links]) => (
-            <div key={title} className="space-y-4">
+            <div key={title} className="space-y-4 lg:col-span-1">
               <h4
-                className="font-display font-semibold text-sm tracking-wide uppercase"
+                className="font-display font-semibold text-xs tracking-wide uppercase"
                 style={{ color: "rgba(46,109,164,0.8)" }}
               >
                 {title}
               </h4>
-              <ul className="space-y-2.5">
+              <ul className="space-y-2">
                 {links.map((link) => (
                   <li key={link.label}>
                     {link.to ? (
                       <Link
                         to={link.to}
-                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                       >
                         {link.label}
                       </Link>
                     ) : (
                       <a
                         href={link.href ?? "#"}
-                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                       >
                         {link.label}
                       </a>
@@ -198,3 +198,4 @@ export function Footer() {
     </footer>
   );
 }
+

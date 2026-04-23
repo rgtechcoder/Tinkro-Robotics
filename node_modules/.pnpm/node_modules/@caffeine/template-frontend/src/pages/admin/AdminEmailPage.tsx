@@ -1,9 +1,9 @@
-// import {
-//   addEmailTemplate,
-//   deleteEmailTemplate,
-//   subscribeToEmailTemplates,
-//   updateEmailTemplate,
-// } from "@/lib/adminService";
+import {
+  addEmailTemplate,
+  deleteEmailTemplate,
+  subscribeToEmailTemplates,
+  updateEmailTemplate,
+} from "@/lib/adminService";
 import type { AdminEmailTemplate } from "@/types/admin";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import * as Dialog from "@radix-ui/react-dialog";

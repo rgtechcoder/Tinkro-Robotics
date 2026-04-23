@@ -28,11 +28,13 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-// import {
-//   getUserOrders,
-//   subscribeToUsers,
-//   updateUser,
-// } from "@/lib/adminService";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  getUserOrders,
+  sendPromoEmail,
+  subscribeToUsers,
+  updateUser,
+} from "@/lib/adminService";
 import type { AdminOrder, AdminUserRecord } from "@/types/admin";
 import {
   Calendar,
@@ -41,6 +43,7 @@ import {
   Package,
   Phone,
   Search,
+  Send,
   ShoppingBag,
   TrendingUp,
   User,
@@ -53,10 +56,16 @@ import { toast } from "sonner";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatDate(val: string | undefined): string {
+function formatDate(val: unknown): string {
   if (!val) return "—";
-  const d = new Date(val);
-  return d.toLocaleDateString("en-IN", {
+  const dateValue =
+    typeof val === "object" && val && "toDate" in val
+      ? (val as { toDate: () => Date }).toDate()
+      : val instanceof Date
+        ? val
+        : new Date(val as string);
+  if (Number.isNaN(dateValue.getTime())) return "—";
+  return dateValue.toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -405,6 +414,16 @@ export default function AdminUsersPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [togglingUid, setTogglingUid] = useState<string | null>(null);
 
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoSending, setPromoSending] = useState(false);
+  const [promoForm, setPromoForm] = useState({
+    audience: "all" as "all" | "new" | "inactive" | "active",
+    activityDays: "60",
+    couponCode: "",
+    subject: "",
+    message: "",
+  });
+
   // Real-time subscription
   useEffect(() => {
     const unsub = subscribeToUsers((data) => {
@@ -463,6 +482,56 @@ export default function AdminUsersPage() {
     }
   }, [toggleTarget]);
 
+  function handlePromoChange(
+    key: keyof typeof promoForm,
+    value: string,
+  ) {
+    setPromoForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleSendPromo() {
+    if (!promoForm.couponCode.trim()) {
+      toast.error("Please enter a coupon code");
+      return;
+    }
+    if (!promoForm.subject.trim()) {
+      toast.error("Please enter an email subject");
+      return;
+    }
+    if (!promoForm.message.trim()) {
+      toast.error("Please enter a message");
+      return;
+    }
+    setPromoSending(true);
+    try {
+      const result = await sendPromoEmail({
+        audience: promoForm.audience,
+        activityDays:
+          promoForm.audience === "active" || promoForm.audience === "inactive"
+            ? Number(promoForm.activityDays) || 60
+            : undefined,
+        couponCode: promoForm.couponCode.trim().toUpperCase(),
+        subject: promoForm.subject.trim(),
+        message: promoForm.message.trim(),
+      });
+      toast.success(
+        `Promo sent to ${result.sent} users${result.skipped ? `, skipped ${result.skipped}` : ""}`,
+      );
+      setPromoOpen(false);
+      setPromoForm({
+        audience: "all",
+        activityDays: "60",
+        couponCode: "",
+        subject: "",
+        message: "",
+      });
+    } catch {
+      toast.error("Failed to send promo email");
+    } finally {
+      setPromoSending(false);
+    }
+  }
+
   return (
     <AdminLayout>
       <motion.div
@@ -481,13 +550,24 @@ export default function AdminUsersPage() {
               Manage registered customers and their activity
             </p>
           </div>
-          <Badge
-            variant="secondary"
-            className="text-sm px-3 py-1.5 font-medium"
-          >
-            <Users size={14} className="mr-1.5" />
-            {stats.total} users
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="border-border/60"
+              onClick={() => setPromoOpen(true)}
+              data-ocid="promo-email-open"
+            >
+              <Send size={14} className="mr-1.5" />
+              Send Promo Email
+            </Button>
+            <Badge
+              variant="secondary"
+              className="text-sm px-3 py-1.5 font-medium"
+            >
+              <Users size={14} className="mr-1.5" />
+              {stats.total} users
+            </Badge>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -570,12 +650,12 @@ export default function AdminUsersPage() {
         {/* Users Table */}
         <div className="rounded-xl overflow-hidden glass-card border border-border/50">
           {/* Table Header */}
-          <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto_auto] gap-3 px-4 py-3 border-b border-border/40 bg-muted/30">
+          <div className="hidden md:grid grid-cols-[2.2fr_1fr_0.8fr_0.9fr_1fr_0.8fr_0.8fr] items-center gap-3 px-4 py-3 border-b border-border/40 bg-muted/30">
             {["User", "Phone", "Orders", "Spent", "Joined", "Status", ""].map(
               (col) => (
                 <span
                   key={col}
-                  className="text-xs font-semibold text-muted-foreground uppercase tracking-wide"
+                  className={`text-xs font-semibold text-muted-foreground uppercase tracking-wide ${col === "Orders" || col === "Spent" ? "text-center" : col === "Joined" ? "text-left" : col === "Status" ? "text-center" : col === "" ? "text-right" : ""}`}
                 >
                   {col}
                 </span>
@@ -615,7 +695,7 @@ export default function AdminUsersPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: idx * 0.03, duration: 0.25 }}
-                  className="grid grid-cols-[1fr_auto_auto] md:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto_auto] gap-3 items-center px-4 py-3 border-b border-border/30 hover:bg-primary/5 transition-colors group"
+                  className="grid grid-cols-[1fr_auto_auto] md:grid-cols-[2.2fr_1fr_0.8fr_0.9fr_1fr_0.8fr_0.8fr] gap-3 items-center px-4 py-3 border-b border-border/30 hover:bg-primary/5 transition-colors group"
                   data-ocid={`user-row-${user.uid}`}
                 >
                   {/* User identity */}
@@ -643,7 +723,7 @@ export default function AdminUsersPage() {
                   </div>
 
                   {/* Orders */}
-                  <div className="hidden md:flex items-center gap-1">
+                  <div className="hidden md:flex items-center justify-center gap-1">
                     <Package size={12} className="text-muted-foreground" />
                     <span className="text-sm font-medium text-foreground">
                       {user.totalOrders}
@@ -651,14 +731,14 @@ export default function AdminUsersPage() {
                   </div>
 
                   {/* Spent */}
-                  <div className="hidden md:block">
+                  <div className="hidden md:flex items-center justify-center">
                     <span className="text-sm font-semibold text-foreground">
                       {formatCurrency(user.totalSpent)}
                     </span>
                   </div>
 
                   {/* Joined */}
-                  <div className="hidden lg:block">
+                  <div className="hidden lg:flex items-center">
                     <span className="text-xs text-muted-foreground">
                       {formatDate(user.createdAt)}
                     </span>
@@ -666,7 +746,7 @@ export default function AdminUsersPage() {
 
                   {/* Active toggle */}
                   <div
-                    className="flex items-center gap-2"
+                    className="flex items-center justify-center gap-2"
                     data-ocid={`user-toggle-${user.uid}`}
                   >
                     <span
@@ -691,7 +771,7 @@ export default function AdminUsersPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="text-xs h-8 border-border/60 hover:border-primary/50 hover:text-primary"
+                    className="text-xs h-8 border-border/60 hover:border-primary/50 hover:text-primary justify-self-end"
                     onClick={() => handleViewDetails(user)}
                     data-ocid={`user-view-${user.uid}`}
                   >
@@ -745,6 +825,107 @@ export default function AdminUsersPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Promo Email Dialog */}
+        <Dialog open={promoOpen} onOpenChange={setPromoOpen}>
+          <DialogContent className="max-w-xl glass-card border-border/60">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold">
+                Send Promo Email
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>Audience</Label>
+                <Select
+                  value={promoForm.audience}
+                  onValueChange={(v) => handlePromoChange("audience", v)}
+                >
+                  <SelectTrigger data-ocid="promo-audience-select">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All users</SelectItem>
+                    <SelectItem value="new">New users (no orders)</SelectItem>
+                    <SelectItem value="inactive">Inactive users</SelectItem>
+                    <SelectItem value="active">Active users</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  New = no orders. Inactive/Active use last order date.
+                </p>
+              </div>
+
+              {(promoForm.audience === "inactive" ||
+                promoForm.audience === "active") && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="promo-days">Activity window (days)</Label>
+                  <Input
+                    id="promo-days"
+                    type="number"
+                    value={promoForm.activityDays}
+                    onChange={(e) =>
+                      handlePromoChange("activityDays", e.target.value)
+                    }
+                    placeholder="60"
+                    data-ocid="promo-activity-days"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label htmlFor="promo-coupon">Coupon code</Label>
+                <Input
+                  id="promo-coupon"
+                  value={promoForm.couponCode}
+                  onChange={(e) =>
+                    handlePromoChange("couponCode", e.target.value.toUpperCase())
+                  }
+                  placeholder="e.g. SAVE20"
+                  className="font-mono uppercase"
+                  data-ocid="promo-coupon-input"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="promo-subject">Subject</Label>
+                <Input
+                  id="promo-subject"
+                  value={promoForm.subject}
+                  onChange={(e) => handlePromoChange("subject", e.target.value)}
+                  placeholder="Special offer from Tinkro"
+                  data-ocid="promo-subject-input"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="promo-message">Message</Label>
+                <Textarea
+                  id="promo-message"
+                  rows={5}
+                  value={promoForm.message}
+                  onChange={(e) => handlePromoChange("message", e.target.value)}
+                  placeholder="Short promo message with coupon details"
+                  data-ocid="promo-message-input"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setPromoOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSendPromo}
+                  disabled={promoSending}
+                  className="gradient-primary text-white"
+                  data-ocid="promo-send-btn"
+                >
+                  {promoSending ? "Sending…" : "Send Email"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </motion.div>
     </AdminLayout>
   );

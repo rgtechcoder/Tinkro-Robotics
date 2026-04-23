@@ -15,10 +15,16 @@ import { AdminAuthProvider, useAdminAuth } from "./context/AdminAuthContext";
 import { AboutPage } from "./pages/AboutPage";
 import { BlogPage } from "./pages/BlogPage";
 import { ContactPage } from "./pages/ContactPage";
+import { FaqPage } from "./pages/FaqPage";
 import { HomePage } from "./pages/HomePage";
 import { LabsPage } from "./pages/LabsPage";
 import { OrderSuccessPage } from "./pages/OrderSuccessPage";
 import { ProductsPage } from "./pages/ProductsPage";
+import { ReturnsPage } from "./pages/ReturnsPage";
+import { ShippingPolicyPage } from "./pages/ShippingPolicyPage";
+import { TrackOrderPage } from "./pages/TrackOrderPage";
+import { WarrantyPage } from "./pages/WarrantyPage";
+import LoginPage from "./pages/LoginPage";
 
 // ─── Lazy-loaded heavy public pages ───────────────────────────────────────────
 const ProductDetailPage = lazy(() =>
@@ -268,6 +274,12 @@ const productsRoute = createRoute({
   }),
 });
 
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/login",
+  component: LoginPage,
+});
+
 const labsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/labs",
@@ -296,6 +308,36 @@ const aboutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/about",
   component: AboutPage,
+});
+
+const faqRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/faq",
+  component: FaqPage,
+});
+
+const shippingPolicyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/shipping-policy",
+  component: ShippingPolicyPage,
+});
+
+const returnsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/returns",
+  component: ReturnsPage,
+});
+
+const warrantyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/warranty",
+  component: WarrantyPage,
+});
+
+const trackOrderRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/track-order",
+  component: TrackOrderPage,
 });
 
 interface ContactSearch {
@@ -565,10 +607,16 @@ const publicRouteTree = rootRoute.addChildren([
   homeRoute,
   productDetailRoute,
   productsRoute,
+  loginRoute,
   labsRoute,
   blogRoute,
   blogDetailRoute,
   aboutRoute,
+  faqRoute,
+  shippingPolicyRoute,
+  returnsRoute,
+  warrantyRoute,
+  trackOrderRoute,
   contactRoute,
   checkoutRoute,
   orderSuccessRoute,

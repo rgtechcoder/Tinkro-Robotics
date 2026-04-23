@@ -135,7 +135,7 @@ export const CategoriesSection = memo(function CategoriesSection({
                 >
                   <div className="w-full aspect-square rounded-xl overflow-hidden bg-muted relative">
                     <img
-                      src={cat.imageUrl || "/assets/images/placeholder.svg"}
+                      src={cat.imageUrl || "/dp.jpg"}
                       alt={cat.name}
                       loading="lazy"
                       decoding="async"

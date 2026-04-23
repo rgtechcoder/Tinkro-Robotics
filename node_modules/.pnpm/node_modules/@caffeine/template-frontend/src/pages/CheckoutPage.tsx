@@ -2,16 +2,27 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { getUserId } from "@/lib/firebase";
-import { saveOrder } from "@/lib/orderService";
+import {
+  hasUserRedeemedCoupon,
+  saveOrder,
+  subscribeToUserOrders,
+} from "@/lib/orderService";
 import { useCoupons } from "@/lib/publicDataService";
 import { loadRazorpay, openRazorpayCheckout } from "@/lib/razorpay";
 import { useCartStore } from "@/store/cartStore";
-import type { Address } from "@/types";
+import type { Address, Order } from "@/types";
 import type { AdminCoupon } from "@/types/admin";
 import type { RazorpayResponse } from "@/types/razorpay";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useUserAuth } from "@/context/UserAuthContext";
 import {
   CheckCircle2,
   ChevronRight,
@@ -27,12 +38,12 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-// ── NOTE: Replace this with your live Razorpay key before going to production.
-// Get your key from https://dashboard.razorpay.com/app/keys
-const RAZORPAY_KEY = "rzp_test_YOUR_KEY_HERE";
+// ── NOTE: Razorpay public key comes from Vite env.
+// Set VITE_RAZORPAY_KEY_ID in src/frontend/.env
+const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined;
 
 function fadeSlideProps(i: number) {
   return {
@@ -53,15 +64,57 @@ const emptyForm: FormState = {
   pincode: "",
 };
 
+const INDIAN_STATES = [
+  "Andaman and Nicobar Islands",
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chandigarh",
+  "Chhattisgarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jammu and Kashmir",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Ladakh",
+  "Lakshadweep",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Puducherry",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+];
+
 export function CheckoutPage() {
   const { items, total, updateQty, removeItem, clearCart } = useCartStore();
   const navigate = useNavigate();
   const { coupons, loading: couponsLoading } = useCoupons();
+  const { user, isLoading: authLoading } = useUserAuth();
 
   // Coupon state
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<AdminCoupon | null>(null);
   const [couponError, setCouponError] = useState("");
+  const [couponChecking, setCouponChecking] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
 
   // Address state
   const [address, setAddress] = useState<FormState>(emptyForm);
@@ -73,6 +126,17 @@ export function CheckoutPage() {
   const [isPlacing, setIsPlacing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  useEffect(() => {
+    if (!user?.uid) {
+      setOrders([]);
+      return;
+    }
+    const unsub = subscribeToUserOrders(user.uid, (data) => {
+      setOrders(data);
+    });
+    return unsub;
+  }, [user?.uid]);
+
   // ── Coupon logic ────────────────────────────────────────────────────────────
   const discount = appliedCoupon
     ? appliedCoupon.discountType === "percent"
@@ -81,7 +145,33 @@ export function CheckoutPage() {
     : 0;
   const grandTotal = Math.max(0, total - discount);
 
-  function applyCoupon() {
+  function getLastOrderDate() {
+    if (orders.length === 0) return null;
+    const dates = orders
+      .map((o) => new Date(o.createdAt).getTime())
+      .filter((t) => !Number.isNaN(t));
+    if (dates.length === 0) return null;
+    return new Date(Math.max(...dates));
+  }
+
+  function isEligibleForCoupon(coupon: AdminCoupon) {
+    const audience = coupon.audience ?? "all";
+    const totalOrders = orders.length;
+    const lastOrderDate = getLastOrderDate();
+    const activityDays = coupon.activityDays ?? 60;
+    const cutoff = new Date(Date.now() - activityDays * 24 * 60 * 60 * 1000);
+
+    if (audience === "new") return totalOrders === 0;
+    if (audience === "inactive") return !lastOrderDate || lastOrderDate < cutoff;
+    if (audience === "active") return !!lastOrderDate && lastOrderDate >= cutoff;
+    return true;
+  }
+
+  async function applyCoupon() {
+    if (!user?.uid) {
+      setCouponError("Please log in to apply a coupon.");
+      return;
+    }
     const code = couponInput.trim().toUpperCase();
     if (!code) {
       setCouponError("Please enter a coupon code.");
@@ -90,8 +180,14 @@ export function CheckoutPage() {
 
     const found = coupons.find((c) => c.code.toUpperCase() === code);
 
-    if (!found) {
+    if (!found || !found.isActive || (found.expiresAt && new Date(found.expiresAt) < new Date())) {
       setCouponError("Invalid or expired coupon code.");
+      setAppliedCoupon(null);
+      return;
+    }
+
+    if (!isEligibleForCoupon(found)) {
+      setCouponError("This coupon is not available for your account.");
       setAppliedCoupon(null);
       return;
     }
@@ -108,6 +204,17 @@ export function CheckoutPage() {
       setCouponError("This coupon has reached its usage limit.");
       setAppliedCoupon(null);
       return;
+    }
+
+    if (found.oneTimePerUser) {
+      setCouponChecking(true);
+      const redeemed = await hasUserRedeemedCoupon(user.uid, found.id);
+      setCouponChecking(false);
+      if (redeemed) {
+        setCouponError("You have already used this coupon.");
+        setAppliedCoupon(null);
+        return;
+      }
     }
 
     const savedAmount =
@@ -152,6 +259,15 @@ export function CheckoutPage() {
 
   // ── Place order via Razorpay ─────────────────────────────────────────────────
   async function handlePlaceOrder() {
+    if (!user?.uid) {
+      toast.error("Please log in to place an order.");
+      navigate({ to: "/login" });
+      return;
+    }
+    if (!RAZORPAY_KEY) {
+      toast.error("Payment key missing. Please contact support.");
+      return;
+    }
     if (!validate()) return;
     setIsPlacing(true);
 
@@ -179,29 +295,33 @@ export function CheckoutPage() {
         setIsPlacing(false);
         setIsProcessing(true);
         try {
-          const userId = getUserId();
+          const userId = user.uid;
           const orderData = {
             userId,
+            customerEmail: user.email ?? undefined,
+            customerName: user.displayName ?? address.name,
             items,
             address: { ...address, id: crypto.randomUUID(), isDefault: false },
             subtotal: total,
             discount,
             total: grandTotal,
             coupon: appliedCoupon?.code ?? null,
-            couponCode: appliedCoupon?.code,
-            couponDiscount: appliedCoupon ? discount : undefined,
+            couponCode: appliedCoupon?.code ?? null,
+            couponId: appliedCoupon?.id ?? null,
             status: "placed" as const,
             razorpayPaymentId: response.razorpay_payment_id,
             razorpayOrderId: response.razorpay_order_id ?? "",
-            createdAt: new Date().toISOString(),
             estimatedDelivery: "5-7 business days",
             trackingId: null,
           };
+          if (appliedCoupon) {
+            orderData.couponDiscount = discount;
+          }
           const docId = await saveOrder(orderData);
 
-          // Firebase disabled — coupon usage tracking will be re-enabled later
           clearCart();
           void docId;
+          window.location.assign(`/order-success?orderId=${docId}`);
           await navigate({ to: "/order-success", search: { orderId: docId } });
         } catch (err) {
           console.error("Order save failed:", err);
@@ -256,6 +376,33 @@ export function CheckoutPage() {
             <ChevronRight className="ml-2 w-5 h-5" />
           </Button>
         </Link>
+      </motion.div>
+    );
+  }
+
+  if (!authLoading && !user) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="min-h-[70vh] flex flex-col items-center justify-center px-4 text-center"
+      >
+        <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mb-5">
+          <Shield className="w-10 h-10 text-orange-400" />
+        </div>
+        <h2 className="text-2xl font-display font-bold mb-2 text-foreground">
+          Please login to continue
+        </h2>
+        <p className="text-muted-foreground text-base mb-6 max-w-md">
+          Checkout is available only for logged-in users.
+        </p>
+        <Button
+          size="lg"
+          className="gradient-orange text-white border-0 shadow-glow-orange hover:shadow-glow-orange hover:scale-105 transition-smooth"
+          onClick={() => navigate({ to: "/login" })}
+        >
+          Go to Login
+        </Button>
       </motion.div>
     );
   }
@@ -444,104 +591,6 @@ export function CheckoutPage() {
             </div>
           </motion.div>
 
-          {/* Coupon section */}
-          <motion.div
-            {...fadeSlideProps(1)}
-            className="glass-card rounded-2xl p-6"
-            data-ocid="checkout-coupon-section"
-          >
-            <h2 className="text-lg font-display font-bold flex items-center gap-2 mb-4">
-              <Tag className="w-5 h-5 text-primary" />
-              <span className="gradient-text">Coupon Code</span>
-              {couponsLoading && (
-                <Loader2 className="w-3.5 h-3.5 ml-1 animate-spin text-muted-foreground" />
-              )}
-            </h2>
-            {appliedCoupon ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex items-center justify-between bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl px-4 py-3"
-              >
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  <div>
-                    <p className="text-sm font-bold text-green-700 dark:text-green-400">
-                      {appliedCoupon.code} applied!
-                    </p>
-                    <p className="text-xs text-green-600 dark:text-green-500">
-                      You save ₹{discount.toLocaleString("en-IN")}
-                      {appliedCoupon.discountType === "percent"
-                        ? ` (${appliedCoupon.discountValue}% off)`
-                        : ""}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={removeCoupon}
-                  className="text-muted-foreground hover:text-destructive transition-smooth"
-                  data-ocid="coupon-remove"
-                  aria-label="Remove coupon"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </motion.div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Enter coupon code"
-                    value={couponInput}
-                    onChange={(e) =>
-                      setCouponInput(e.target.value.toUpperCase())
-                    }
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && !couponsLoading && applyCoupon()
-                    }
-                    disabled={couponsLoading}
-                    className="flex-1 border-input focus:border-primary/60 transition-smooth uppercase disabled:opacity-50"
-                    data-ocid="coupon-input"
-                  />
-                  <Button
-                    onClick={applyCoupon}
-                    disabled={couponsLoading}
-                    variant="outline"
-                    className="border-primary/40 text-primary hover:bg-primary/10 transition-smooth font-semibold disabled:opacity-50"
-                    data-ocid="coupon-apply"
-                  >
-                    {couponsLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      "Apply"
-                    )}
-                  </Button>
-                </div>
-                {couponError && (
-                  <motion.p
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-sm text-destructive"
-                  >
-                    {couponError}
-                  </motion.p>
-                )}
-                {!couponsLoading && coupons.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    {coupons.length} coupon
-                    {coupons.length !== 1 ? "s" : ""} available — enter a code
-                    above to apply.
-                  </p>
-                )}
-                {couponsLoading && (
-                  <p className="text-xs text-muted-foreground animate-pulse">
-                    Loading available coupons…
-                  </p>
-                )}
-              </div>
-            )}
-          </motion.div>
-
           {/* Address section */}
           <motion.div
             {...fadeSlideProps(2)}
@@ -560,7 +609,6 @@ export function CheckoutPage() {
                 </Label>
                 <Input
                   id="addr-name"
-                  placeholder="Rahul Sharma"
                   value={address.name}
                   onChange={(e) => handleAddress("name", e.target.value)}
                   className={formErrors.name ? "border-destructive" : ""}
@@ -577,7 +625,6 @@ export function CheckoutPage() {
                 </Label>
                 <Input
                   id="addr-phone"
-                  placeholder="9876543210"
                   value={address.phone}
                   onChange={(e) =>
                     handleAddress(
@@ -599,7 +646,6 @@ export function CheckoutPage() {
                 </Label>
                 <Input
                   id="addr-line1"
-                  placeholder="House no., Street, Locality"
                   value={address.line1}
                   onChange={(e) => handleAddress("line1", e.target.value)}
                   className={formErrors.line1 ? "border-destructive" : ""}
@@ -619,7 +665,6 @@ export function CheckoutPage() {
                 </Label>
                 <Input
                   id="addr-line2"
-                  placeholder="Apartment, Building, Landmark"
                   value={address.line2 ?? ""}
                   onChange={(e) => handleAddress("line2", e.target.value)}
                   data-ocid="address-line2"
@@ -632,7 +677,6 @@ export function CheckoutPage() {
                 </Label>
                 <Input
                   id="addr-city"
-                  placeholder="Mumbai"
                   value={address.city}
                   onChange={(e) => handleAddress("city", e.target.value)}
                   className={formErrors.city ? "border-destructive" : ""}
@@ -647,14 +691,25 @@ export function CheckoutPage() {
                 <Label htmlFor="addr-state" className="text-sm font-medium">
                   State <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                  id="addr-state"
-                  placeholder="Maharashtra"
+                <Select
                   value={address.state}
-                  onChange={(e) => handleAddress("state", e.target.value)}
-                  className={formErrors.state ? "border-destructive" : ""}
-                  data-ocid="address-state"
-                />
+                  onValueChange={(val) => handleAddress("state", val)}
+                >
+                  <SelectTrigger
+                    id="addr-state"
+                    className={formErrors.state ? "border-destructive" : ""}
+                    data-ocid="address-state"
+                  >
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-64 overflow-y-auto">
+                    {INDIAN_STATES.map((state) => (
+                      <SelectItem key={state} value={state}>
+                        {state}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {formErrors.state && (
                   <p className="text-xs text-destructive">{formErrors.state}</p>
                 )}
@@ -666,7 +721,6 @@ export function CheckoutPage() {
                 </Label>
                 <Input
                   id="addr-pincode"
-                  placeholder="400001"
                   value={address.pincode}
                   onChange={(e) =>
                     handleAddress(
@@ -738,9 +792,110 @@ export function CheckoutPage() {
             </div>
           </motion.div>
 
-          {/* Order total + Place Order */}
+          {/* Coupon section */}
           <motion.div
             {...fadeSlideProps(4)}
+            className="glass-card rounded-2xl p-6"
+            data-ocid="checkout-coupon-section"
+          >
+            <h2 className="text-lg font-display font-bold flex items-center gap-2 mb-4">
+              <Tag className="w-5 h-5 text-primary" />
+              <span className="gradient-text">Coupon Code</span>
+              {couponsLoading && (
+                <Loader2 className="w-3.5 h-3.5 ml-1 animate-spin text-muted-foreground" />
+              )}
+            </h2>
+            {appliedCoupon ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-center justify-between bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl px-4 py-3"
+              >
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  <div>
+                    <p className="text-sm font-bold text-green-700 dark:text-green-400">
+                      {appliedCoupon.code} applied!
+                    </p>
+                    <p className="text-xs text-green-600 dark:text-green-500">
+                      You save ₹{discount.toLocaleString("en-IN")}
+                      {appliedCoupon.discountType === "percent"
+                        ? ` (${appliedCoupon.discountValue}% off)`
+                        : ""}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={removeCoupon}
+                  className="text-muted-foreground hover:text-destructive transition-smooth"
+                  data-ocid="coupon-remove"
+                  aria-label="Remove coupon"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </motion.div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <Input
+                    value={couponInput}
+                    onChange={(e) =>
+                      setCouponInput(e.target.value.toUpperCase())
+                    }
+                    onKeyDown={(e) =>
+                      e.key === "Enter" &&
+                      !couponsLoading &&
+                      !couponChecking &&
+                      applyCoupon()
+                    }
+                    disabled={couponsLoading || couponChecking}
+                    className="flex-1 border-input focus:border-primary/60 transition-smooth uppercase disabled:opacity-50"
+                    data-ocid="coupon-input"
+                    aria-label="Coupon code"
+                  />
+                  <Button
+                    onClick={applyCoupon}
+                    disabled={couponsLoading || couponChecking}
+                    variant="outline"
+                    className="border-primary/40 text-primary hover:bg-primary/10 transition-smooth font-semibold disabled:opacity-50"
+                    data-ocid="coupon-apply"
+                  >
+                    {couponsLoading || couponChecking ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      "Apply"
+                    )}
+                  </Button>
+                </div>
+                {couponError && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-sm text-destructive"
+                  >
+                    {couponError}
+                  </motion.p>
+                )}
+                {!couponsLoading && coupons.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {coupons.length} coupon
+                    {coupons.length !== 1 ? "s" : ""} available — enter a code
+                    above to apply.
+                  </p>
+                )}
+                {couponsLoading && (
+                  <p className="text-xs text-muted-foreground animate-pulse">
+                    Loading available coupons…
+                  </p>
+                )}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Order total + Place Order */}
+          <motion.div
+            {...fadeSlideProps(5)}
             className="glass-card rounded-2xl p-6 space-y-4"
             data-ocid="checkout-place-order-section"
           >
@@ -818,7 +973,7 @@ export function CheckoutPage() {
           </motion.div>
 
           {/* Trust badges */}
-          <motion.div {...fadeSlideProps(5)} className="grid grid-cols-3 gap-3">
+          <motion.div {...fadeSlideProps(6)} className="grid grid-cols-3 gap-3">
             {[
               { icon: Shield, label: "Secure\nCheckout" },
               { icon: Package, label: "Free\nDelivery" },

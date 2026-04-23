@@ -311,8 +311,10 @@ function RobotModel() {
   useFrame(({ clock }) => {
     const elapsed = clock.getElapsedTime();
     if (groupRef.current) {
-      groupRef.current.rotation.y = elapsed * 0.25;
-      groupRef.current.position.y = -0.3 + Math.sin(elapsed * 0.55) * 0.16;
+
+      // Robot Size Fixing
+       groupRef.current.rotation.y = elapsed * 0.25;
+      groupRef.current.position.y = -0.45 + Math.sin(elapsed * 0.55) * 0.12;
     }
     const eyeIntensity = Math.sin(elapsed * 2) * 0.5 + 2.5;
     if (leftEyeRef.current)
@@ -330,7 +332,7 @@ function RobotModel() {
   });
 
   return (
-    <group ref={groupRef} position={[0, -0.3, 0]}>
+    <group ref={groupRef} position={[0, -0.45, 0]} scale={[0.92, 0.92, 0.92]}>
       {/* HEAD */}
       <mesh position={[0, 2.0, 0]} material={metalMid}>
         <boxGeometry args={[0.82, 0.78, 0.62]} />
@@ -765,7 +767,7 @@ export function HeroSection({
                     borderColor: "rgba(244,123,32,0.35)",
                   }}
                 >
-                  India's #1 STEM Robotics Brand
+                  India's Best STEM Robotics Brand
                 </Badge>
               </motion.div>
 

@@ -15,7 +15,6 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { getUserId } from "../lib/firebase";
 import { useProducts } from "../lib/publicDataService";
 import { useCartStore } from "../store/cartStore";
 import type { AdminProduct } from "../types/admin";
@@ -143,21 +142,97 @@ function SearchDropdown({
   );
 }
 
+import { useUserAuth } from "@/context/UserAuthContext";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
+
 function UserDropdown({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
-  const userId = getUserId();
-  const shortId = userId.slice(0, 8).toUpperCase();
+  const { user } = useUserAuth();
+
+  function handleLogin() {
+    navigate({ to: "/login" });
+    onClose();
+  }
+
+  function handleSignup() {
+    navigate({ to: "/login", search: { mode: "signup" } as never });
+    onClose();
+  }
 
   function handleNav(path: "/dashboard") {
     navigate({ to: path });
     onClose();
   }
 
-  function handleSignOut() {
-    localStorage.removeItem("tinkro_user_id");
+  async function handleSignOut() {
+    try {
+      await signOut(auth);
+      toast.success("Signed out successfully");
+    } catch (err) {
+      toast.error("Sign out failed");
+    }
     onClose();
-    toast.success("Signed out successfully");
   }
+
+  if (!user) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -8, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -6, scale: 0.97 }}
+        transition={{ duration: 0.18, ease: "easeOut" }}
+        className="absolute top-full right-0 mt-2 w-64 rounded-2xl border overflow-hidden z-50"
+        style={{
+          background:
+            "linear-gradient(160deg, oklch(0.13 0.04 250 / 0.97) 0%, oklch(0.17 0.05 243 / 0.97) 100%)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          borderColor: "oklch(0.45 0.12 243 / 0.35)",
+          boxShadow:
+            "0 12px 40px oklch(0.1 0.08 243 / 0.5), 0 0 0 1px oklch(0.45 0.12 243 / 0.15), inset 0 1px 0 oklch(1 0 0 / 0.07)",
+        }}
+        data-ocid="user-dropdown"
+      >
+        <div className="px-4 py-4">
+          <p className="text-sm font-semibold text-foreground">Welcome</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Login or create an account to view your dashboard and orders.
+          </p>
+        </div>
+        <div className="px-4 pb-4 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={handleLogin}
+            className="w-full h-9 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90"
+            data-ocid="user-login-btn"
+          >
+            Login
+          </button>
+          <button
+            type="button"
+            onClick={handleSignup}
+            className="w-full h-9 rounded-lg text-sm font-semibold transition-colors"
+            style={{
+              background: "oklch(0.14 0.03 243 / 0.6)",
+              border: "1px solid oklch(0.30 0.05 243 / 0.7)",
+              color: "white",
+            }}
+            data-ocid="user-signup-btn"
+          >
+            Sign Up
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // User display info
+  const displayName = user.displayName || user.email || "User";
+  const initials = user.displayName
+    ? user.displayName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+    : (user.email ? user.email[0].toUpperCase() : "U");
+  const userLabel = displayName || "My Account";
 
   return (
     <motion.div
@@ -187,15 +262,15 @@ function UserDropdown({ onClose }: { onClose: () => void }) {
             boxShadow: "0 0 12px oklch(0.45 0.12 243 / 0.5)",
           }}
         >
-          TR
+          {initials}
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-foreground">My Account</p>
+          <p className="text-sm font-semibold text-foreground">{displayName}</p>
           <p
             className="text-xs font-mono truncate"
             style={{ color: "oklch(0.55 0.08 243)" }}
           >
-            ID: {shortId}
+            {userLabel}
           </p>
         </div>
       </div>
@@ -277,6 +352,7 @@ export function Navbar() {
   const router = useRouter();
   const itemCount = useCartStore((s) => s.itemCount);
   const { adminUser } = useAdminAuth();
+  const { user } = useUserAuth();
   const { products: liveProducts } = useProducts();
 
   const debouncedQuery = useDebounce(searchQuery, 200);
@@ -390,6 +466,9 @@ export function Navbar() {
             to="/"
             className="flex items-center gap-2 group"
             data-ocid="nav-logo"
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
           >
             <img
               src="/assets/brand/logo.png"
@@ -637,6 +716,13 @@ export function Navbar() {
           className={`lg:hidden overflow-hidden transition-all duration-300 ease-out ${
             menuOpen ? "max-h-[28rem] opacity-100 pb-4" : "max-h-0 opacity-0"
           }`}
+          style={{
+            background: "linear-gradient(135deg, oklch(0.13 0.04 250 / 0.97) 0%, oklch(0.17 0.05 243 / 0.97) 100%)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            boxShadow: "0 8px 32px oklch(0.1 0.08 243 / 0.4)",
+            zIndex: 60,
+          }}
         >
           <nav className="flex flex-col gap-1 pt-2 border-t border-border/50">
             {/* Mobile search trigger */}
@@ -663,16 +749,18 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
-            {/* Dashboard link in mobile menu */}
-            <Link
-              to="/dashboard"
-              onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2 text-left px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-smooth"
-              data-ocid="nav-mobile-dashboard"
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              My Dashboard
-            </Link>
+            {/* Dashboard link in mobile menu (only when signed in) */}
+            {user && (
+              <Link
+                to="/dashboard"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 text-left px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-smooth"
+                data-ocid="nav-mobile-dashboard"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                My Dashboard
+              </Link>
+            )}
             {/* Admin Panel — mobile, only for admin users */}
             {adminUser && (
               <a

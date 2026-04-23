@@ -21,12 +21,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-// import {
-//   addShippingRule,
-//   deleteShippingRule,
-//   subscribeToShippingRules,
-//   updateShippingRule,
-// } from "@/lib/adminService";
+import {
+  addShippingRule,
+  deleteShippingRule,
+  subscribeToShippingRules,
+  updateShippingRule,
+} from "@/lib/adminService";
 import type { AdminShippingRule } from "@/types/admin";
 import {
   Calculator,

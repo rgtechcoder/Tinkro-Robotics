@@ -1,47 +1,16 @@
 import { getUserAddresses } from "@/lib/addressService";
-import { getUserId } from "@/lib/firebase";
 import { subscribeToUserOrders } from "@/lib/orderService";
-import { Check, Mail, Pencil, Phone, Shield, User, X } from "lucide-react";
+import { Check, Mail, Pencil, Phone, User, X } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { useUserAuth } from "@/context/UserAuthContext";
+import { getUserProfile, updateUserProfile } from "@/lib/userService";
+import { updateProfile } from "firebase/auth";
 
 interface ProfileData {
   displayName: string;
   email: string;
   phone: string;
-}
-
-const LS_KEYS = {
-  displayName: "tinkro_display_name",
-  email: "tinkro_email",
-  phone: "tinkro_phone",
-  memberSince: "tinkro_member_since",
-};
-
-function loadProfile(): ProfileData {
-  return {
-    displayName: localStorage.getItem(LS_KEYS.displayName) ?? "",
-    email: localStorage.getItem(LS_KEYS.email) ?? "",
-    phone: localStorage.getItem(LS_KEYS.phone) ?? "",
-  };
-}
-
-function saveProfile(data: ProfileData) {
-  localStorage.setItem(LS_KEYS.displayName, data.displayName);
-  localStorage.setItem(LS_KEYS.email, data.email);
-  localStorage.setItem(LS_KEYS.phone, data.phone);
-}
-
-function getMemberSince(): string {
-  let ms = localStorage.getItem(LS_KEYS.memberSince);
-  if (!ms) {
-    ms = new Date().toLocaleDateString("en-IN", {
-      month: "long",
-      year: "numeric",
-    });
-    localStorage.setItem(LS_KEYS.memberSince, ms);
-  }
-  return ms;
 }
 
 function getInitials(name: string): string {
@@ -93,37 +62,81 @@ function SkeletonProfile() {
 }
 
 export function DashboardProfile() {
-  const [profile, setProfile] = useState<ProfileData>(loadProfile());
+  const [profile, setProfile] = useState<ProfileData>({
+    displayName: "",
+    email: "",
+    phone: "",
+  });
   const [editMode, setEditMode] = useState(false);
-  const [draft, setDraft] = useState<ProfileData>(loadProfile());
+  const [draft, setDraft] = useState<ProfileData>({
+    displayName: "",
+    email: "",
+    phone: "",
+  });
   const [orderCount, setOrderCount] = useState(0);
   const [addressCount, setAddressCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
-
-  const userId = getUserId();
-  const memberSince = getMemberSince();
+  const { user } = useUserAuth();
+  const memberSince = user?.metadata?.creationTime
+    ? new Date(user.metadata.creationTime).toLocaleDateString("en-IN", {
+        month: "long",
+        year: "numeric",
+      })
+    : "";
 
   useEffect(() => {
-    let ready = { orders: false, addresses: false };
-    function checkDone() {
-      if (ready.orders && ready.addresses) setLoading(false);
+    if (!user?.uid) {
+      setOrderCount(0);
+      setAddressCount(0);
+      setLoading(false);
+      return;
     }
 
-    const unsub = subscribeToUserOrders(userId, (orders) => {
+    let ready = { orders: false, addresses: false, profile: false };
+    function checkDone() {
+      if (ready.orders && ready.addresses && ready.profile) setLoading(false);
+    }
+
+    const unsub = subscribeToUserOrders(user.uid, (orders) => {
       setOrderCount(orders.length);
       ready.orders = true;
       checkDone();
     });
 
-    getUserAddresses(userId).then((addrs) => {
+    getUserAddresses(user.uid).then((addrs) => {
       setAddressCount(addrs.length);
       ready.addresses = true;
       checkDone();
     });
 
+    getUserProfile(user.uid)
+      .then((data) => {
+        const next: ProfileData = {
+          displayName:
+            data?.displayName || user.displayName || "",
+          email: user.email || data?.email || "",
+          phone: data?.phone || "",
+        };
+        setProfile(next);
+        setDraft(next);
+      })
+      .catch(() => {
+        const fallback: ProfileData = {
+          displayName: user.displayName || "",
+          email: user.email || "",
+          phone: "",
+        };
+        setProfile(fallback);
+        setDraft(fallback);
+      })
+      .finally(() => {
+        ready.profile = true;
+        checkDone();
+      });
+
     return unsub;
-  }, [userId]);
+  }, [user?.uid, user?.displayName, user?.email]);
 
   function startEdit() {
     setDraft({ ...profile });
@@ -135,11 +148,22 @@ export function DashboardProfile() {
     setEditMode(false);
   }
 
-  function saveEdit() {
-    saveProfile(draft);
-    setProfile({ ...draft });
-    setEditMode(false);
-    setToast("Profile updated successfully!");
+  async function saveEdit() {
+    if (!user?.uid) return;
+    try {
+      if (draft.displayName && draft.displayName !== user.displayName) {
+        await updateProfile(user, { displayName: draft.displayName });
+      }
+      await updateUserProfile(user.uid, {
+        displayName: draft.displayName,
+        phone: draft.phone,
+      });
+      setProfile({ ...draft });
+      setEditMode(false);
+      setToast("Profile updated successfully!");
+    } catch {
+      setToast("Profile update failed. Try again.");
+    }
   }
 
   const initials = getInitials(profile.displayName);
@@ -150,6 +174,7 @@ export function DashboardProfile() {
     icon: React.ComponentType<{ size?: number; className?: string }>;
     placeholder: string;
     type: string;
+    readOnly?: boolean;
   }[] = [
     {
       key: "displayName",
@@ -164,6 +189,7 @@ export function DashboardProfile() {
       icon: Mail,
       placeholder: "you@example.com",
       type: "email",
+      readOnly: true,
     },
     {
       key: "phone",
@@ -251,13 +277,13 @@ export function DashboardProfile() {
                     data-ocid={`profile-input-${f.key}`}
                     type={f.type}
                     value={editMode ? draft[f.key] : profile[f.key]}
-                    readOnly={!editMode}
+                    readOnly={!editMode || f.readOnly}
                     placeholder={f.placeholder}
                     onChange={(e) =>
                       setDraft((d) => ({ ...d, [f.key]: e.target.value }))
                     }
                     className={`w-full bg-white/5 border rounded-xl px-4 py-2.5 text-sm outline-none transition-colors ${
-                      editMode
+                      editMode && !f.readOnly
                         ? "border-white/10 focus:border-orange-500/60 focus:ring-1 focus:ring-orange-500/20 text-white placeholder-slate-600"
                         : "border-white/10 text-slate-300 cursor-default"
                     } ${!profile[f.key] && !editMode ? "italic text-slate-600" : ""}`}
@@ -268,23 +294,6 @@ export function DashboardProfile() {
                 </div>
               );
             })}
-
-            {/* Account ID — read only */}
-            <div className="space-y-1">
-              <p className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                <Shield size={12} /> Account ID
-              </p>
-              <div
-                id="profile-account-id"
-                aria-label="Account ID"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono text-slate-500 flex items-center gap-2"
-              >
-                <span className="flex-1 truncate">{userId}</span>
-                <span className="text-xs text-slate-600 flex-shrink-0">
-                  Read only
-                </span>
-              </div>
-            </div>
           </div>
 
           {/* Edit mode buttons */}

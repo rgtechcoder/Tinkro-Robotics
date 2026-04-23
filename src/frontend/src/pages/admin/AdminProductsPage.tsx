@@ -475,6 +475,9 @@ async function uploadPendingImages(
       } else {
         await addProduct(payload);
         toast.success("Product added successfully");
+        reset(); // Reset form after adding
+        setSelectedCategoryIds([]);
+        setImageUploads([]);
       }
       onClose();
     } catch (err) {

@@ -113,10 +113,15 @@ export interface Order {
   subtotal: number;
   discount: number;
   coupon: string | null;
+  couponId?: string | null;
+  couponCode?: string | null;
+  couponDiscount?: number;
   status: OrderStatus;
   createdAt: string;
   address: Address;
   userId?: string;
+  customerEmail?: string;
+  customerName?: string;
   razorpayPaymentId?: string;
   razorpayOrderId?: string;
   trackingId?: string | null;

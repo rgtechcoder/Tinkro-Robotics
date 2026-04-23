@@ -1,9 +1,11 @@
-import { getUserId } from "@/lib/firebase";
 import { subscribeToUserOrders } from "@/lib/orderService";
+import { subscribeToCoupons } from "@/lib/adminService";
+import type { AdminCoupon } from "@/types/admin";
 import type { Order } from "@/types";
 import { Check, Copy, Tag, Ticket } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { useUserAuth } from "@/context/UserAuthContext";
 
 interface CouponDef {
   code: string;
@@ -17,52 +19,90 @@ interface CouponDef {
   borderColor: string;
 }
 
-const AVAILABLE_COUPONS: CouponDef[] = [
+const PALETTE = [
   {
-    code: "TINKRO10",
-    title: "10% Off Everything",
-    description: "Flat 10% off on all orders. No category restrictions.",
-    discountLabel: "10% OFF",
-    minOrder: "₹500",
-    validUntil: "31 Dec 2025",
     gradient: "from-blue-600/20 to-blue-800/10",
     accentColor: "text-blue-400",
     borderColor: "border-blue-500/30",
   },
   {
-    code: "STEM20",
-    title: "STEM Kit Special",
-    description: "Extra 20% off on all STEM kit purchases.",
-    discountLabel: "20% OFF",
-    minOrder: "₹1,000",
-    validUntil: "31 Dec 2025",
     gradient: "from-purple-600/20 to-purple-800/10",
     accentColor: "text-purple-400",
     borderColor: "border-purple-500/30",
   },
   {
-    code: "ROBO15",
-    title: "Robotics Discount",
-    description: "15% off on all robotics kit orders.",
-    discountLabel: "15% OFF",
-    minOrder: "₹800",
-    validUntil: "31 Dec 2025",
     gradient: "from-teal-600/20 to-teal-800/10",
     accentColor: "text-teal-400",
     borderColor: "border-teal-500/30",
   },
   {
-    code: "FIRST50",
-    title: "First Order Offer",
-    description: "Exclusive 50% off on your very first order.",
-    discountLabel: "50% OFF",
-    minOrder: "₹200",
-    validUntil: "31 Dec 2025",
     gradient: "from-orange-600/20 to-orange-800/10",
     accentColor: "text-orange-400",
     borderColor: "border-orange-500/30",
   },
 ];
+
+function isExpired(expiresAt?: string) {
+  if (!expiresAt) return false;
+  return new Date(expiresAt) < new Date();
+}
+
+function getLastOrderDate(orders: Order[]) {
+  if (orders.length === 0) return null;
+  const dates = orders
+    .map((o) => new Date(o.createdAt).getTime())
+    .filter((t) => !Number.isNaN(t));
+  if (dates.length === 0) return null;
+  return new Date(Math.max(...dates));
+}
+
+function isEligibleForCoupon(
+  coupon: AdminCoupon,
+  orders: Order[],
+): boolean {
+  const audience = coupon.audience ?? "all";
+  const totalOrders = orders.length;
+  const lastOrderDate = getLastOrderDate(orders);
+  const activityDays = coupon.activityDays ?? 60;
+  const cutoff = new Date(Date.now() - activityDays * 24 * 60 * 60 * 1000);
+
+  if (audience === "new") return totalOrders === 0;
+  if (audience === "inactive") {
+    return !lastOrderDate || lastOrderDate < cutoff;
+  }
+  if (audience === "active") {
+    return !!lastOrderDate && lastOrderDate >= cutoff;
+  }
+  return true;
+}
+
+function formatExpiry(expiresAt?: string) {
+  if (!expiresAt) return "No expiry";
+  return new Date(expiresAt).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function formatDiscount(coupon: AdminCoupon) {
+  return coupon.discountType === "percent"
+    ? `${coupon.discountValue}% OFF`
+    : `₹${coupon.discountValue} OFF`;
+}
+
+function mapCoupon(coupon: AdminCoupon, index: number): CouponDef {
+  const theme = PALETTE[index % PALETTE.length];
+  return {
+    code: coupon.code,
+    title: coupon.description ? coupon.description.slice(0, 28) : "Special Offer",
+    description: coupon.description || "Use this coupon at checkout.",
+    discountLabel: formatDiscount(coupon),
+    minOrder: `₹${coupon.minOrderAmount}`,
+    validUntil: formatExpiry(coupon.expiresAt),
+    ...theme,
+  };
+}
 
 function CopyToast({ onClose }: { onClose: () => void }) {
   useEffect(() => {
@@ -166,17 +206,39 @@ function CouponCard({ coupon, onCopy, copied }: CouponCardProps) {
 export function DashboardCoupons() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [coupons, setCoupons] = useState<CouponDef[]>([]);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
+  const { user } = useUserAuth();
 
   useEffect(() => {
-    const userId = getUserId();
-    const unsub = subscribeToUserOrders(userId, (data) => {
+    if (!user?.uid) {
+      setOrders([]);
+      return;
+    }
+    const unsub = subscribeToUserOrders(user.uid, (data) => {
       setOrders(data);
+    });
+    return unsub;
+  }, [user?.uid]);
+
+  useEffect(() => {
+    const unsub = subscribeToCoupons((data) => {
+      const usedCodes = new Set(
+        orders
+          .filter((o) => o.coupon)
+          .map((o) => String(o.coupon).toUpperCase()),
+      );
+      const active = data
+        .filter((c) => c.isActive && !isExpired(c.expiresAt))
+        .filter((c) => isEligibleForCoupon(c, orders))
+        .filter((c) => !(c.oneTimePerUser && usedCodes.has(c.code.toUpperCase())))
+        .map((c, i) => mapCoupon(c, i));
+      setCoupons(active);
       setLoading(false);
     });
     return unsub;
-  }, []);
+  }, [orders]);
 
   function handleCopy(code: string) {
     navigator.clipboard.writeText(code).catch(() => {});
@@ -226,9 +288,24 @@ export function DashboardCoupons() {
               <SkeletonCoupon key={i} />
             ))}
           </div>
+        ) : coupons.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="rounded-2xl bg-white/5 border border-white/10 px-5 py-10 text-center"
+            data-ocid="coupons-available-empty"
+          >
+            <span className="text-3xl mb-3 block">🎫</span>
+            <p className="text-slate-400 text-sm">
+              No active coupons right now.
+            </p>
+            <p className="text-slate-500 text-xs mt-1">
+              Ask admin to publish a coupon from the Admin Panel.
+            </p>
+          </motion.div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {AVAILABLE_COUPONS.map((coupon) => (
+            {coupons.map((coupon) => (
               <CouponCard
                 key={coupon.code}
                 coupon={coupon}

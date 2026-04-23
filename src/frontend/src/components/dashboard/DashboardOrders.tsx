@@ -1,10 +1,11 @@
 import { products } from "@/data/mockData";
-import { getUserId } from "@/lib/firebase";
+import { generateInvoicePdf } from "@/lib/invoice";
 import { subscribeToUserOrders } from "@/lib/orderService";
 import type { Order, OrderStatus } from "@/types";
 import { ChevronDown, ChevronUp, Package } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { useUserAuth } from "@/context/UserAuthContext";
 
 type Filter = "all" | "recent" | "delivered" | "pending";
 
@@ -21,7 +22,8 @@ const STATUS_PILL: Record<OrderStatus, string> = {
   delivered: "bg-green-500/20 text-green-300 border border-green-500/30",
 };
 
-function productImage(name: string): string {
+function productImage(name: string, image?: string): string {
+  if (image) return image;
   const match = products.find((p) =>
     p.name.toLowerCase().includes(name.toLowerCase().split(" ")[0]),
   );
@@ -80,7 +82,7 @@ interface OrderCardProps {
 function OrderCard({ order, expanded, onToggle }: OrderCardProps) {
   const firstItem = order.items[0];
   const img = firstItem
-    ? productImage(firstItem.name)
+    ? productImage(firstItem.name, firstItem.image)
     : "/assets/brand/product-robot-chassis.jpg";
 
   return (
@@ -123,6 +125,14 @@ function OrderCard({ order, expanded, onToggle }: OrderCardProps) {
               {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
             </span>
           </div>
+          <button
+            type="button"
+            data-ocid={`order-download-invoice-${order.id}`}
+            onClick={() => generateInvoicePdf(order)}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/10 text-slate-300 text-xs hover:bg-white/20 transition-colors"
+          >
+            Invoice
+          </button>
           <button
             type="button"
             data-ocid={`order-view-details-${order.id}`}
@@ -213,15 +223,20 @@ export function DashboardOrders() {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<Filter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { user } = useUserAuth();
 
   useEffect(() => {
-    const userId = getUserId();
-    const unsub = subscribeToUserOrders(userId, (data) => {
+    if (!user?.uid) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
+    const unsub = subscribeToUserOrders(user.uid, (data) => {
       setOrders(data);
       setLoading(false);
     });
     return unsub;
-  }, []);
+  }, [user?.uid]);
 
   const filtered = filterOrders(orders, activeFilter);
 

@@ -15,7 +15,7 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
       data-ocid="testimonial-card"
     >
       <Quote className="w-6 h-6 text-accent/60 shrink-0" />
-      <p className="text-white/80 text-sm leading-relaxed flex-1">
+      <p className="text-black text-base leading-relaxed flex-1">
         "{testimonial.content}"
       </p>
       <div className="flex gap-0.5">

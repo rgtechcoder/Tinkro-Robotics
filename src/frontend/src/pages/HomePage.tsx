@@ -9,6 +9,7 @@ import {
 } from "../components/ContentSections";
 import { FeaturedProducts } from "../components/FeaturedProducts";
 import { HeroSection } from "../components/HeroSection";
+import { useNavigate } from "@tanstack/react-router";
 import { LabTiersSection } from "../components/LabTiersSection";
 import { TestimonialsSection } from "../components/TestimonialsSection";
 import {
@@ -255,6 +256,7 @@ const testimonials = [
 ];
 
 export function HomePage() {
+  const navigate = useNavigate();
   const { products, loading: productsLoading } = useProducts();
   const { categories, loading: categoriesLoading } = useCategories();
   const { labSetups, loading: labSetupsLoading } = useLabSetups();
@@ -289,7 +291,9 @@ export function HomePage() {
             <HeroSection
               banners={banners}
               loading={false}
-              onShopNow={() => scrollTo("categories")}
+              onShopNow={() => {
+                navigate({ to: "/products#all-products" });
+              }}
               onExploreLabs={() => scrollTo("lab-tiers")}
             />
           </motion.div>

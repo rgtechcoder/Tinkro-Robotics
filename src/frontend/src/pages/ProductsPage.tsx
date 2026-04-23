@@ -1,3 +1,104 @@
+import React from "react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
+// Carousel with dots for product card
+function ProductImageCarousel({
+  images,
+  productName,
+  priority,
+}: {
+  images: string[];
+  productName: string;
+  priority?: boolean;
+}) {
+  const [selected, setSelected] = useState(0);
+  const [api, setApi] = useState<any>(null);
+  const intervalRef = useRef<number | null>(null);
+
+  const stopAutoSlide = useCallback(() => {
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  const startAutoSlide = useCallback(() => {
+    if (!api || images.length <= 1) return;
+    stopAutoSlide();
+    intervalRef.current = window.setInterval(() => {
+      api.scrollNext();
+    }, 3500);
+  }, [api, images.length, stopAutoSlide]);
+
+  useEffect(() => {
+    startAutoSlide();
+    return () => stopAutoSlide();
+  }, [startAutoSlide, stopAutoSlide]);
+
+  useEffect(() => {
+    if (!api) return;
+    api.on("pointerDown", stopAutoSlide);
+    api.on("pointerUp", startAutoSlide);
+    api.on("select", startAutoSlide);
+    return () => {
+      api.off("pointerDown", stopAutoSlide);
+      api.off("pointerUp", startAutoSlide);
+      api.off("select", startAutoSlide);
+    };
+  }, [api, startAutoSlide, stopAutoSlide]);
+  return (
+    <div
+      className="relative w-full h-full flex flex-col items-center"
+      onMouseEnter={stopAutoSlide}
+      onMouseLeave={startAutoSlide}
+    >
+      <Carousel
+        className="w-full h-full"
+        opts={{ loop: false }}
+        setApi={(embla) => {
+          if (!embla) return;
+          setApi(embla);
+          embla.on("select", () => setSelected(embla.selectedScrollSnap()));
+        }}
+      >
+        <CarouselContent>
+          {images.map((img, idx) => {
+            const shouldLoad = idx === 0 || idx === selected;
+            return (
+            <CarouselItem key={img} className="flex items-center justify-center h-52">
+              <img
+                src={shouldLoad ? img : "/placeholder.jpg"}
+                alt={productName}
+                loading={priority && idx === 0 ? "eager" : "lazy"}
+                decoding="async"
+                className="h-full w-full object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/placeholder.jpg";
+                }}
+              />
+            </CarouselItem>
+            );
+          })}
+        </CarouselContent>
+      </Carousel>
+      {/* Dots indicator */}
+      <div className="flex justify-center gap-1 mt-2">
+        {images.map((_, idx) => (
+          <button
+            key={idx}
+            type="button"
+            aria-label={`View image ${idx + 1}`}
+            onClick={() => api?.scrollTo?.(idx)}
+            className={`w-2 h-2 rounded-full ${selected === idx ? "bg-primary" : "bg-muted-foreground/30"} inline-block`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import {
@@ -8,7 +109,7 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useToastContext } from "../components/Layout";
 import { useCategories, useProducts } from "../lib/publicDataService";
 import { useCartStore } from "../store/cartStore";
@@ -76,7 +177,8 @@ export function ProductCard({
   onAddToCart,
   onBuyNow,
 }: ProductCardProps) {
-  const heroImage = product.images?.[0] ?? product.image ?? "/placeholder.jpg";
+  const isPriority = index < 4;
+  const heroImages = product.images && product.images.length > 0 ? product.images : [product.image ?? "/placeholder.jpg"];
   const discountPct =
     product.discount > 0
       ? product.discount
@@ -99,7 +201,7 @@ export function ProductCard({
       }}
       layout={false}
       style={{ willChange: "transform, opacity" }}
-      className="group relative glass-card rounded-2xl overflow-hidden hover-lift flex flex-col"
+      className="group relative glass-card rounded-2xl overflow-hidden hover-lift flex flex-col min-h-[420px]"
       data-ocid={`product-card-${product.id}`}
     >
       {/* Badges */}
@@ -114,49 +216,66 @@ export function ProductCard({
         </span>
       )}
 
-      {/* Product image */}
+      {/* Product images carousel */}
       <Link to="/product/$id" params={{ id: product.id }} className="block">
-        <div className="product-image-container h-52 mx-4 mt-4 rounded-xl">
-          <img
-            src={heroImage}
-            alt={product.name}
-            loading="lazy"
-            decoding="async"
-            className="h-full w-full object-contain"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = "/placeholder.jpg";
-            }}
-          />
+        <div className="product-image-container h-52 mx-4 mt-4 rounded-xl relative">
+          {heroImages.length > 1 ? (
+            <ProductImageCarousel
+              images={heroImages}
+              productName={product.name}
+              priority={isPriority}
+            />
+          ) : (
+            <img
+              src={heroImages[0]}
+              alt={product.name}
+              loading={isPriority ? "eager" : "lazy"}
+              decoding="async"
+              className="h-full w-full object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/placeholder.jpg";
+              }}
+            />
+          )}
+          {heroImages.length > 1 && (
+            <span className="absolute bottom-2 right-2 z-10 text-[10px] font-semibold px-2 py-1 rounded-full bg-black/60 text-white">
+              +{heroImages.length - 1}
+            </span>
+          )}
         </div>
       </Link>
 
       {/* Content */}
       <div className="flex flex-col flex-1 p-4 gap-2">
-        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-          {product.category}
-        </p>
+        <div className="space-y-2 min-h-[110px]">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider line-clamp-1 min-h-[16px]">
+            {product.category}
+          </p>
 
-        <Link to="/product/$id" params={{ id: product.id }}>
-          <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 hover:text-primary transition-colors duration-200">
-            {product.name}
-          </h3>
-        </Link>
+          <Link to="/product/$id" params={{ id: product.id }}>
+            <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 hover:text-primary transition-colors duration-200 min-h-[40px]">
+              {product.name}
+            </h3>
+          </Link>
 
-        {/* Rating */}
-        {product.rating > 0 && (
-          <div className="flex items-center gap-2">
-            <StarRating rating={product.rating} />
-            <span className="text-xs text-muted-foreground">
-              {product.rating.toFixed(1)}
-              {product.reviews > 0 && ` (${product.reviews.toLocaleString()})`}
-            </span>
+          {/* Rating */}
+          <div className="flex items-center gap-2 min-h-[18px]">
+            {product.rating > 0 ? (
+              <>
+                <StarRating rating={product.rating} />
+                <span className="text-xs text-muted-foreground">
+                  {product.rating.toFixed(1)}
+                  {product.reviews > 0 && ` (${product.reviews.toLocaleString()})`}
+                </span>
+              </>
+            ) : (
+              <span className="text-xs text-muted-foreground/60">&nbsp;</span>
+            )}
           </div>
-        )}
-
-        <div className="flex-1" />
+        </div>
 
         {/* Price + CTA */}
-        <div className="flex items-end justify-between gap-2 mt-1">
+        <div className="mt-auto pt-2 flex items-center justify-between gap-2 min-h-[44px]">
           <div>
             <span className="text-lg font-bold text-foreground">
               ₹{product.price.toLocaleString()}
@@ -167,12 +286,12 @@ export function ProductCard({
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-nowrap">
             <button
               type="button"
               onClick={() => onBuyNow(product)}
               data-ocid={`buy-now-${product.id}`}
-              className="flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-white transition-smooth active:scale-95"
+              className="flex items-center justify-center gap-1 px-2.5 h-8 rounded-xl text-xs font-semibold text-white transition-smooth active:scale-95"
               style={{
                 background: "linear-gradient(135deg, #F47B20 0%, #F5A623 100%)",
               }}
@@ -184,7 +303,7 @@ export function ProductCard({
               type="button"
               onClick={() => onAddToCart(product)}
               data-ocid={`add-to-cart-${product.id}`}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-smooth active:scale-95"
+              className="flex items-center justify-center gap-1.5 px-3 h-8 rounded-xl text-xs font-semibold border transition-smooth active:scale-95"
               style={{
                 borderColor: "oklch(0.7 0.13 195 / 0.4)",
                 color: "#3BBFBF",
@@ -386,6 +505,26 @@ export function FilterPanelContent({
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export function ProductsPage() {
+  // Scroll to anchor if hash is present (after navigation)
+  useEffect(() => {
+    if (window.location.hash === "#all-products") {
+      setTimeout(() => {
+        const el = document.getElementById("all-products");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 200);
+    }
+  }, []);
+  // Scroll to anchor if hash is present
+  useEffect(() => {
+    if (window.location.hash === "#all-products") {
+      const el = document.getElementById("all-products");
+      if (el) {
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
+      }
+    }
+  }, []);
   const search = useSearch({ from: "/products" });
   const categorySlugFromUrl = search.category ?? null;
 
@@ -544,28 +683,35 @@ export function ProductsPage() {
     <>
       {/* ── Hero Banner ─────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden pt-28 pb-16">
-        {/* Deep blue background */}
+        {/* Premium gradient background */}
         <div
           className="absolute inset-0 -z-10"
           style={{
             background:
-              "linear-gradient(135deg, oklch(0.1 0.04 250) 0%, oklch(0.15 0.05 240) 45%, oklch(0.12 0.04 220) 70%, oklch(0.1 0.03 260) 100%)",
+              "linear-gradient(120deg, #f8fafc 0%, #e0e7ef 40%, #f5f7fa 100%)",
           }}
         />
-        {/* Orange glow */}
+        {/* Soft color overlays for depth */}
         <div
-          className="absolute top-0 right-1/3 w-[500px] h-[400px] rounded-full blur-3xl pointer-events-none -z-10"
+          className="absolute top-[-80px] left-1/2 -translate-x-1/2 w-[900px] h-[400px] rounded-full blur-3xl opacity-60 pointer-events-none -z-10"
           style={{
             background:
-              "radial-gradient(circle, rgba(244,123,32,0.15) 0%, transparent 70%)",
+              "radial-gradient(circle, rgba(244,123,32,0.10) 0%, transparent 70%)",
           }}
         />
-        {/* Blue glow */}
         <div
-          className="absolute bottom-0 left-1/4 w-[400px] h-[300px] rounded-full blur-3xl pointer-events-none -z-10"
+          className="absolute bottom-[-120px] right-1/4 w-[600px] h-[350px] rounded-full blur-3xl opacity-50 pointer-events-none -z-10"
           style={{
             background:
-              "radial-gradient(circle, rgba(46,109,164,0.2) 0%, transparent 70%)",
+              "radial-gradient(circle, rgba(46,109,164,0.13) 0%, transparent 70%)",
+          }}
+        />
+        {/* Subtle white overlay for glass effect */}
+        <div
+          className="absolute inset-0 -z-10"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
           }}
         />
 
@@ -580,7 +726,7 @@ export function ProductsPage() {
               🛒 Shop All Products
             </span>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-white leading-tight mb-5">
-              Explore <span className="gradient-text-orange">All Products</span>
+              <span className="text-gray-900 drop-shadow-[0_2px_8px_rgba(0,0,0,0.12)]">Explore</span> <span className="gradient-text-orange drop-shadow-[0_2px_8px_rgba(0,0,0,0.12)]">All Products</span>
             </h1>
             <p className="text-lg text-white/70 max-w-2xl mx-auto leading-relaxed">
               Premium robotics kits, sensors, development boards, and components
@@ -591,7 +737,7 @@ export function ProductsPage() {
       </section>
 
       {/* ── Products Section ─────────────────────────────────────────────────── */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <section id="all-products" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex gap-8 items-start">
           {/* ── Desktop sticky sidebar ── */}
           <aside className="hidden lg:block w-64 shrink-0">

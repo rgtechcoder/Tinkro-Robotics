@@ -1,0 +1,447 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-display: Satoshi;
+    --font-body: PlusJakartaSans;
+    --font-mono: JetBrainsMono;
+    --radius: 0.625rem;
+
+    --background: 0.99 0 0;
+    --foreground: 0.12 0 0;
+    --card: 0.98 0 0;
+    --card-foreground: 0.12 0 0;
+    --popover: 0.97 0.01 0;
+    --popover-foreground: 0.12 0 0;
+
+    /* Tinkro Primary Blue #2E6DA4 */
+    --primary: 0.45 0.12 243;
+    --primary-foreground: 0.98 0 0;
+
+    --secondary: 0.92 0.05 243;
+    --secondary-foreground: 0.25 0 0;
+    --muted: 0.94 0 0;
+    --muted-foreground: 0.48 0 0;
+
+    /* Tinkro Teal #3BBFBF */
+    --accent: 0.7 0.13 195;
+    --accent-foreground: 0.98 0 0;
+
+    --destructive: 0.55 0.22 25;
+    --destructive-foreground: 0.98 0 0;
+
+    --border: 0.88 0.02 243;
+    --input: 0.92 0.01 243;
+    --ring: 0.7 0.13 195;
+
+    /* Tinkro Orange #F47B20 */
+    --chart-1: 0.71 0.17 48;
+    --chart-2: 0.7 0.13 195;
+    --chart-3: 0.45 0.12 243;
+    /* Tinkro Amber #F5A623 */
+    --chart-4: 0.76 0.16 72;
+    --chart-5: 0.22 0.06 250;
+
+    --sidebar: 0.98 0 0;
+    --sidebar-foreground: 0.12 0 0;
+    --sidebar-primary: 0.45 0.12 243;
+    --sidebar-primary-foreground: 0.98 0 0;
+    --sidebar-accent: 0.7 0.13 195;
+    --sidebar-accent-foreground: 0.12 0 0;
+    --sidebar-border: 0.88 0.02 243;
+    --sidebar-ring: 0.7 0.13 195;
+
+    /* Tinkro brand gradients: blue → teal */
+    --gradient-primary: linear-gradient(
+      135deg,
+      oklch(0.45 0.12 243) 0%,
+      oklch(0.7 0.13 195) 100%
+    );
+    --gradient-subtle: linear-gradient(
+      180deg,
+      oklch(0.98 0 0) 0%,
+      oklch(0.94 0.02 243) 100%
+    );
+    /* Orange accent gradient */
+    --gradient-orange: linear-gradient(
+      135deg,
+      oklch(0.71 0.17 48) 0%,
+      oklch(0.76 0.16 72) 100%
+    );
+  }
+
+  .dark {
+    --background: 0.1 0.02 250;
+    --foreground: 0.95 0 0;
+    --card: 0.14 0.02 250;
+    --card-foreground: 0.95 0 0;
+    --popover: 0.18 0.03 250;
+    --popover-foreground: 0.95 0 0;
+
+    /* Tinkro teal brightened for dark mode */
+    --primary: 0.7 0.13 195;
+    --primary-foreground: 0.1 0.02 250;
+
+    --secondary: 0.22 0.03 250;
+    --secondary-foreground: 0.88 0 0;
+    --muted: 0.18 0.02 250;
+    --muted-foreground: 0.58 0 0;
+
+    --accent: 0.75 0.14 195;
+    --accent-foreground: 0.1 0.02 250;
+
+    --destructive: 0.65 0.19 22;
+    --destructive-foreground: 0.95 0 0;
+
+    --border: 0.22 0.03 250;
+    --input: 0.22 0.03 250;
+    --ring: 0.75 0.14 195;
+
+    --chart-1: 0.71 0.17 48;
+    --chart-2: 0.75 0.14 195;
+    --chart-3: 0.55 0.13 243;
+    --chart-4: 0.76 0.16 72;
+    --chart-5: 0.65 0.25 16;
+
+    --sidebar: 0.14 0.02 250;
+    --sidebar-foreground: 0.95 0 0;
+    --sidebar-primary: 0.7 0.13 195;
+    --sidebar-primary-foreground: 0.1 0.02 250;
+    --sidebar-accent: 0.22 0.03 250;
+    --sidebar-accent-foreground: 0.88 0 0;
+    --sidebar-border: 0.22 0.03 250;
+    --sidebar-ring: 0.75 0.14 195;
+
+    --gradient-primary: linear-gradient(
+      135deg,
+      oklch(0.3 0.1 243) 0%,
+      oklch(0.55 0.12 195) 100%
+    );
+    --gradient-subtle: linear-gradient(
+      180deg,
+      oklch(0.14 0.02 250) 0%,
+      oklch(0.1 0.01 250) 100%
+    );
+    --gradient-orange: linear-gradient(
+      135deg,
+      oklch(0.71 0.17 48) 0%,
+      oklch(0.76 0.16 72) 100%
+    );
+  }
+
+  * {
+    @apply border-border;
+    scroll-behavior: smooth;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+}
+
+@layer utilities {
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @font-face {
+    font-family: Satoshi;
+    src: url("/assets/fonts/Satoshi.woff2") format("woff2");
+    font-weight: 400 700;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: PlusJakartaSans;
+    src: url("/assets/fonts/PlusJakartaSans.woff2") format("woff2");
+    font-weight: 400 700;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: JetBrainsMono;
+    src: url("/assets/fonts/JetBrainsMono.woff2") format("woff2");
+    font-weight: 400 700;
+    font-display: swap;
+  }
+
+  .glass-card {
+    backdrop-filter: blur(12px);
+    background-color: color-mix(
+      in oklch,
+      var(--color-background, oklch(0.99 0 0)) 80%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(
+        in oklch,
+        var(--color-border, oklch(0.88 0.02 243)) 20%,
+        transparent
+      );
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07);
+  }
+
+  .glass-hover {
+    @apply transition-smooth hover:shadow-xl;
+  }
+
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-orange {
+    background: var(--gradient-orange);
+  }
+
+  .gradient-subtle {
+    background: var(--gradient-subtle);
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  }
+
+  .gradient-text-orange {
+    background: var(--gradient-orange);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .shadow-elevated {
+    @apply shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1)];
+  }
+
+  .shadow-subtle {
+    @apply shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)];
+  }
+
+  .fade-in {
+    animation: fadeIn 0.6s ease-in-out;
+  }
+
+  .slide-up {
+    animation: slideUp 0.6s ease-out;
+  }
+
+  .hover-lift {
+    @apply transition-smooth hover:translate-y-[-4px] hover:shadow-elevated;
+  }
+
+  .active-glow {
+    @apply transition-smooth ring-2 ring-accent ring-offset-2 ring-offset-background;
+  }
+
+  /* Tinkro brand glow: primary blue */
+  .shadow-glow-primary {
+    box-shadow: 0 0 20px rgba(46, 109, 164, 0.35), 0 4px 12px
+      rgba(46, 109, 164, 0.2);
+  }
+
+  /* Tinkro brand glow: teal #3BBFBF */
+  .shadow-glow-accent {
+    box-shadow: 0 0 20px rgba(59, 191, 191, 0.4), 0 4px 12px
+      rgba(59, 191, 191, 0.25);
+  }
+
+  /* Tinkro brand glow: orange #F47B20 */
+  .shadow-glow-orange {
+    box-shadow: 0 0 20px rgba(244, 123, 32, 0.35), 0 4px 12px
+      rgba(244, 123, 32, 0.2);
+  }
+
+  /* Tinkro brand glow: teal hover */
+  .glow-teal {
+    box-shadow: 0 0 20px 4px rgba(59, 191, 191, 0.35);
+  }
+
+  /* Tinkro brand glow: orange hover */
+  .glow-orange {
+    box-shadow: 0 0 20px 4px rgba(244, 123, 32, 0.35);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Brand color utilities */
+  .brand-blue {
+    color: #2e6da4;
+  }
+  .brand-teal {
+    color: #3bbfbf;
+  }
+  .brand-orange {
+    color: #f47b20;
+  }
+  .bg-brand-blue {
+    background-color: #2e6da4;
+  }
+  .bg-brand-teal {
+    background-color: #3bbfbf;
+  }
+  .bg-brand-orange {
+    background-color: #f47b20;
+  }
+  .border-brand-teal {
+    border-color: #3bbfbf;
+  }
+  .border-brand-orange {
+    border-color: #f47b20;
+  }
+
+  /* Product image containers — always use contain to prevent distortion */
+  .product-image-container {
+    background: linear-gradient(135deg, #f8faff 0%, #eef4ff 100%);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .product-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12));
+    transition: transform 0.3s ease;
+  }
+
+  .product-image-container:hover img {
+    transform: scale(1.05);
+  }
+}
+
+/* ─── Hero cinematic background sweep ─────────────────────────────────────── */
+@keyframes cinematicSweep {
+  0% {
+    background-position: 0% 0%;
+    opacity: 0.85;
+  }
+  25% {
+    background-position: 60% 30%;
+    opacity: 1;
+  }
+  50% {
+    background-position: 100% 60%;
+    opacity: 0.9;
+  }
+  75% {
+    background-position: 40% 100%;
+    opacity: 1;
+  }
+  100% {
+    background-position: 0% 0%;
+    opacity: 0.85;
+  }
+}
+
+@keyframes cinematicSweep2 {
+  0% {
+    background-position: 100% 100%;
+    opacity: 0.7;
+  }
+  33% {
+    background-position: 20% 60%;
+    opacity: 0.9;
+  }
+  66% {
+    background-position: 80% 10%;
+    opacity: 0.75;
+  }
+  100% {
+    background-position: 100% 100%;
+    opacity: 0.7;
+  }
+}
+
+/* ─── Shop Now ripple glow burst ──────────────────────────────────────────── */
+@keyframes rippleGlow {
+  0% {
+    transform: scale(0);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes rippleGlow2 {
+  0% {
+    transform: scale(0);
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(3.2);
+    opacity: 0;
+  }
+}
+
+@keyframes rippleGlow3 {
+  0% {
+    transform: scale(0);
+    opacity: 0.45;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes shrink {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

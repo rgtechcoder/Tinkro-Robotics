@@ -14,15 +14,23 @@ import {
   hasUserRedeemedCoupon,
   saveOrder,
   subscribeToUserOrders,
+  type SaveOrderData,
 } from "@/lib/orderService";
+import { getUserAddresses, saveAddress } from "@/lib/addressService";
 import { useCoupons } from "@/lib/publicDataService";
-import { loadRazorpay, openRazorpayCheckout } from "@/lib/razorpay";
+import {
+  createCashfreeOrder,
+  loadCashfree,
+  openCashfreeCheckout,
+  verifyCashfreePayment,
+} from "@/lib/cashfree";
 import { useCartStore } from "@/store/cartStore";
 import type { Address, Order } from "@/types";
-import type { AdminCoupon } from "@/types/admin";
-import type { RazorpayResponse } from "@/types/razorpay";
+import type { AdminCoupon, AdminShippingRule } from "@/types/admin";
+import type { CashfreeCheckoutResult } from "@/types/cashfree";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useUserAuth } from "@/context/UserAuthContext";
+import { db } from "@/lib/firebase";
 import {
   CheckCircle2,
   ChevronRight,
@@ -39,11 +47,12 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { toast } from "sonner";
+import { FirebaseError } from "firebase/app";
 
-// ── NOTE: Razorpay public key comes from Vite env.
-// Set VITE_RAZORPAY_KEY_ID in src/frontend/.env
-const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined;
+// ── NOTE: Cashfree mode comes from Vite env.
+// Set VITE_CASHFREE_ENV=sandbox|production in src/frontend/.env
 
 function fadeSlideProps(i: number) {
   return {
@@ -115,16 +124,37 @@ export function CheckoutPage() {
   const [couponError, setCouponError] = useState("");
   const [couponChecking, setCouponChecking] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [shippingRules, setShippingRules] = useState<AdminShippingRule[]>([]);
+  const [shippingCost, setShippingCost] = useState(0);
+  const [shippingRule, setShippingRule] = useState<AdminShippingRule | null>(null);
 
   // Address state
   const [address, setAddress] = useState<FormState>(emptyForm);
+  const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("new");
+  const [alternateEmail, setAlternateEmail] = useState("");
+  const [alternateEmailStatus, setAlternateEmailStatus] = useState<
+    "idle" | "checking" | "valid" | "invalid"
+  >("idle");
   const [formErrors, setFormErrors] = useState<
     Partial<Record<keyof FormState, string>>
   >({});
+  const [pincodeStatus, setPincodeStatus] = useState<
+    "idle" | "checking" | "valid" | "invalid" | "error"
+  >("idle");
+  const [pincodeMessage, setPincodeMessage] = useState<string>("");
+  const [pincodeCities, setPincodeCities] = useState<string[]>([]);
+  const [pincodeState, setPincodeState] = useState<string>("");
+  const [cityTouched, setCityTouched] = useState(false);
+  const [stateTouched, setStateTouched] = useState(false);
+  const [lastPincode, setLastPincode] = useState<string>("");
 
   // Payment state
   const [isPlacing, setIsPlacing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"cashfree" | "cod">(
+    "cashfree",
+  );
 
   useEffect(() => {
     if (!user?.uid) {
@@ -137,13 +167,192 @@ export function CheckoutPage() {
     return unsub;
   }, [user?.uid]);
 
+  useEffect(() => {
+    if (!user?.uid) {
+      setSavedAddresses([]);
+      setSelectedAddressId("new");
+      setAddress(emptyForm);
+      return;
+    }
+    getUserAddresses(user.uid)
+      .then((data) => {
+        setSavedAddresses(data);
+        const defaultAddr = data.find((a) => a.isDefault) ?? data[0];
+        if (defaultAddr) {
+          setSelectedAddressId(defaultAddr.id);
+          setAddress({
+            name: defaultAddr.name,
+            phone: defaultAddr.phone,
+            line1: defaultAddr.line1,
+            line2: defaultAddr.line2 ?? "",
+            city: defaultAddr.city,
+            state: defaultAddr.state,
+            pincode: defaultAddr.pincode,
+          });
+        } else {
+          setSelectedAddressId("new");
+          setAddress((prev) => ({
+            ...prev,
+            name: prev.name || user.displayName || "",
+            phone: prev.phone || user.phoneNumber || "",
+          }));
+        }
+        });
+  }, [user?.uid, user?.displayName, user?.phoneNumber]);
+
+  // ── Shipping rules ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    async function fetchShippingRules() {
+      try {
+        const snap = await getDocs(collection(db, "shippingRules"));
+        const data = snap.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...(docSnap.data() as AdminShippingRule),
+        }));
+        setShippingRules(data);
+      } catch {
+        setShippingRules([]);
+      }
+    }
+    void fetchShippingRules();
+  }, []);
+
+  function calcShipping(amount: number) {
+    const activeRules = shippingRules
+      .filter((r) => r.isActive)
+      .sort((a, b) => b.minOrderAmount - a.minOrderAmount);
+
+    const applyRule = (rule: AdminShippingRule) => {
+      const cost =
+        rule.freeShippingAbove !== undefined &&
+        rule.freeShippingAbove !== null &&
+        amount >= rule.freeShippingAbove
+          ? 0
+          : rule.baseCost;
+      return { cost, rule };
+    };
+
+    for (const rule of activeRules) {
+      const aboveMin = amount >= rule.minOrderAmount;
+      const belowMax =
+        rule.maxOrderAmount === undefined ||
+        rule.maxOrderAmount === null ||
+        amount <= rule.maxOrderAmount;
+
+      if (aboveMin && belowMax) {
+        return applyRule(rule);
+      }
+    }
+
+    if (activeRules.length > 0) {
+      return applyRule(activeRules[activeRules.length - 1]);
+    }
+
+    return { cost: 0, rule: null };
+  }
+
+  // ── Pincode lookup (India Post) ─────────────────────────────────────────────
+  useEffect(() => {
+    if (selectedAddressId !== "new") {
+      setPincodeStatus("idle");
+      setPincodeMessage("");
+      setPincodeCities([]);
+      setPincodeState("");
+      return;
+    }
+
+    const pincode = address.pincode?.trim();
+    if (pincode && pincode.length === 6 && pincode !== lastPincode) {
+      setCityTouched(false);
+      setStateTouched(false);
+      setLastPincode(pincode);
+    }
+    if (!pincode || pincode.length !== 6) {
+      setPincodeStatus("idle");
+      setPincodeMessage("");
+      setPincodeCities([]);
+      setPincodeState("");
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      setPincodeStatus("checking");
+      setPincodeMessage("");
+
+      try {
+        const response = await fetch(
+          `https://api.postalpincode.in/pincode/${pincode}`,
+          { signal: controller.signal },
+        );
+        const data = (await response.json()) as Array<{
+          Status: string;
+          Message: string;
+          PostOffice: Array<{ District: string; State: string; Name: string }> | null;
+        }>;
+
+        const first = data?.[0];
+        if (!first || first.Status !== "Success" || !first.PostOffice?.length) {
+          setPincodeStatus("invalid");
+          setPincodeMessage("We couldn't verify this pincode. Please recheck.");
+          setPincodeCities([]);
+          setPincodeState("");
+          return;
+        }
+
+        const cities = Array.from(
+          new Set(first.PostOffice.map((office) => office.District).filter(Boolean)),
+        );
+        const state = first.PostOffice[0]?.State || "";
+
+        setPincodeCities(cities);
+        setPincodeState(state);
+        setPincodeStatus("valid");
+
+        setAddress((prev) => ({
+          ...prev,
+          city: cityTouched ? prev.city : cities[0] || prev.city,
+          state: stateTouched ? prev.state : state || prev.state,
+        }));
+        if (state && address.state && address.state !== state) {
+          setPincodeMessage("State doesn't match the pincode. Please confirm.");
+        }
+      } catch (error) {
+        if ((error as { name?: string })?.name === "AbortError") return;
+        setPincodeStatus("error");
+        setPincodeMessage("Couldn't validate pincode right now. Please try later.");
+      }
+    }, 450);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [address.pincode, address.city, address.state, selectedAddressId]);
+
+  const cityMismatch =
+    pincodeStatus === "valid" &&
+    address.city?.trim() &&
+    pincodeCities.length > 0 &&
+    !pincodeCities.some(
+      (city) => city.toLowerCase() === address.city.trim().toLowerCase(),
+    );
+
   // ── Coupon logic ────────────────────────────────────────────────────────────
   const discount = appliedCoupon
     ? appliedCoupon.discountType === "percent"
       ? Math.round((total * appliedCoupon.discountValue) / 100)
       : Math.min(appliedCoupon.discountValue, total)
     : 0;
-  const grandTotal = Math.max(0, total - discount);
+  const orderBase = Math.max(0, total - discount);
+
+  useEffect(() => {
+    const { cost, rule } = calcShipping(orderBase);
+    setShippingCost(cost);
+    setShippingRule(rule);
+  }, [orderBase, shippingRules]);
+
+  const grandTotal = Math.max(0, orderBase + shippingCost);
 
   function getLastOrderDate() {
     if (orders.length === 0) return null;
@@ -257,88 +466,254 @@ export function CheckoutPage() {
     return Object.keys(errs).length === 0;
   }
 
-  // ── Place order via Razorpay ─────────────────────────────────────────────────
+  async function checkAlternateEmailExists(email: string): Promise<boolean> {
+    const normalized = email.trim().toLowerCase();
+    const usersRef = collection(db, "users");
+    let snap = await getDocs(query(usersRef, where("email", "==", normalized)));
+    if (snap.empty && email.trim() !== normalized) {
+      snap = await getDocs(query(usersRef, where("email", "==", email.trim())));
+    }
+    return !snap.empty;
+  }
+
+  async function validateAlternateEmail(): Promise<boolean> {
+    const email = alternateEmail.trim();
+    if (!email) {
+      setAlternateEmailStatus("idle");
+      return true;
+    }
+    if (user?.email && email.toLowerCase() === user.email.toLowerCase()) {
+      setAlternateEmailStatus("valid");
+      return true;
+    }
+    setAlternateEmailStatus("checking");
+    try {
+      const exists = await checkAlternateEmailExists(email);
+      setAlternateEmailStatus(exists ? "valid" : "invalid");
+      return exists;
+    } catch {
+      setAlternateEmailStatus("invalid");
+      return false;
+    }
+  }
+
+  async function persistNewAddressIfNeeded() {
+    if (!user?.uid) return null;
+    if (selectedAddressId !== "new") return selectedAddressId;
+
+    const addressPayload: Omit<Address, "id"> = {
+      ...address,
+      line2: address.line2 ?? "",
+      isDefault: savedAddresses.length === 0,
+    };
+
+    try {
+      const newId = await saveAddress(user.uid, addressPayload);
+      setSavedAddresses((prev) => {
+        const cleared = addressPayload.isDefault
+          ? prev.map((item) => ({ ...item, isDefault: false }))
+          : prev;
+        return [{ id: newId, ...addressPayload }, ...cleared];
+      });
+      setSelectedAddressId(newId);
+      return newId;
+    } catch (error) {
+      console.error("Failed to save address", error);
+      toast.error("Could not save this address to your dashboard.");
+      return null;
+    }
+  }
+
+  // ── Place order via Cashfree / COD ───────────────────────────────────────────
+  function getCashfreeErrorMessage(error: unknown) {
+    if (error instanceof FirebaseError) {
+      const details = error.customData || (error as unknown as { details?: unknown }).details;
+      if (details && typeof (details as { error?: unknown }).error === "string") {
+        return (details as { error?: string }).error || error.message;
+      }
+      if (typeof details === "string") return details;
+      return error.message || "Payment failed. Please try again.";
+    }
+    if (error && typeof error === "object") {
+      const message = (error as { message?: unknown }).message;
+      if (typeof message === "string") return message;
+    }
+    return "Payment failed. Please try again.";
+  }
+
   async function handlePlaceOrder() {
     if (!user?.uid) {
       toast.error("Please log in to place an order.");
       navigate({ to: "/login" });
       return;
     }
-    if (!RAZORPAY_KEY) {
-      toast.error("Payment key missing. Please contact support.");
-      return;
+    if (alternateEmail.trim()) {
+      const ok = await validateAlternateEmail();
+      if (!ok) {
+        toast.error(
+          "Alternate email doesn't have an account. Please create one or use your account email.",
+        );
+        return;
+      }
     }
     if (!validate()) return;
     setIsPlacing(true);
 
-    const loaded = await loadRazorpay();
-    if (!loaded) {
-      toast.error(
-        "Failed to load payment gateway. Please check your connection.",
-      );
-      setIsPlacing(false);
-      return;
-    }
-
-    openRazorpayCheckout({
-      key: RAZORPAY_KEY,
-      amount: grandTotal * 100, // paise
-      currency: "INR",
-      name: "Tinkro Robotics",
-      description: `Order for ${items.length} item${items.length !== 1 ? "s" : ""}`,
-      prefill: {
-        name: address.name,
-        contact: address.phone,
-      },
-      theme: { color: "#f97316" },
-      handler: async (response: RazorpayResponse) => {
+    try {
+      if (paymentMethod === "cod") {
         setIsPlacing(false);
         setIsProcessing(true);
-        try {
-          const userId = user.uid;
-          const orderData = {
-            userId,
-            customerEmail: user.email ?? undefined,
-            customerName: user.displayName ?? address.name,
-            items,
-            address: { ...address, id: crypto.randomUUID(), isDefault: false },
-            subtotal: total,
-            discount,
-            total: grandTotal,
-            coupon: appliedCoupon?.code ?? null,
-            couponCode: appliedCoupon?.code ?? null,
-            couponId: appliedCoupon?.id ?? null,
-            status: "placed" as const,
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpayOrderId: response.razorpay_order_id ?? "",
-            estimatedDelivery: "5-7 business days",
-            trackingId: null,
-          };
-          if (appliedCoupon) {
-            orderData.couponDiscount = discount;
-          }
-          const docId = await saveOrder(orderData);
 
-          clearCart();
-          void docId;
-          window.location.assign(`/order-success?orderId=${docId}`);
-          await navigate({ to: "/order-success", search: { orderId: docId } });
-        } catch (err) {
-          console.error("Order save failed:", err);
-          toast.error(
-            "Payment received but order save failed. Please contact support.",
-          );
-        } finally {
-          setIsProcessing(false);
+        await persistNewAddressIfNeeded();
+
+        const alt = alternateEmail.trim();
+        const useAlt =
+          alt && user.email && alt.toLowerCase() !== user.email.toLowerCase();
+        const customerEmail = useAlt ? alt : user.email ?? undefined;
+        const customerName = user.displayName ?? address.name;
+
+        const orderData: SaveOrderData = {
+          userId: user.uid,
+          customerEmail,
+          customerName,
+          items,
+          address: { ...address, id: crypto.randomUUID(), isDefault: false },
+          subtotal: total,
+          discount,
+          shippingCharge: shippingCost,
+          shippingRuleId: shippingRule?.id ?? null,
+          shippingRuleName: shippingRule?.name ?? null,
+          total: grandTotal,
+          coupon: appliedCoupon?.code ?? null,
+          couponCode: appliedCoupon?.code ?? null,
+          couponId: appliedCoupon?.id ?? null,
+          status: "placed" as const,
+          paymentGateway: "cod" as const,
+          estimatedDelivery:
+            shippingRule?.estimatedDaysMax
+              ? `${shippingRule.estimatedDays}-${shippingRule.estimatedDaysMax} business days`
+              : shippingRule?.estimatedDays
+                ? `${shippingRule.estimatedDays} business days`
+                : "5-7 business days",
+          trackingId: null,
+        };
+        if (appliedCoupon) {
+          orderData.couponDiscount = discount;
         }
-      },
-      modal: {
-        ondismiss: () => {
-          setIsPlacing(false);
-          toast.error("Payment cancelled. Please try again.");
+        const docId = await saveOrder(orderData);
+
+        clearCart();
+        void docId;
+        window.location.assign(`/order-success?orderId=${docId}`);
+        await navigate({ to: "/order-success", search: { orderId: docId } });
+        return;
+      }
+
+      const loaded = await loadCashfree();
+      if (!loaded) {
+        toast.error(
+          "Failed to load payment gateway. Please check your connection.",
+        );
+        return;
+      }
+
+      const alt = alternateEmail.trim();
+      const useAlt =
+        alt && user.email && alt.toLowerCase() !== user.email.toLowerCase();
+      const customerEmail = useAlt ? alt : user.email ?? undefined;
+      const customerName = user.displayName ?? address.name;
+
+      if (!customerEmail) {
+        toast.error("Email is required for online payments.");
+        return;
+      }
+
+      await persistNewAddressIfNeeded();
+
+      const { orderId, paymentSessionId } = await createCashfreeOrder({
+        amount: grandTotal,
+        currency: "INR",
+        customer: {
+          id: user.uid,
+          name: customerName,
+          email: customerEmail,
+          phone: address.phone,
         },
-      },
-    });
+        orderNote: `Order for ${items.length} item${items.length !== 1 ? "s" : ""}`,
+        orderMeta: {
+          source: "web",
+        },
+      });
+
+      const result: CashfreeCheckoutResult = await openCashfreeCheckout({
+        paymentSessionId,
+        redirectTarget: "_modal",
+      });
+
+      if (result?.error) {
+        toast.error(result.error.message || "Payment failed. Please try again.");
+        return;
+      }
+
+      setIsPlacing(false);
+      setIsProcessing(true);
+
+      const verification = await verifyCashfreePayment({ orderId });
+      const orderStatus =
+        (verification.orderStatus || "").toUpperCase() ||
+        (verification.paymentStatus || "").toUpperCase();
+
+      if (orderStatus !== "PAID" && orderStatus !== "SUCCESS") {
+        toast.error(
+          "Payment not confirmed yet. Please check your order status or try again.",
+        );
+        return;
+      }
+
+      const orderData: SaveOrderData = {
+        userId: user.uid,
+        customerEmail,
+        customerName,
+        items,
+        address: { ...address, id: crypto.randomUUID(), isDefault: false },
+        subtotal: total,
+        discount,
+        shippingCharge: shippingCost,
+        shippingRuleId: shippingRule?.id ?? null,
+        shippingRuleName: shippingRule?.name ?? null,
+        total: grandTotal,
+        coupon: appliedCoupon?.code ?? null,
+        couponCode: appliedCoupon?.code ?? null,
+        couponId: appliedCoupon?.id ?? null,
+        status: "placed" as const,
+        paymentGateway: "cashfree" as const,
+        cashfreeOrderId: orderId,
+        cashfreePaymentId: verification.paymentId ?? null,
+        cashfreeCfOrderId: verification.cfOrderId ?? null,
+        estimatedDelivery:
+          shippingRule?.estimatedDaysMax
+            ? `${shippingRule.estimatedDays}-${shippingRule.estimatedDaysMax} business days`
+            : shippingRule?.estimatedDays
+              ? `${shippingRule.estimatedDays} business days`
+              : "5-7 business days",
+        trackingId: null,
+      };
+      if (appliedCoupon) {
+        orderData.couponDiscount = discount;
+      }
+      const docId = await saveOrder(orderData);
+
+      clearCart();
+      void docId;
+      window.location.assign(`/order-success?orderId=${docId}`);
+      await navigate({ to: "/order-success", search: { orderId: docId } });
+    } catch (err) {
+      console.error("Cashfree payment failed:", err);
+      toast.error(getCashfreeErrorMessage(err));
+    } finally {
+      setIsPlacing(false);
+      setIsProcessing(false);
+    }
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -346,6 +721,28 @@ export function CheckoutPage() {
     setAddress((prev) => ({ ...prev, [key]: val }));
     if (formErrors[key])
       setFormErrors((prev) => ({ ...prev, [key]: undefined }));
+  }
+
+  function selectSavedAddress(addr: Address) {
+    setSelectedAddressId(addr.id);
+    setAddress({
+      name: addr.name,
+      phone: addr.phone,
+      line1: addr.line1,
+      line2: addr.line2 ?? "",
+      city: addr.city,
+      state: addr.state,
+      pincode: addr.pincode,
+    });
+  }
+
+  function selectNewAddress() {
+    setSelectedAddressId("new");
+    setAddress((prev) => ({
+      ...emptyForm,
+      name: user?.displayName || prev.name,
+      phone: user?.phoneNumber || prev.phone,
+    }));
   }
 
   // ── Empty cart ───────────────────────────────────────────────────────────────
@@ -451,7 +848,7 @@ export function CheckoutPage() {
               Secure Checkout
             </h1>
             <p className="text-sm text-muted-foreground">
-              SSL encrypted · Powered by Razorpay
+              PCI-DSS compliant · SSL encrypted · Powered by Cashfree
             </p>
           </div>
         </div>
@@ -485,7 +882,7 @@ export function CheckoutPage() {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 16, height: 0 }}
                     transition={{ duration: 0.25 }}
-                    className="flex items-center gap-4 p-3 rounded-xl hover:bg-muted/40 transition-smooth"
+                    className="flex flex-col sm:flex-row sm:items-center gap-4 p-3 rounded-xl hover:bg-muted/40 transition-smooth"
                     data-ocid={`cart-item-${item.productId}`}
                   >
                     <div className="w-14 h-14 rounded-xl overflow-hidden border border-border flex-shrink-0 product-image-container">
@@ -504,52 +901,54 @@ export function CheckoutPage() {
                       <p className="font-semibold text-sm truncate text-foreground">
                         {item.name}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
                         ₹{item.price.toLocaleString("en-IN")} × {item.quantity}
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateQty(item.productId, item.quantity - 1)
+                          }
+                          className="w-7 h-7 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/10 transition-smooth flex items-center justify-center"
+                          aria-label="Decrease quantity"
+                          data-ocid={`qty-decrease-${item.productId}`}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="w-7 text-center text-sm font-bold text-foreground">
+                          {item.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateQty(item.productId, item.quantity + 1)
+                          }
+                          className="w-7 h-7 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/10 transition-smooth flex items-center justify-center"
+                          aria-label="Increase quantity"
+                          data-ocid={`qty-increase-${item.productId}`}
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      <p className="text-sm font-bold text-foreground min-w-[72px] text-right whitespace-nowrap flex-shrink-0">
+                        ₹{(item.price * item.quantity).toLocaleString("en-IN")}
+                      </p>
+
                       <button
                         type="button"
-                        onClick={() =>
-                          updateQty(item.productId, item.quantity - 1)
-                        }
-                        className="w-7 h-7 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/10 transition-smooth flex items-center justify-center"
-                        aria-label="Decrease quantity"
-                        data-ocid={`qty-decrease-${item.productId}`}
+                        onClick={() => removeItem(item.productId)}
+                        className="w-7 h-7 rounded-lg hover:bg-destructive/15 hover:text-destructive transition-smooth flex items-center justify-center text-muted-foreground flex-shrink-0"
+                        aria-label={`Remove ${item.name}`}
+                        data-ocid={`remove-item-${item.productId}`}
                       >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="w-7 text-center text-sm font-bold text-foreground">
-                        {item.quantity}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateQty(item.productId, item.quantity + 1)
-                        }
-                        className="w-7 h-7 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/10 transition-smooth flex items-center justify-center"
-                        aria-label="Increase quantity"
-                        data-ocid={`qty-increase-${item.productId}`}
-                      >
-                        <Plus className="w-3 h-3" />
+                        <X className="w-4 h-4" />
                       </button>
                     </div>
-
-                    <p className="text-sm font-bold text-foreground w-20 text-right flex-shrink-0">
-                      ₹{(item.price * item.quantity).toLocaleString("en-IN")}
-                    </p>
-
-                    <button
-                      type="button"
-                      onClick={() => removeItem(item.productId)}
-                      className="w-7 h-7 rounded-lg hover:bg-destructive/15 hover:text-destructive transition-smooth flex items-center justify-center text-muted-foreground flex-shrink-0"
-                      aria-label={`Remove ${item.name}`}
-                      data-ocid={`remove-item-${item.productId}`}
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
                   </motion.div>
                 ))}
               </AnimatePresence>
@@ -577,9 +976,15 @@ export function CheckoutPage() {
               )}
               <div className="flex justify-between text-muted-foreground">
                 <span>Shipping</span>
-                <span className="text-green-600 dark:text-green-400 font-medium">
-                  Free
-                </span>
+                {shippingCost > 0 ? (
+                  <span className="text-foreground font-medium">
+                    ₹{shippingCost.toLocaleString("en-IN")}
+                  </span>
+                ) : (
+                  <span className="text-green-600 dark:text-green-400 font-medium">
+                    Free
+                  </span>
+                )}
               </div>
               <Separator />
               <div className="flex justify-between text-lg font-bold text-foreground pt-1">
@@ -602,7 +1007,114 @@ export function CheckoutPage() {
               <span className="gradient-text">Delivery Address</span>
             </h2>
 
+            {savedAddresses.length > 0 && (
+              <div className="space-y-3 mb-5">
+                <p className="text-sm font-medium text-foreground">
+                  Select a saved address
+                </p>
+                <div className="grid gap-2">
+                  {savedAddresses.map((addr) => (
+                    <button
+                      key={addr.id}
+                      type="button"
+                      onClick={() => selectSavedAddress(addr)}
+                      className={`rounded-xl border px-4 py-3 text-left transition-smooth ${
+                        selectedAddressId === addr.id
+                          ? "border-primary/60 bg-primary/5"
+                          : "border-border hover:border-primary/30"
+                      }`}
+                      data-ocid={`address-pick-${addr.id}`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">
+                            {addr.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {addr.line1}
+                            {addr.line2 ? `, ${addr.line2}` : ""}, {addr.city},
+                            {" "}{addr.state} — {addr.pincode}
+                          </p>
+                        </div>
+                        {addr.isDefault && (
+                          <Badge variant="secondary" className="text-[10px]">
+                            Default
+                          </Badge>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={selectNewAddress}
+                    className={`rounded-xl border px-4 py-3 text-left transition-smooth ${
+                      selectedAddressId === "new"
+                        ? "border-primary/60 bg-primary/5"
+                        : "border-dashed border-border hover:border-primary/30"
+                    }`}
+                    data-ocid="address-pick-new"
+                  >
+                    <p className="text-sm font-semibold text-foreground">
+                      Use a new address
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Enter a different delivery address
+                    </p>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="addr-email" className="text-sm font-medium">
+                  Account Email
+                </Label>
+                <Input
+                  id="addr-email"
+                  value={user?.email ?? ""}
+                  readOnly
+                  disabled
+                  className="opacity-80"
+                  data-ocid="address-email"
+                />
+              </div>
+
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="addr-alt-email" className="text-sm font-medium">
+                  Alternate Email (optional)
+                </Label>
+                <Input
+                  id="addr-alt-email"
+                  type="email"
+                  value={alternateEmail}
+                  onChange={(e) => setAlternateEmail(e.target.value)}
+                  onBlur={() => void validateAlternateEmail()}
+                  data-ocid="address-alt-email"
+                />
+                {alternateEmailStatus === "checking" && (
+                  <p className="text-xs text-muted-foreground">
+                    Checking this email…
+                  </p>
+                )}
+                {alternateEmailStatus === "invalid" && (
+                  <p className="text-xs text-destructive">
+                    No account found for this email. Please create an account to
+                    use it.
+                  </p>
+                )}
+                {alternateEmailStatus === "valid" &&
+                  alternateEmail.trim() &&
+                  user?.email &&
+                  alternateEmail.trim().toLowerCase() !==
+                    user.email.toLowerCase() && (
+                    <p className="text-xs text-muted-foreground">
+                      Account found. Updates will be sent to this email.
+                    </p>
+                  )}
+              </div>
+
               <div className="space-y-1.5">
                 <Label htmlFor="addr-name" className="text-sm font-medium">
                   Full Name <span className="text-destructive">*</span>
@@ -612,6 +1124,7 @@ export function CheckoutPage() {
                   value={address.name}
                   onChange={(e) => handleAddress("name", e.target.value)}
                   className={formErrors.name ? "border-destructive" : ""}
+                  disabled={selectedAddressId !== "new"}
                   data-ocid="address-name"
                 />
                 {formErrors.name && (
@@ -633,6 +1146,7 @@ export function CheckoutPage() {
                     )
                   }
                   className={formErrors.phone ? "border-destructive" : ""}
+                  disabled={selectedAddressId !== "new"}
                   data-ocid="address-phone"
                 />
                 {formErrors.phone && (
@@ -649,6 +1163,7 @@ export function CheckoutPage() {
                   value={address.line1}
                   onChange={(e) => handleAddress("line1", e.target.value)}
                   className={formErrors.line1 ? "border-destructive" : ""}
+                  disabled={selectedAddressId !== "new"}
                   data-ocid="address-line1"
                 />
                 {formErrors.line1 && (
@@ -667,8 +1182,41 @@ export function CheckoutPage() {
                   id="addr-line2"
                   value={address.line2 ?? ""}
                   onChange={(e) => handleAddress("line2", e.target.value)}
+                  disabled={selectedAddressId !== "new"}
                   data-ocid="address-line2"
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="addr-pincode" className="text-sm font-medium">
+                  Pincode <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="addr-pincode"
+                  value={address.pincode}
+                  onChange={(e) =>
+                    handleAddress(
+                      "pincode",
+                      e.target.value.replace(/\D/g, "").slice(0, 6),
+                    )
+                  }
+                  className={formErrors.pincode ? "border-destructive" : ""}
+                  disabled={selectedAddressId !== "new"}
+                  data-ocid="address-pincode"
+                />
+                {formErrors.pincode && (
+                  <p className="text-xs text-destructive">
+                    {formErrors.pincode}
+                  </p>
+                )}
+                {pincodeStatus === "checking" && (
+                  <p className="text-xs text-muted-foreground">
+                    Verifying pincode…
+                  </p>
+                )}
+                {pincodeMessage && (
+                  <p className="text-xs text-amber-600">{pincodeMessage}</p>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -678,12 +1226,27 @@ export function CheckoutPage() {
                 <Input
                   id="addr-city"
                   value={address.city}
-                  onChange={(e) => handleAddress("city", e.target.value)}
+                  onChange={(e) => {
+                    setCityTouched(true);
+                    handleAddress("city", e.target.value);
+                  }}
                   className={formErrors.city ? "border-destructive" : ""}
+                  disabled={selectedAddressId !== "new"}
                   data-ocid="address-city"
                 />
                 {formErrors.city && (
                   <p className="text-xs text-destructive">{formErrors.city}</p>
+                )}
+                {pincodeStatus === "valid" && pincodeCities.length > 0 && (
+                  <div className="text-xs text-muted-foreground">
+                    Auto-filled from pincode: {pincodeCities[0]}
+                    {pincodeState ? `, ${pincodeState}` : ""}
+                  </div>
+                )}
+                {cityMismatch && (
+                  <p className="text-xs text-amber-600">
+                    City doesn't match this pincode. You can still proceed or adjust it.
+                  </p>
                 )}
               </div>
 
@@ -693,7 +1256,11 @@ export function CheckoutPage() {
                 </Label>
                 <Select
                   value={address.state}
-                  onValueChange={(val) => handleAddress("state", val)}
+                  onValueChange={(val) => {
+                    setStateTouched(true);
+                    handleAddress("state", val);
+                  }}
+                  disabled={selectedAddressId !== "new"}
                 >
                   <SelectTrigger
                     id="addr-state"
@@ -714,36 +1281,13 @@ export function CheckoutPage() {
                   <p className="text-xs text-destructive">{formErrors.state}</p>
                 )}
               </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="addr-pincode" className="text-sm font-medium">
-                  Pincode <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="addr-pincode"
-                  value={address.pincode}
-                  onChange={(e) =>
-                    handleAddress(
-                      "pincode",
-                      e.target.value.replace(/\D/g, "").slice(0, 6),
-                    )
-                  }
-                  className={formErrors.pincode ? "border-destructive" : ""}
-                  data-ocid="address-pincode"
-                />
-                {formErrors.pincode && (
-                  <p className="text-xs text-destructive">
-                    {formErrors.pincode}
-                  </p>
-                )}
-              </div>
             </div>
           </motion.div>
         </div>
 
         {/* ── RIGHT COLUMN ────────────────────────────────────────────────── */}
         <div className="space-y-6 lg:sticky lg:top-6">
-          {/* Razorpay payment section */}
+          {/* Payment section */}
           <motion.div
             {...fadeSlideProps(3)}
             className="glass-card rounded-2xl p-6"
@@ -754,41 +1298,102 @@ export function CheckoutPage() {
               <span className="gradient-text">Payment</span>
             </h2>
 
-            {/* Razorpay secure payment block */}
-            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl gradient-primary flex items-center justify-center shadow-glow-primary flex-shrink-0">
-                  <Shield className="w-6 h-6 text-primary-foreground" />
-                </div>
-                <div>
-                  <p className="font-bold text-foreground text-sm">
-                    Secure Payment via Razorpay
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    100% Secure · SSL Encrypted · Powered by Razorpay
-                  </p>
-                </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("cashfree")}
+                  className={`rounded-2xl border px-4 py-4 text-left transition-smooth ${
+                    paymentMethod === "cashfree"
+                      ? "border-primary/60 bg-primary/5"
+                      : "border-border hover:border-primary/30"
+                  }`}
+                  data-ocid="payment-method-cashfree"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow-primary flex-shrink-0">
+                      <Shield className="w-5 h-5 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-foreground text-sm">
+                        Pay Online (Cashfree)
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        UPI · Cards · NetBanking · Wallets · EMI
+                      </p>
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("cod")}
+                  className={`rounded-2xl border px-4 py-4 text-left transition-smooth ${
+                    paymentMethod === "cod"
+                      ? "border-primary/60 bg-primary/5"
+                      : "border-border hover:border-primary/30"
+                  }`}
+                  data-ocid="payment-method-cod"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-muted/70 flex items-center justify-center flex-shrink-0">
+                      <CreditCard className="w-5 h-5 text-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-foreground text-sm">
+                        Cash on Delivery (COD)
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Pay when you receive your order
+                      </p>
+                    </div>
+                  </div>
+                </button>
               </div>
 
-              {/* Payment method badges */}
-              <div className="flex flex-wrap gap-2">
-                {["UPI", "Cards", "NetBanking", "Wallets", "EMI"].map(
-                  (method) => (
-                    <span
-                      key={method}
-                      className="text-xs font-medium bg-card border border-border rounded-lg px-2.5 py-1 text-muted-foreground"
-                    >
-                      {method}
-                    </span>
-                  ),
-                )}
-              </div>
+              {paymentMethod === "cashfree" && (
+                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl gradient-primary flex items-center justify-center shadow-glow-primary flex-shrink-0">
+                      <Shield className="w-6 h-6 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-foreground text-sm">
+                        Secure Payment via Cashfree
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        100% Secure · PCI-DSS compliant · Powered by Cashfree
+                      </p>
+                    </div>
+                  </div>
 
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                You'll be redirected to Razorpay's secure payment window after
-                clicking "Pay Now". Your card details are never stored on our
-                servers.
-              </p>
+                  <div className="flex flex-wrap gap-2">
+                    {["UPI", "Cards", "NetBanking", "Wallets", "EMI"].map(
+                      (method) => (
+                        <span
+                          key={method}
+                          className="text-xs font-medium bg-card border border-border rounded-lg px-2.5 py-1 text-muted-foreground"
+                        >
+                          {method}
+                        </span>
+                      ),
+                    )}
+                  </div>
+
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    You'll be redirected to Cashfree's secure payment window after
+                    clicking "Pay Now". Your card details are never stored on our
+                    servers.
+                  </p>
+                </div>
+              )}
+
+              {paymentMethod === "cod" && (
+                <div className="rounded-2xl border border-border bg-muted/40 p-4 text-xs text-muted-foreground">
+                  COD orders are confirmed instantly and shipped as per delivery
+                  rules. Please keep the exact amount ready at the time of delivery.
+                </div>
+              )}
             </div>
           </motion.div>
 
@@ -914,9 +1519,15 @@ export function CheckoutPage() {
               )}
               <div className="flex justify-between text-muted-foreground">
                 <span>Delivery</span>
-                <span className="text-green-600 dark:text-green-400 font-medium">
-                  Free
-                </span>
+                {shippingCost > 0 ? (
+                  <span className="text-foreground font-medium">
+                    ₹{shippingCost.toLocaleString("en-IN")}
+                  </span>
+                ) : (
+                  <span className="text-green-600 dark:text-green-400 font-medium">
+                    Free
+                  </span>
+                )}
               </div>
               <Separator />
               <div className="flex justify-between items-center pt-1">

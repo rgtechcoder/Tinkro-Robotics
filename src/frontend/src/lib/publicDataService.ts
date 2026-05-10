@@ -697,7 +697,12 @@ export function useLabSetups(): {
   error: string | null;
 } {
   const { data, loading, error } = labSetupsStore.useCollection();
-  return { labSetups: data, loading, error };
+  const sorted = [...data].sort((a, b) => {
+    const orderDiff = Number(a.order || 0) - Number(b.order || 0);
+    if (orderDiff !== 0) return orderDiff;
+    return a.name.localeCompare(b.name);
+  });
+  return { labSetups: sorted, loading, error };
 }
 // BANNERS
 export function useBanners(): {

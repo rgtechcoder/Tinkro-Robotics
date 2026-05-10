@@ -91,7 +91,7 @@ export async function generateInvoicePdf(order: Order) {
 
   // Logo on white background
   if (logoData) {
-    doc.addImage(logoData, "PNG", marginX, cursorY, 60, 36);
+    doc.addImage(logoData, "PNG", marginX, cursorY, 72, 42);
   }
 
   // Navy strip only under TAX INVOICE
@@ -108,7 +108,7 @@ export async function generateInvoicePdf(order: Order) {
 
   const orderSuffix = order.id ? order.id.slice(-6).toUpperCase() : "XXXXXX";
   const dateKey = new Date(order.createdAt).toISOString().slice(0, 10).replace(/-/g, "");
-  const invoiceId = `TKR-${dateKey}-${orderSuffix}`;
+  const invoiceId = order.invoiceNumber || `TKR-${dateKey}-${orderSuffix}`;
   const orderId = `TKR-${dateKey}${orderSuffix}`;
 
   // Boxes grid
@@ -136,14 +136,12 @@ export async function generateInvoicePdf(order: Order) {
   // FROM (brand name only)
   drawBoxTitle(marginX, fromY, "TINKRO");
   drawBoxBorder(marginX, fromY, 104);
-  doc.setFont("helvetica", "bold");
-  doc.text(COMPANY_INFO.name, marginX + boxPadding, fromY + 30);
   doc.setFont("helvetica", "normal");
-  doc.text(COMPANY_INFO.address1, marginX + boxPadding, fromY + 44);
-  doc.text(COMPANY_INFO.address2, marginX + boxPadding, fromY + 58);
-  doc.text(`Email: ${COMPANY_INFO.email}`, marginX + boxPadding, fromY + 72);
-  doc.text(`Phone: ${COMPANY_INFO.phone}`, marginX + boxPadding, fromY + 86);
-  doc.text(`GST: ${COMPANY_INFO.gst}`, marginX + boxPadding, fromY + 100);
+  doc.text(COMPANY_INFO.address1, marginX + boxPadding, fromY + 30);
+  doc.text(COMPANY_INFO.address2, marginX + boxPadding, fromY + 44);
+  doc.text(`Email: ${COMPANY_INFO.email}`, marginX + boxPadding, fromY + 58);
+  doc.text(`Phone: ${COMPANY_INFO.phone}`, marginX + boxPadding, fromY + 72);
+  doc.text(`GST: ${COMPANY_INFO.gst}`, marginX + boxPadding, fromY + 86);
 
   // INVOICE DETAILS
   const detailsX = marginX + boxWidth + boxGap;
@@ -189,6 +187,7 @@ export async function generateInvoicePdf(order: Order) {
   // Items table
   const tableY = addressY + 104;
   const taxableAmount = Math.max(0, order.subtotal - order.discount);
+  const shippingCharge = Number(order.shippingCharge || 0);
   const baseAmount = taxableAmount / (1 + GST_RATE);
   const taxAmount = taxableAmount - baseAmount;
 
@@ -233,7 +232,12 @@ export async function generateInvoicePdf(order: Order) {
   doc.text(`Tax (18%):`, pageWidth - marginX - 120, totalsY + 16, { align: "right" });
   doc.text(formatCurrency(taxAmount), pageWidth - marginX, totalsY + 16, { align: "right" });
   doc.text(`Shipping:`, pageWidth - marginX - 120, totalsY + 32, { align: "right" });
-  doc.text("Free", pageWidth - marginX, totalsY + 32, { align: "right" });
+  doc.text(
+    shippingCharge > 0 ? formatCurrency(shippingCharge) : "Free",
+    pageWidth - marginX,
+    totalsY + 32,
+    { align: "right" },
+  );
   doc.setFont("helvetica", "bold");
   doc.text(`TOTAL AMOUNT:`, pageWidth - marginX - 120, totalsY + 54, { align: "right" });
   doc.text(formatCurrency(order.total), pageWidth - marginX, totalsY + 54, { align: "right" });
@@ -249,28 +253,37 @@ export async function generateInvoicePdf(order: Order) {
 
   // Footer
   doc.setFont("helvetica", "normal");
+  const footerBoxY = totalsY + 92;
+  const footerBoxHeight = 64;
   doc.setFillColor(255, 243, 237);
-  doc.roundedRect(marginX, totalsY + 92, pageWidth - marginX * 2, 40, 6, 6, "F");
+  doc.roundedRect(marginX, footerBoxY, pageWidth - marginX * 2, footerBoxHeight, 6, 6, "F");
+  const footerLine1Y = footerBoxY + 16;
+  const footerLine2Y = footerBoxY + 32;
+  const footerLine3Y = footerBoxY + 48;
   doc.text(
     "Thank you for shopping with Tinkro!",
     pageWidth / 2,
-    totalsY + 116,
+    footerLine1Y,
     { align: "center" },
   );
   doc.text(
     "If you have any questions, contact us at hello@tinkro.in",
     pageWidth / 2,
-    totalsY + 130,
+    footerLine2Y,
+    { align: "center" },
+  );
+  doc.setFontSize(8);
+  doc.setTextColor(120, 120, 120);
+  doc.text(
+    "This is a computer generated invoice and does not require a signature.",
+    pageWidth / 2,
+    footerLine3Y,
     { align: "center" },
   );
 
   doc.setFontSize(8);
   doc.setTextColor(120, 120, 120);
-  doc.text(
-    "This is a computer generated invoice and does not require a signature.",
-    marginX,
-    totalsY + 156,
-  );
+  doc.setTextColor(0, 0, 0);
 
   doc.setTextColor(0, 0, 0);
   doc.save(`${invoiceId}.pdf`);

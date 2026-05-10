@@ -160,13 +160,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <div className="px-5 py-5 border-b border-white/5">
         <div className="flex items-center gap-2.5">
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden bg-white"
             style={{
-              background:
-                "linear-gradient(135deg, oklch(0.45 0.12 243), oklch(0.7 0.13 195))",
+              boxShadow: "0 0 0 1px oklch(0.20 0.03 243 / 0.6)",
             }}
           >
-            T
+            <img
+              src="/tinkro%20favicon.png"
+              alt="Tinkro"
+              className="h-full w-full object-contain p-1"
+            />
           </div>
           <div>
             <span className="text-sm font-bold text-white tracking-wide">
@@ -420,16 +423,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 color: "oklch(0.70 0.05 243)",
               }}
             >
-              <div
-                className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
-                style={{
-                  background:
-                    "linear-gradient(135deg, oklch(0.71 0.17 48), oklch(0.76 0.16 72))",
-                }}
-              >
-                {(adminUser?.displayName ||
-                  adminUser?.email ||
-                  "A")[0].toUpperCase()}
+              <div className="w-5 h-5 rounded-full flex items-center justify-center overflow-hidden bg-white">
+                <img
+                  src="/tinkro%20favicon.png"
+                  alt="Tinkro"
+                  className="h-full w-full object-contain p-0.5"
+                />
               </div>
               <span className="hidden sm:block truncate max-w-[140px]">
                 {adminUser?.displayName || adminUser?.email}

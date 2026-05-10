@@ -175,12 +175,10 @@ function StatsCard({ label, value, icon, accent = "blue" }: StatsCardProps) {
       className={`rounded-xl border bg-gradient-to-br p-5 backdrop-blur-sm ${accentClasses[accent]}`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-muted-foreground">
-          {label}
-        </span>
+        <span className="text-sm font-medium text-white/70">{label}</span>
         <span className={iconClasses[accent]}>{icon}</span>
       </div>
-      <p className="mt-2 text-3xl font-bold tracking-tight text-foreground">
+      <p className="mt-2 text-3xl font-bold tracking-tight text-white">
         {value}
       </p>
     </div>
@@ -215,14 +213,14 @@ function CouponRow({ coupon, onEdit, onDelete, onToggle }: CouponRowProps) {
       {/* Code */}
       <div className="flex min-w-[120px] items-center gap-2">
         <Tag className="h-4 w-4 shrink-0 text-primary" />
-        <span className="font-mono text-sm font-bold uppercase tracking-widest text-foreground">
+        <span className="font-mono text-sm font-bold uppercase tracking-widest text-white/90">
           {coupon.code}
         </span>
       </div>
 
       {/* Discount badge */}
       <Badge
-        className="border border-primary/30 bg-primary/10 font-semibold text-primary"
+        className="border border-primary/30 bg-primary/15 font-semibold text-white/90"
         variant="outline"
       >
         {formatDiscount(coupon)}
@@ -237,7 +235,7 @@ function CouponRow({ coupon, onEdit, onDelete, onToggle }: CouponRowProps) {
       </Badge>
 
       {/* Meta */}
-      <div className="ml-auto flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+      <div className="ml-auto flex flex-wrap items-center gap-4 text-sm text-white/70">
         <span className="flex items-center gap-1">
           <TrendingDown className="h-3.5 w-3.5" />
           {`Min ₹${coupon.minOrderAmount}`}
@@ -342,6 +340,7 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
     const fieldErrors = validateForm(form);
     if (Object.keys(fieldErrors).length > 0) {
       setErrors(fieldErrors);
+      toast.error("Please fill the required fields correctly.");
       return;
     }
     setIsSaving(true);
@@ -382,17 +381,32 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto border-border/60 bg-background/95 text-foreground backdrop-blur-xl">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-bold">
+      <DialogContent
+        className="max-h-[90vh] max-w-lg overflow-y-auto p-0 border-0 shadow-2xl"
+        style={{
+          background:
+            "linear-gradient(180deg, oklch(0.12 0.04 243) 0%, oklch(0.10 0.03 250) 100%)",
+          border: "1px solid oklch(0.25 0.05 243 / 0.5)",
+        }}
+      >
+        <DialogHeader
+          className="px-6 pt-6 pb-4 border-b"
+          style={{ borderColor: "oklch(0.22 0.05 243 / 0.4)" }}
+        >
+          <DialogTitle className="text-xl font-display font-bold text-white">
             {editTarget ? "Edit Coupon" : "Create Coupon"}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="mt-2 space-y-5">
+        <form onSubmit={handleSubmit} className="px-6 pb-6 pt-5 space-y-5">
           {/* Code */}
           <div className="space-y-1.5">
-            <Label htmlFor="coupon-code">Coupon Code *</Label>
+            <Label
+              htmlFor="coupon-code"
+              className="text-xs font-semibold text-white/60 uppercase tracking-widest"
+            >
+              Coupon Code *
+            </Label>
             <Input
               id="coupon-code"
               value={form.code}
@@ -400,36 +414,61 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
                 handleChange("code", e.target.value.toUpperCase())
               }
               placeholder="e.g. SAVE20"
-              className="bg-background/60 font-mono uppercase"
+              className="h-10 text-sm font-mono uppercase"
+              style={{
+                background: "oklch(0.15 0.03 243 / 0.7)",
+                border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+                color: "white",
+              }}
               data-ocid="coupon-code-input"
             />
             {errors.code && (
-              <p className="text-xs text-destructive">{errors.code}</p>
+              <p className="text-[11px] text-red-400">{errors.code}</p>
             )}
           </div>
 
           {/* Discount Type + Value */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label>Discount Type *</Label>
+              <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+                Discount Type *
+              </Label>
               <Select
                 value={form.discountType}
                 onValueChange={(v) => handleChange("discountType", v)}
               >
                 <SelectTrigger
-                  className="bg-background/60"
+                  className="h-10 text-sm"
+                  style={{
+                    background: "oklch(0.15 0.03 243 / 0.7)",
+                    border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+                    color: "white",
+                  }}
                   data-ocid="coupon-type-select"
                 >
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="percent">Percentage (%)</SelectItem>
-                  <SelectItem value="flat">Flat Amount (₹)</SelectItem>
+                <SelectContent
+                  style={{
+                    background: "oklch(0.14 0.04 243)",
+                    border: "1px solid oklch(0.25 0.05 243 / 0.5)",
+                    color: "white",
+                  }}
+                >
+                  <SelectItem value="percent" className="text-white/80">
+                    Percentage (%)
+                  </SelectItem>
+                  <SelectItem value="flat" className="text-white/80">
+                    Flat Amount (₹)
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="coupon-value">
+              <Label
+                htmlFor="coupon-value"
+                className="text-xs font-semibold text-white/60 uppercase tracking-widest"
+              >
                 {form.discountType === "percent"
                   ? "Discount % *"
                   : "Discount ₹ *"}
@@ -442,11 +481,16 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
                 placeholder={
                   form.discountType === "percent" ? "1–100" : "e.g. 200"
                 }
-                className="bg-background/60"
+                className="h-10 text-sm"
+                style={{
+                  background: "oklch(0.15 0.03 243 / 0.7)",
+                  border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+                  color: "white",
+                }}
                 data-ocid="coupon-value-input"
               />
               {errors.discountValue && (
-                <p className="text-xs text-destructive">
+                <p className="text-[11px] text-red-400">
                   {errors.discountValue}
                 </p>
               )}
@@ -456,26 +500,46 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
           {/* Min Order + Usage Limit */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="coupon-min">Min Order Amount (₹)</Label>
+              <Label
+                htmlFor="coupon-min"
+                className="text-xs font-semibold text-white/60 uppercase tracking-widest"
+              >
+                Min Order Amount (₹)
+              </Label>
               <Input
                 id="coupon-min"
                 type="number"
                 value={form.minOrderAmount}
                 onChange={(e) => handleChange("minOrderAmount", e.target.value)}
                 placeholder="0"
-                className="bg-background/60"
+                className="h-10 text-sm"
+                style={{
+                  background: "oklch(0.15 0.03 243 / 0.7)",
+                  border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+                  color: "white",
+                }}
                 data-ocid="coupon-min-input"
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="coupon-limit">Usage Limit (0 = unlimited)</Label>
+              <Label
+                htmlFor="coupon-limit"
+                className="text-xs font-semibold text-white/60 uppercase tracking-widest"
+              >
+                Usage Limit (0 = unlimited)
+              </Label>
               <Input
                 id="coupon-limit"
                 type="number"
                 value={form.usageLimit}
                 onChange={(e) => handleChange("usageLimit", e.target.value)}
                 placeholder="0"
-                className="bg-background/60"
+                className="h-10 text-sm"
+                style={{
+                  background: "oklch(0.15 0.03 243 / 0.7)",
+                  border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+                  color: "white",
+                }}
                 data-ocid="coupon-limit-input"
               />
             </div>
@@ -483,59 +547,103 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
 
           {/* Expiry Date */}
           <div className="space-y-1.5">
-            <Label htmlFor="coupon-expiry">Expiry Date (optional)</Label>
+            <Label
+              htmlFor="coupon-expiry"
+              className="text-xs font-semibold text-white/60 uppercase tracking-widest"
+            >
+              Expiry Date (optional)
+            </Label>
             <Input
               id="coupon-expiry"
               type="date"
               value={form.expiresAt}
               onChange={(e) => handleChange("expiresAt", e.target.value)}
-              className="bg-background/60"
+              className="h-10 text-sm"
+              style={{
+                background: "oklch(0.15 0.03 243 / 0.7)",
+                border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+                color: "white",
+              }}
               data-ocid="coupon-expiry-input"
             />
           </div>
 
           {/* Description */}
           <div className="space-y-1.5">
-            <Label htmlFor="coupon-desc">Description (optional)</Label>
+            <Label
+              htmlFor="coupon-desc"
+              className="text-xs font-semibold text-white/60 uppercase tracking-widest"
+            >
+              Description (optional)
+            </Label>
             <Textarea
               id="coupon-desc"
               value={form.description}
               onChange={(e) => handleChange("description", e.target.value)}
               placeholder="e.g. 20% off for first-time buyers"
               rows={2}
-              className="bg-background/60"
+              className="text-sm resize-none"
+              style={{
+                background: "oklch(0.15 0.03 243 / 0.7)",
+                border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+                color: "white",
+              }}
               data-ocid="coupon-desc-input"
             />
           </div>
 
           {/* Audience */}
           <div className="space-y-1.5">
-            <Label>Audience</Label>
+            <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+              Audience
+            </Label>
             <Select
               value={form.audience}
               onValueChange={(v) => handleChange("audience", v)}
             >
               <SelectTrigger
-                className="bg-background/60"
+                className="h-10 text-sm"
+                style={{
+                  background: "oklch(0.15 0.03 243 / 0.7)",
+                  border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+                  color: "white",
+                }}
                 data-ocid="coupon-audience-select"
               >
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All users</SelectItem>
-                <SelectItem value="new">New users (no orders)</SelectItem>
-                <SelectItem value="inactive">Inactive users</SelectItem>
-                <SelectItem value="active">Active users</SelectItem>
+              <SelectContent
+                style={{
+                  background: "oklch(0.14 0.04 243)",
+                  border: "1px solid oklch(0.25 0.05 243 / 0.5)",
+                  color: "white",
+                }}
+              >
+                <SelectItem value="all" className="text-white/80">
+                  All users
+                </SelectItem>
+                <SelectItem value="new" className="text-white/80">
+                  New users (no orders)
+                </SelectItem>
+                <SelectItem value="inactive" className="text-white/80">
+                  Inactive users
+                </SelectItem>
+                <SelectItem value="active" className="text-white/80">
+                  Active users
+                </SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-white/40">
               New = no orders. Inactive/Active are based on last order date.
             </p>
           </div>
 
           {(form.audience === "inactive" || form.audience === "active") && (
             <div className="space-y-1.5">
-              <Label htmlFor="coupon-activity-days">
+              <Label
+                htmlFor="coupon-activity-days"
+                className="text-xs font-semibold text-white/60 uppercase tracking-widest"
+              >
                 Activity window (days)
               </Label>
               <Input
@@ -544,10 +652,15 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
                 value={form.activityDays}
                 onChange={(e) => handleChange("activityDays", e.target.value)}
                 placeholder="60"
-                className="bg-background/60"
+                className="h-10 text-sm"
+                style={{
+                  background: "oklch(0.15 0.03 243 / 0.7)",
+                  border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+                  color: "white",
+                }}
                 data-ocid="coupon-activity-days-input"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-white/40">
                 Active = ordered within last N days. Inactive = no order in last
                 N days.
               </p>
@@ -555,7 +668,13 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
           )}
 
           {/* One-time per user */}
-          <div className="flex items-center gap-3 rounded-lg border border-border/40 bg-muted/30 px-4 py-3">
+          <div
+            className="flex items-center gap-3 px-4 py-3 rounded-xl"
+            style={{
+              background: "oklch(0.14 0.03 243 / 0.5)",
+              border: "1px solid oklch(0.25 0.05 243 / 0.4)",
+            }}
+          >
             <Switch
               id="coupon-onetime"
               checked={form.oneTimePerUser}
@@ -564,14 +683,20 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
             />
             <Label
               htmlFor="coupon-onetime"
-              className="cursor-pointer text-sm font-medium"
+              className="cursor-pointer text-sm font-medium text-white/70"
             >
               One-time per user
             </Label>
           </div>
 
           {/* Active toggle */}
-          <div className="flex items-center gap-3 rounded-lg border border-border/40 bg-muted/30 px-4 py-3">
+          <div
+            className="flex items-center gap-3 px-4 py-3 rounded-xl"
+            style={{
+              background: "oklch(0.14 0.03 243 / 0.5)",
+              border: "1px solid oklch(0.25 0.05 243 / 0.4)",
+            }}
+          >
             <Switch
               id="coupon-active"
               checked={form.isActive}
@@ -580,7 +705,7 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
             />
             <Label
               htmlFor="coupon-active"
-              className="cursor-pointer text-sm font-medium"
+              className="cursor-pointer text-sm font-medium text-white/70"
             >
               Active — coupon is usable at checkout
             </Label>
@@ -588,7 +713,16 @@ function CouponDialog({ open, editTarget, onClose }: CouponDialogProps) {
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              style={{
+                background: "oklch(0.18 0.04 243 / 0.6)",
+                border: "1px solid oklch(0.28 0.05 243 / 0.5)",
+                color: "white",
+              }}
+            >
               Cancel
             </Button>
             <Button
@@ -749,7 +883,7 @@ export default function AdminCouponsPage() {
           <div className="relative min-w-[220px] flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search by code or description…"
+              placeholder="Search coupon code or description…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -761,7 +895,7 @@ export default function AdminCouponsPage() {
             onValueChange={(v) => setStatusFilter(v as FilterStatus)}
           >
             <SelectTrigger className="w-44" data-ocid="coupon-status-filter">
-              <SelectValue placeholder="Filter by status" />
+              <SelectValue placeholder="Status filter" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Coupons</SelectItem>
@@ -771,6 +905,9 @@ export default function AdminCouponsPage() {
             </SelectContent>
           </Select>
         </div>
+        <p className="text-xs text-white/40">
+          Search by coupon code or description, then filter by status on the right.
+        </p>
 
         {/* List */}
         <div className="space-y-3">

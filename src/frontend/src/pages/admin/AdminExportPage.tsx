@@ -1,6 +1,9 @@
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { exportToExcel } from "@/lib/exportService";
 import type { ExportColumn } from "@/lib/exportService";
+import { db } from "@/lib/firebase";
+import type { AdminEnquiry, AdminOrder, AdminUserRecord } from "@/types/admin";
+import { collection, getDocs } from "firebase/firestore";
 import {
   Download,
   FileSpreadsheet,
@@ -38,6 +41,28 @@ function formatTs(d: Date): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function normalizeDate(value: unknown): Date | null {
+  if (!value) return null;
+  if (typeof value === "object" && value && "toDate" in value) {
+    return (value as { toDate: () => Date }).toDate();
+  }
+  const d = new Date(value as string);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function inRange(date: Date | null, from?: string, to?: string): boolean {
+  if (!date) return false;
+  if (from) {
+    const fromDate = new Date(`${from}T00:00:00`);
+    if (date < fromDate) return false;
+  }
+  if (to) {
+    const toDate = new Date(`${to}T23:59:59`);
+    if (date > toDate) return false;
+  }
+  return true;
 }
 
 function nowFilename(prefix: string): string {
@@ -288,15 +313,30 @@ function OrdersExportCard({
   const fetchCount = useCallback(async () => {
     setCounting(true);
     try {
-      // Firebase disabled — return 0 records
-      setCount(0);
+      const snap = await getDocs(collection(db, "orders"));
+      const rows = snap.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as AdminOrder),
+      }));
+
+      const filtered = rows.filter((order) => {
+        const date = normalizeDate(order.createdAt);
+        const matchesStatus =
+          statusFilter === "all" || order.status === statusFilter;
+        const matchesDate =
+          !dateRange.from && !dateRange.to
+            ? true
+            : inRange(date, dateRange.from, dateRange.to);
+        return matchesStatus && matchesDate;
+      });
+      setCount(filtered.length);
     } catch {
       setCount(null);
     } finally {
       setCounting(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [dateRange.from, dateRange.to, statusFilter]);
 
   useEffect(() => {
     void fetchCount();
@@ -305,8 +345,37 @@ function OrdersExportCard({
   async function handleExport() {
     setLoading(true);
     try {
-      // Firebase disabled — export empty dataset
-      const rows: Record<string, unknown>[] = [];
+      const snap = await getDocs(collection(db, "orders"));
+      const orders = snap.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as AdminOrder),
+      }));
+
+      const filtered = orders.filter((order) => {
+        const date = normalizeDate(order.createdAt);
+        const matchesStatus =
+          statusFilter === "all" || order.status === statusFilter;
+        const matchesDate =
+          !dateRange.from && !dateRange.to
+            ? true
+            : inRange(date, dateRange.from, dateRange.to);
+        return matchesStatus && matchesDate;
+      });
+
+      const rows: Record<string, unknown>[] = filtered.map((order) => {
+        const date = normalizeDate(order.createdAt);
+        return {
+          id: order.id,
+          date: date ? formatTs(date) : "—",
+          customerEmail: order.customerEmail ?? "—",
+          status: order.status,
+          total: order.total ?? 0,
+          itemsCount: Array.isArray(order.items) ? order.items.length : 0,
+          trackingId: order.trackingId ?? "—",
+          paymentId: order.razorpayPaymentId ?? "—",
+          city: order.address?.city ?? "—",
+        };
+      });
       const filename = nowFilename("orders");
       exportToExcel(rows, ORDER_COLUMNS, filename);
       const entry: ExportHistoryEntry = {
@@ -319,7 +388,7 @@ function OrdersExportCard({
       onExported(entry);
       toast.success(
         rows.length === 0
-          ? "No orders to export (Firebase offline)"
+          ? "No orders to export"
           : `Exported ${rows.length} records to ${filename}.xlsx`,
       );
     } catch (err) {
@@ -417,11 +486,31 @@ function UsersExportCard({
 
   const fetchCount = useCallback(async () => {
     setCounting(true);
-    // Firebase disabled
-    setCount(0);
-    setCounting(false);
+    try {
+      const snap = await getDocs(collection(db, "users"));
+      const users = snap.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as AdminUserRecord),
+      }));
+      const filtered = users.filter((user) => {
+        const date = normalizeDate(user.createdAt);
+        const matchesStatus =
+          statusFilter === "all" ||
+          (statusFilter === "active" ? user.isActive : !user.isActive);
+        const matchesDate =
+          !dateRange.from && !dateRange.to
+            ? true
+            : inRange(date, dateRange.from, dateRange.to);
+        return matchesStatus && matchesDate;
+      });
+      setCount(filtered.length);
+    } catch {
+      setCount(null);
+    } finally {
+      setCounting(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [dateRange.from, dateRange.to, statusFilter]);
 
   useEffect(() => {
     void fetchCount();
@@ -430,7 +519,37 @@ function UsersExportCard({
   async function handleExport() {
     setLoading(true);
     try {
-      const rows: Record<string, unknown>[] = [];
+      const snap = await getDocs(collection(db, "users"));
+      const users = snap.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as AdminUserRecord),
+      }));
+
+      const filtered = users.filter((user) => {
+        const date = normalizeDate(user.createdAt);
+        const matchesStatus =
+          statusFilter === "all" ||
+          (statusFilter === "active" ? user.isActive : !user.isActive);
+        const matchesDate =
+          !dateRange.from && !dateRange.to
+            ? true
+            : inRange(date, dateRange.from, dateRange.to);
+        return matchesStatus && matchesDate;
+      });
+
+      const rows: Record<string, unknown>[] = filtered.map((user) => {
+        const date = normalizeDate(user.createdAt);
+        return {
+          uid: user.uid ?? user.id,
+          email: user.email ?? "—",
+          displayName: user.displayName ?? "—",
+          phone: user.phone ?? "—",
+          totalOrders: user.totalOrders ?? 0,
+          totalSpent: user.totalSpent ?? 0,
+          joinedDate: date ? formatTs(date) : "—",
+          isActive: user.isActive ? "Active" : "Inactive",
+        };
+      });
       const filename = nowFilename("users");
       exportToExcel(rows, USER_COLUMNS, filename);
       const entry: ExportHistoryEntry = {
@@ -441,7 +560,11 @@ function UsersExportCard({
         type: "users",
       };
       onExported(entry);
-      toast.success("No users to export (Firebase offline)");
+      toast.success(
+        rows.length === 0
+          ? "No users to export"
+          : `Exported ${rows.length} records to ${filename}.xlsx`,
+      );
     } catch (err) {
       console.error(err);
       toast.error("Export failed. Please try again.");
@@ -548,11 +671,32 @@ function EnquiriesExportCard({
 
   const fetchCount = useCallback(async () => {
     setCounting(true);
-    // Firebase disabled
-    setCount(0);
-    setCounting(false);
+    try {
+      const snap = await getDocs(collection(db, "enquiries"));
+      const rows = snap.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as AdminEnquiry),
+      }));
+      const filtered = rows.filter((enquiry) => {
+        const date = normalizeDate(enquiry.createdAt);
+        const matchesStatus =
+          statusFilter === "all" || enquiry.status === statusFilter;
+        const matchesType =
+          labTypeFilter === "all" || enquiry.labType === labTypeFilter;
+        const matchesDate =
+          !dateRange.from && !dateRange.to
+            ? true
+            : inRange(date, dateRange.from, dateRange.to);
+        return matchesStatus && matchesType && matchesDate;
+      });
+      setCount(filtered.length);
+    } catch {
+      setCount(null);
+    } finally {
+      setCounting(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [dateRange.from, dateRange.to, labTypeFilter, statusFilter]);
 
   useEffect(() => {
     void fetchCount();
@@ -561,7 +705,40 @@ function EnquiriesExportCard({
   async function handleExport() {
     setLoading(true);
     try {
-      const rows: Record<string, unknown>[] = [];
+      const snap = await getDocs(collection(db, "enquiries"));
+      const enquiries = snap.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as AdminEnquiry),
+      }));
+
+      const filtered = enquiries.filter((enquiry) => {
+        const date = normalizeDate(enquiry.createdAt);
+        const matchesStatus =
+          statusFilter === "all" || enquiry.status === statusFilter;
+        const matchesType =
+          labTypeFilter === "all" || enquiry.labType === labTypeFilter;
+        const matchesDate =
+          !dateRange.from && !dateRange.to
+            ? true
+            : inRange(date, dateRange.from, dateRange.to);
+        return matchesStatus && matchesType && matchesDate;
+      });
+
+      const rows: Record<string, unknown>[] = filtered.map((enquiry) => {
+        const created = normalizeDate(enquiry.createdAt);
+        const responded = normalizeDate(enquiry.respondedAt);
+        return {
+          name: enquiry.name ?? "—",
+          email: enquiry.email ?? "—",
+          phone: enquiry.phone ?? "—",
+          labType: enquiry.labType ?? "—",
+          status: enquiry.status ?? "—",
+          priority: enquiry.priority ?? "—",
+          message: enquiry.message ?? "—",
+          createdDate: created ? formatTs(created) : "—",
+          respondedDate: responded ? formatTs(responded) : "—",
+        };
+      });
       const filename = nowFilename("enquiries");
       exportToExcel(rows, ENQUIRY_COLUMNS, filename);
       const entry: ExportHistoryEntry = {
@@ -572,7 +749,11 @@ function EnquiriesExportCard({
         type: "enquiries",
       };
       onExported(entry);
-      toast.success("No enquiries to export (Firebase offline)");
+      toast.success(
+        rows.length === 0
+          ? "No enquiries to export"
+          : `Exported ${rows.length} records to ${filename}.xlsx`,
+      );
     } catch (err) {
       console.error(err);
       toast.error("Export failed. Please try again.");

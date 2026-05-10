@@ -124,6 +124,7 @@ function FeaturedArticle({
   onNavigate,
 }: { post: AdminBlogPost; onNavigate: (id: string) => void }) {
   const colors = CATEGORY_COLORS[post.category] ?? DEFAULT_CATEGORY_COLORS;
+  const heroImage = post.featuredImage || post.images?.[0];
 
   return (
     <motion.div
@@ -155,14 +156,14 @@ function FeaturedArticle({
 
       <div className="relative z-10 grid md:grid-cols-2 gap-0">
         {/* Visual side */}
-        <div className="relative overflow-hidden min-h-[260px] md:min-h-[380px]">
-          {post.featuredImage ? (
+        <div className="relative overflow-hidden min-h-[260px] md:min-h-[380px] bg-[#0a1628]">
+          {heroImage ? (
             <img
-              src={post.featuredImage}
+              src={heroImage}
               alt={post.title}
               loading="lazy"
               decoding="async"
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              className="absolute inset-0 w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
             />
           ) : (
             <div
@@ -180,7 +181,7 @@ function FeaturedArticle({
                 "radial-gradient(ellipse at 40% 50%, rgba(244,123,32,0.4) 0%, transparent 65%)",
             }}
           />
-          {!post.featuredImage && (
+          {!heroImage && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center px-8">
                 <div className="text-7xl mb-4">📰</div>
@@ -270,6 +271,7 @@ function ArticleCard({
   onNavigate,
 }: { post: AdminBlogPost; index: number; onNavigate: (id: string) => void }) {
   const colors = CATEGORY_COLORS[post.category] ?? DEFAULT_CATEGORY_COLORS;
+  const heroImage = post.featuredImage || post.images?.[0];
 
   return (
     <motion.div
@@ -297,14 +299,14 @@ function ArticleCard({
       data-ocid={`blog-article-card-${post.id}`}
     >
       {/* Image area */}
-      <div className="relative overflow-hidden h-44 flex-shrink-0">
-        {post.featuredImage ? (
+      <div className="relative overflow-hidden h-44 flex-shrink-0 bg-[#0a1628]">
+        {heroImage ? (
           <img
-            src={post.featuredImage}
+            src={heroImage}
             alt={post.title}
             loading="lazy"
             decoding="async"
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div
@@ -321,7 +323,7 @@ function ArticleCard({
               "radial-gradient(ellipse at 60% 60%, rgba(244,123,32,0.25) 0%, transparent 70%)",
           }}
         />
-        {!post.featuredImage && (
+        {!heroImage && (
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-5xl opacity-70">📰</span>
           </div>

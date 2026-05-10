@@ -24,6 +24,7 @@ import { ReturnsPage } from "./pages/ReturnsPage";
 import { ShippingPolicyPage } from "./pages/ShippingPolicyPage";
 import { TrackOrderPage } from "./pages/TrackOrderPage";
 import { WarrantyPage } from "./pages/WarrantyPage";
+import { WishlistPage } from "./pages/WishlistPage";
 import LoginPage from "./pages/LoginPage";
 
 // ─── Lazy-loaded heavy public pages ───────────────────────────────────────────
@@ -334,6 +335,12 @@ const warrantyRoute = createRoute({
   component: WarrantyPage,
 });
 
+const wishlistRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/wishlist",
+  component: WishlistPage,
+});
+
 const trackOrderRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/track-order",
@@ -621,6 +628,7 @@ const publicRouteTree = rootRoute.addChildren([
   checkoutRoute,
   orderSuccessRoute,
   dashboardRoute,
+  wishlistRoute,
 ]);
 
 const adminRouteTree = adminRootRoute.addChildren([

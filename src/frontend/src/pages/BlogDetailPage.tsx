@@ -107,6 +107,7 @@ function BlogDetailSkeleton() {
 
 function RelatedCard({ post }: { post: AdminBlogPost }) {
   const colors = CATEGORY_COLORS[post.category] ?? DEFAULT_COLORS;
+  const heroImage = post.featuredImage || post.images?.[0];
 
   return (
     <motion.a
@@ -125,12 +126,12 @@ function RelatedCard({ post }: { post: AdminBlogPost }) {
       data-ocid={`blog-related-card-${post.id}`}
     >
       {/* Image */}
-      <div className="relative overflow-hidden h-40">
-        {post.featuredImage ? (
+      <div className="relative overflow-hidden h-40 bg-[#0a1628]">
+        {heroImage ? (
           <img
-            src={post.featuredImage}
+            src={heroImage}
             alt={post.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div
@@ -218,6 +219,7 @@ export function BlogDetailPage() {
 
   const colors = CATEGORY_COLORS[post.category] ?? DEFAULT_COLORS;
   const readTime = estimateReadTime(post.content);
+  const heroImage = post.featuredImage || post.images?.[0];
   const relatedPosts = allPosts
     .filter((p) => p.id !== post.id && p.category === post.category)
     .slice(0, 3);
@@ -247,14 +249,14 @@ export function BlogDetailPage() {
 
       {/* ── Hero ── */}
       <div
-        className="relative overflow-hidden"
+        className="relative overflow-hidden bg-[#0a1628]"
         style={{ height: "clamp(280px, 50vh, 520px)" }}
       >
-        {post.featuredImage ? (
+        {heroImage ? (
           <motion.img
-            src={post.featuredImage}
+            src={heroImage}
             alt={post.title}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-contain"
             initial={{ scale: 1.06 }}
             animate={{ scale: 1 }}
             transition={{ duration: 1.2, ease: "easeOut" }}
@@ -362,6 +364,35 @@ export function BlogDetailPage() {
             <p className="text-white/80 text-base md:text-lg leading-relaxed italic font-light">
               {post.excerpt}
             </p>
+          </motion.div>
+        )}
+
+        {/* Gallery */}
+        {post.images && post.images.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="mb-10"
+            data-ocid="blog-detail-gallery"
+          >
+            <h3 className="text-base font-semibold text-white mb-4">
+              Gallery
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {post.images.map((img) => (
+                <div
+                  key={img}
+                  className="rounded-2xl overflow-hidden border border-white/10 bg-[#0a1628]"
+                >
+                  <img
+                    src={img}
+                    alt={post.title}
+                    className="w-full h-56 object-contain"
+                  />
+                </div>
+              ))}
+            </div>
           </motion.div>
         )}
 

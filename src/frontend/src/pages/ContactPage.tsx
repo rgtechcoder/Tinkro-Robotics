@@ -340,7 +340,7 @@ export function ContactPage() {
                   )}
                 </AnimatePresence>
 
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
                   {/* Full Name */}
                   <div className="space-y-1.5">
                     <label
@@ -356,7 +356,7 @@ export function ContactPage() {
                       required
                       value={form.name}
                       onChange={handleChange}
-                      placeholder="Arjun Sharma"
+                      autoComplete="off"
                       className="w-full h-11 px-4 rounded-lg border border-white/10 bg-white/5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#3BBFBF] focus:border-transparent transition-smooth"
                       data-ocid="contact-name"
                     />
@@ -377,7 +377,9 @@ export function ContactPage() {
                       required
                       value={form.email}
                       onChange={handleChange}
-                      placeholder="arjun@school.edu.in"
+                      autoComplete="off"
+                      autoCapitalize="none"
+                      spellCheck={false}
                       className="w-full h-11 px-4 rounded-lg border border-white/10 bg-white/5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#3BBFBF] focus:border-transparent transition-smooth"
                       data-ocid="contact-email"
                     />
@@ -464,7 +466,7 @@ export function ContactPage() {
                             type="text"
                             value={form.schoolName ?? ""}
                             onChange={handleChange}
-                            placeholder="e.g. Delhi Public School, Sector 45"
+                            autoComplete="off"
                             className="w-full h-11 px-4 rounded-lg border border-white/10 bg-white/5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#3BBFBF] focus:border-transparent transition-smooth"
                             data-ocid="contact-school-name"
                           />
@@ -488,11 +490,7 @@ export function ContactPage() {
                       rows={isLabEnquiry ? 6 : 5}
                       value={form.message}
                       onChange={handleChange}
-                      placeholder={
-                        isLabEnquiry
-                          ? "Tell us about your school, the number of students, and any specific robotics requirements…"
-                          : "Tell us about your school, robotics requirements, or any questions you have..."
-                      }
+                      autoComplete="off"
                       className="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#3BBFBF] focus:border-transparent transition-smooth resize-none"
                       data-ocid="contact-message"
                     />

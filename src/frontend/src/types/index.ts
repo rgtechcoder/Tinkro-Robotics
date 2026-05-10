@@ -92,6 +92,13 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface WishlistItem {
+  productId: string;
+  name: string;
+  image: string;
+  price: number;
+}
+
 export interface Address {
   id: string;
   name: string;
@@ -112,6 +119,9 @@ export interface Order {
   total: number;
   subtotal: number;
   discount: number;
+  shippingCharge?: number;
+  shippingRuleId?: string | null;
+  shippingRuleName?: string | null;
   coupon: string | null;
   couponId?: string | null;
   couponCode?: string | null;
@@ -122,8 +132,13 @@ export interface Order {
   userId?: string;
   customerEmail?: string;
   customerName?: string;
+  invoiceNumber?: string;
+  paymentGateway?: "razorpay" | "cashfree" | "cod";
   razorpayPaymentId?: string;
   razorpayOrderId?: string;
+  cashfreeOrderId?: string;
+  cashfreePaymentId?: string | null;
+  cashfreeCfOrderId?: string | null;
   trackingId?: string | null;
   estimatedDelivery?: string;
 }

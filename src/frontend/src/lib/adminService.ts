@@ -688,8 +688,13 @@ export function subscribeToDashboardStats(callback: (stats: DashboardStats) => v
 // 🔁 realtime fetch
 export function subscribeToLabSetups(callback: (data: AdminLabSetup[]) => void) {
   return onSnapshot(collection(db, "labSetups"), (snap) => {
-    const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    callback(data as AdminLabSetup[]);
+    const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as AdminLabSetup[];
+    const sorted = [...data].sort((a, b) => {
+      const orderDiff = Number(a.order || 0) - Number(b.order || 0);
+      if (orderDiff !== 0) return orderDiff;
+      return a.name.localeCompare(b.name);
+    });
+    callback(sorted);
   });
 }
 
@@ -738,6 +743,14 @@ const normalizeDates = <T extends Record<string, unknown>>(
   return next;
 };
 
+const stripUndefined = <T extends Record<string, unknown>>(data: T): T => {
+  const next: Record<string, unknown> = {};
+  Object.entries(data).forEach(([key, value]) => {
+    if (value !== undefined) next[key] = value;
+  });
+  return next as T;
+};
+
 const storage = getStorage();
 
 export async function uploadCategoryImage(file: File) {
@@ -778,7 +791,7 @@ export async function addCoupon(
   data: Omit<AdminCoupon, "id" | "createdAt" | "usedCount">,
 ): Promise<string> {
   const docRef = await addDoc(collection(db, "coupons"), {
-    ...data,
+    ...stripUndefined(data),
     usedCount: 0,
     createdAt: serverTimestamp(),
   });
@@ -789,7 +802,7 @@ export async function updateCoupon(
   id: string,
   data: Partial<AdminCoupon>,
 ): Promise<void> {
-  await updateDoc(doc(db, "coupons", id), data);
+  await updateDoc(doc(db, "coupons", id), stripUndefined(data));
 }
 
 export async function deleteCoupon(id: string): Promise<void> {
@@ -816,7 +829,7 @@ export async function addBanner(
   data: Omit<AdminBanner, "id" | "createdAt">,
 ): Promise<string> {
   const docRef = await addDoc(collection(db, "banners"), {
-    ...data,
+    ...stripUndefined(data),
     createdAt: serverTimestamp(),
   });
   return docRef.id;
@@ -826,7 +839,7 @@ export async function updateBanner(
   id: string,
   data: Partial<AdminBanner>,
 ): Promise<void> {
-  await updateDoc(doc(db, "banners", id), data);
+  await updateDoc(doc(db, "banners", id), stripUndefined(data));
 }
 
 export async function deleteBanner(id: string): Promise<void> {
@@ -930,7 +943,7 @@ export async function addShippingRule(
   data: Omit<AdminShippingRule, "id" | "createdAt">,
 ): Promise<string> {
   const docRef = await addDoc(collection(db, "shippingRules"), {
-    ...data,
+    ...stripUndefined(data),
     createdAt: serverTimestamp(),
   });
   return docRef.id;
@@ -940,7 +953,7 @@ export async function updateShippingRule(
   id: string,
   data: Partial<AdminShippingRule>,
 ): Promise<void> {
-  await updateDoc(doc(db, "shippingRules", id), data);
+  await updateDoc(doc(db, "shippingRules", id), stripUndefined(data));
 }
 
 export async function deleteShippingRule(id: string): Promise<void> {

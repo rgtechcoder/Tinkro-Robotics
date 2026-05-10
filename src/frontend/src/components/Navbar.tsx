@@ -2,6 +2,7 @@ import { useAdminAuth } from "@/context/AdminAuthContext";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import {
   ChevronDown,
+  Heart,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -17,6 +18,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useProducts } from "../lib/publicDataService";
 import { useCartStore } from "../store/cartStore";
+import { useWishlistStore } from "../store/wishlistStore";
 import type { AdminProduct } from "../types/admin";
 
 const navLinks = [
@@ -351,6 +353,7 @@ export function Navbar() {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const itemCount = useCartStore((s) => s.itemCount);
+  const wishlistCount = useWishlistStore((s) => s.itemCount);
   const { adminUser } = useAdminAuth();
   const { user } = useUserAuth();
   const { products: liveProducts } = useProducts();
@@ -453,10 +456,11 @@ export function Navbar() {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "bg-card/95 backdrop-blur-xl border-b border-border shadow-subtle"
-          : "bg-transparent"
+        scrolled ? "backdrop-blur-xl border-b border-border shadow-subtle" : "" 
       }`}
+      style={{
+        background: scrolled ? "oklch(0.12 0.04 250 / 0.92)" : "transparent",
+      }}
       data-ocid="nav"
     >
       <div className="container max-w-7xl mx-auto px-4 sm:px-6">
@@ -587,6 +591,32 @@ export function Navbar() {
                     data-ocid="nav-cart-badge"
                   >
                     {itemCount > 99 ? "99+" : itemCount}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Link>
+
+            {/* Wishlist icon with live badge */}
+            <Link
+              to="/wishlist"
+              className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-smooth"
+              aria-label={`Wishlist${wishlistCount > 0 ? `, ${wishlistCount} items` : ""}`}
+              data-ocid="nav-wishlist"
+            >
+              <Heart className="w-4.5 h-4.5" />
+              <AnimatePresence>
+                {wishlistCount > 0 && (
+                  <motion.span
+                    key="wishlist-badge"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                    className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-bold text-primary-foreground px-1"
+                    style={{ background: "oklch(0.71 0.17 48)" }}
+                    data-ocid="nav-wishlist-badge"
+                  >
+                    {wishlistCount > 99 ? "99+" : wishlistCount}
                   </motion.span>
                 )}
               </AnimatePresence>

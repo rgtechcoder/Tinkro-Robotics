@@ -114,14 +114,17 @@ export default function AdminLoginPage() {
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
             <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-bold text-white mb-4"
+              className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 bg-white overflow-hidden"
               style={{
-                background:
-                  "linear-gradient(135deg, oklch(0.45 0.12 243), oklch(0.7 0.13 195))",
-                boxShadow: "0 0 24px oklch(0.45 0.12 243 / 0.4)",
+                boxShadow:
+                  "0 0 24px oklch(0.45 0.12 243 / 0.4), 0 0 0 1px oklch(0.20 0.03 243 / 0.6)",
               }}
             >
-              T
+              <img
+                src="/tinkro%20favicon.png"
+                alt="Tinkro"
+                className="h-full w-full object-contain p-1.5"
+              />
             </div>
             <div className="flex items-center gap-2">
               <ShieldCheck size={16} style={{ color: "oklch(0.71 0.17 48)" }} />

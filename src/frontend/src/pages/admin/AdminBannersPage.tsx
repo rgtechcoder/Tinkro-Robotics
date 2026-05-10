@@ -9,7 +9,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -38,8 +37,6 @@ import {
 import type { AdminBanner } from "@/types/admin";
 import {
   AlertCircle,
-  Calendar,
-  Clock,
   ExternalLink,
   Image,
   ImageOff,
@@ -47,7 +44,6 @@ import {
   Megaphone,
   Pencil,
   Plus,
-  ToggleLeft,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -65,15 +61,13 @@ interface BannerFormValues {
   ctaText: string;
   ctaLink: string;
   isActive: boolean;
-  scheduledFrom: string;
-  scheduledTo: string;
 }
 
 interface FormErrors {
   title?: string;
 }
 
-type StatusType = "active" | "scheduled" | "expired" | "inactive";
+type StatusType = "active" | "inactive";
 type FilterType = "all" | "banner" | "popup";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -82,11 +76,6 @@ const SKELETON_KEYS = ["sk-a", "sk-b", "sk-c", "sk-d", "sk-e", "sk-f"];
 
 function getBannerStatus(banner: AdminBanner): StatusType {
   if (!banner.isActive) return "inactive";
-  const now = new Date();
-  if (banner.scheduledFrom && new Date(banner.scheduledFrom) > now)
-    return "scheduled";
-  if (banner.scheduledTo && new Date(banner.scheduledTo) < now)
-    return "expired";
   return "active";
 }
 
@@ -98,16 +87,6 @@ const STATUS_CONFIG: Record<
     label: "Active",
     borderColor: "border-l-emerald-500",
     badgeClass: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  },
-  scheduled: {
-    label: "Scheduled",
-    borderColor: "border-l-amber-500",
-    badgeClass: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-  },
-  expired: {
-    label: "Expired",
-    borderColor: "border-l-red-500",
-    badgeClass: "bg-red-500/15 text-red-400 border-red-500/30",
   },
   inactive: {
     label: "Inactive",
@@ -139,8 +118,6 @@ const EMPTY_FORM: BannerFormValues = {
   ctaText: "",
   ctaLink: "",
   isActive: true,
-  scheduledFrom: "",
-  scheduledTo: "",
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -227,7 +204,6 @@ export default function AdminBannersPage() {
   const stats = {
     total: banners.length,
     active: banners.filter((b) => getBannerStatus(b) === "active").length,
-    scheduled: banners.filter((b) => getBannerStatus(b) === "scheduled").length,
   };
 
   // ─── Form helpers ────────────────────────────────────────────────────────
@@ -251,8 +227,6 @@ export default function AdminBannersPage() {
       ctaText: banner.ctaText ?? "",
       ctaLink: banner.ctaLink ?? "",
       isActive: banner.isActive,
-      scheduledFrom: banner.scheduledFrom ?? "",
-      scheduledTo: banner.scheduledTo ?? "",
     });
     setErrors({});
     setImageFile(null);
@@ -271,6 +245,9 @@ export default function AdminBannersPage() {
     const errs: FormErrors = {};
     if (!form.title.trim()) errs.title = "Title is required";
     setErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      toast.error("Please add a title before saving.");
+    }
     return Object.keys(errs).length === 0;
   }
 
@@ -286,8 +263,6 @@ export default function AdminBannersPage() {
         ctaText: form.ctaText.trim() || undefined,
         ctaLink: form.ctaLink.trim() || undefined,
         isActive: form.isActive,
-        scheduledFrom: form.scheduledFrom || undefined,
-        scheduledTo: form.scheduledTo || undefined,
         imageUrl: editingBanner?.imageUrl ?? undefined,
       };
 
@@ -371,7 +346,7 @@ export default function AdminBannersPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <StatCard
             label="Total Banners"
             value={stats.total}
@@ -383,12 +358,6 @@ export default function AdminBannersPage() {
             value={stats.active}
             icon={Megaphone}
             color="bg-emerald-500/10 text-emerald-500"
-          />
-          <StatCard
-            label="Scheduled"
-            value={stats.scheduled}
-            icon={Calendar}
-            color="bg-amber-500/10 text-amber-500"
           />
         </div>
 
@@ -519,26 +488,6 @@ export default function AdminBannersPage() {
                                 → {banner.ctaLink}
                               </span>
                             )}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Schedule */}
-                      {(banner.scheduledFrom ?? banner.scheduledTo) && (
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Clock className="h-3.5 w-3.5 shrink-0" />
-                          <span className="truncate">
-                            {banner.scheduledFrom
-                              ? new Date(
-                                  banner.scheduledFrom,
-                                ).toLocaleDateString()
-                              : "∞"}
-                            {" → "}
-                            {banner.scheduledTo
-                              ? new Date(
-                                  banner.scheduledTo,
-                                ).toLocaleDateString()
-                              : "∞"}
                           </span>
                         </div>
                       )}
@@ -708,34 +657,6 @@ export default function AdminBannersPage() {
                   value={form.ctaLink}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, ctaLink: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
-
-            {/* Schedule */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="banner-from">Schedule From</Label>
-                <Input
-                  id="banner-from"
-                  type="datetime-local"
-                  data-ocid="banner-form-schedule-from"
-                  value={form.scheduledFrom}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, scheduledFrom: e.target.value }))
-                  }
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="banner-to">Schedule To</Label>
-                <Input
-                  id="banner-to"
-                  type="datetime-local"
-                  data-ocid="banner-form-schedule-to"
-                  value={form.scheduledTo}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, scheduledTo: e.target.value }))
                   }
                 />
               </div>

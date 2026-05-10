@@ -1,0 +1,29 @@
+# Node and package managers
+node_modules/
+**/node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+**/dist/
+
+# Vite/React
+.vite/
+**/.vite/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env (keep example envs if needed)
+.env.local
+.env.*.local
+
+# Firebase
+.firebase/
+
+# Misc
+*.swp

@@ -31,6 +31,13 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/sw.js").catch(console.error);
   });
+
+  navigator.serviceWorker.addEventListener("message", (event) => {
+    if (event.data?.type !== "SW_UPDATED") return;
+    if (sessionStorage.getItem("sw-reloaded")) return;
+    sessionStorage.setItem("sw-reloaded", "1");
+    window.location.reload();
+  });
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

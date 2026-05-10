@@ -7,6 +7,7 @@ import { motion } from "motion/react";
 import { memo, useCallback, useState } from "react";
 import { useToastContext } from "../components/Layout";
 import { useCartStore } from "../store/cartStore";
+import { useWishlistStore } from "../store/wishlistStore";
 import type { AdminProduct } from "../types/admin";
 
 // Explicit skeleton key list — avoids no-array-index-key
@@ -38,6 +39,9 @@ const ProductCard = memo(function ProductCard({
   onAddToCart,
   onBuyNow,
 }: ProductCardProps) {
+  const toggleItem = useWishlistStore((s) => s.toggleItem);
+  const isInWishlist = useWishlistStore((s) => s.isInWishlist);
+  const wishlisted = isInWishlist(product.id);
   const productImage =
     product.images?.[0] || product.image || "/dp.jpg";
   const hasMultipleImages = (product.images?.length ?? 0) > 1;
@@ -136,9 +140,21 @@ const ProductCard = memo(function ProductCard({
       <button
         type="button"
         aria-label="Add to wishlist"
+        onClick={() =>
+          toggleItem({
+            productId: product.id,
+            name: product.name,
+            image: productImage,
+            price: product.price,
+          })
+        }
         className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-smooth hover:bg-white hover:text-destructive z-10"
       >
-        <Heart className="w-4 h-4" />
+        <Heart
+          className={`w-4 h-4 ${
+            wishlisted ? "fill-red-500 text-red-500" : "text-muted-foreground"
+          }`}
+        />
       </button>
 
       <div className="p-5 flex flex-col gap-3 flex-1">
@@ -159,13 +175,21 @@ const ProductCard = memo(function ProductCard({
         </Link>
 
         <div className="flex items-center gap-1.5 min-h-[18px]">
-          <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-          <span className="text-sm font-semibold text-foreground">
-            {product.rating?.toFixed(1) ?? "—"}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            ({product.reviews ?? 0})
-          </span>
+          {product.rating > 0 ? (
+            <>
+              <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+              <span className="text-sm font-semibold text-foreground">
+                {product.rating.toFixed(1)}
+              </span>
+              {product.reviews > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  ({product.reviews})
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-xs text-muted-foreground/60">&nbsp;</span>
+          )}
         </div>
 
         <div className="mt-auto pt-1 flex items-center justify-between min-h-[40px]">

@@ -657,7 +657,7 @@ export function HeroSection({
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen flex flex-col overflow-hidden"
+      className="relative min-h-screen flex flex-col overflow-hidden pt-20 lg:pt-24"
     >
       <CinematicBackground />
 
@@ -686,13 +686,6 @@ export function HeroSection({
           style={{
             background:
               "radial-gradient(ellipse 40% 45% at 25% 65%, oklch(0.70 0.13 195 / 0.14) 0%, transparent 60%)",
-          }}
-        />
-        <div
-          className="absolute top-0 left-0 right-0 h-px"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent 0%, rgba(46,109,164,0.5) 30%, rgba(244,123,32,0.4) 70%, transparent 100%)",
           }}
         />
       </div>

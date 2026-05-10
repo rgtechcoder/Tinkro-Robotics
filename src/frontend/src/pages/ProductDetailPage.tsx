@@ -5,11 +5,13 @@ import {
 } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { Heart } from "lucide-react";
 import { AnimatePresence, motion, useScroll, useTransform } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useToastContext } from "../components/Layout";
 import { useCategories, useProductById } from "../lib/publicDataService";
 import { useCartStore } from "../store/cartStore";
+import { useWishlistStore } from "../store/wishlistStore";
 import type { KitContentItem, ProductReview, UseCase } from "../types";
 import type { AdminCategory, AdminProduct } from "../types/admin";
 
@@ -323,6 +325,8 @@ function HeroSection({
   heroImage,
   categories,
 }: { product: AdminProduct; heroImage: string; categories: AdminCategory[] }) {
+  const toggleItem = useWishlistStore((s) => s.toggleItem);
+  const wishlisted = useWishlistStore(s => s.isInWishlist(product.id));
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { scrollYProgress } = useScroll({
@@ -607,27 +611,51 @@ function HeroSection({
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.45 }}
-            className="flex items-baseline gap-3"
+            className="flex items-center gap-3"
           >
-            <span className="text-3xl font-bold gradient-text-orange">
-              ₹{displayPrice.toLocaleString()}
-            </span>
-            {showOriginal && (
-              <span className="text-xl text-white/40 line-through">
-                ₹{product.originalPrice.toLocaleString()}
+            <div className="flex items-baseline gap-3">
+              <span className="text-3xl font-bold gradient-text-orange">
+                ₹{displayPrice.toLocaleString()}
               </span>
-            )}
-            {product.discount > 0 && (
-              <span
-                className="px-2 py-0.5 rounded-full text-sm font-bold"
-                style={{
-                  background: "oklch(0.55 0.17 145 / 0.15)",
-                  color: "#4ade80",
-                }}
-              >
-                {product.discount}% OFF
-              </span>
-            )}
+              {showOriginal && (
+                <span className="text-xl text-white/40 line-through">
+                  ₹{product.originalPrice.toLocaleString()}
+                </span>
+              )}
+              {product.discount > 0 && (
+                <span
+                  className="px-2 py-0.5 rounded-full text-sm font-bold"
+                  style={{
+                    background: "oklch(0.55 0.17 145 / 0.15)",
+                    color: "#4ade80",
+                  }}
+                >
+                  {product.discount}% OFF
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+              onClick={() =>
+                toggleItem({
+                  productId: product.id,
+                  name: product.name,
+                  image: heroImage,
+                  price: product.price,
+                })
+              }
+              className={`w-10 h-10 rounded-full flex items-center justify-center border transition-smooth
+                ${wishlisted ? "bg-white/90 border-red-500 text-red-500" : "border-white/15 text-white/70 hover:text-white hover:bg-white/10"}`}
+              style={wishlisted ? { boxShadow: "0 0 0 2px #ef4444, 0 2px 8px #ef444433" } : {}}
+              data-ocid={`product-wishlist-toggle-${product.id}`}
+            >
+              <Heart
+                className={`w-5 h-5 transition-all duration-200 ${wishlisted ? "fill-red-500 text-red-500" : "text-white/70"}`}
+                fill={wishlisted ? "#ef4444" : "none"}
+                stroke={wishlisted ? "#ef4444" : "currentColor"}
+              />
+            </button>
           </motion.div>
 
           {/* Trust badges */}

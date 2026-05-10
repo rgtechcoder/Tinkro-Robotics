@@ -76,8 +76,8 @@ interface BlogFormValues {
   content: string;
   tags: string;
   status: "draft" | "published";
-  scheduledAt: string;
   featuredImage: string;
+  images: string[];
 }
 
 interface FormErrors {
@@ -107,7 +107,7 @@ function autoExcerpt(content: string): string {
   return plain.slice(0, 160);
 }
 
-function formatDate(value: string | undefined): string {
+function formatDate(value: string | null | undefined): string {
   if (!value) return "—";
   try {
     return new Date(value).toLocaleDateString("en-IN", {
@@ -137,8 +137,8 @@ const DEFAULT_FORM: BlogFormValues = {
   content: "",
   tags: "",
   status: "draft",
-  scheduledAt: "",
   featuredImage: "",
+  images: [],
 };
 
 // ─── Skeleton Row ─────────────────────────────────────────────────────────────
@@ -209,7 +209,6 @@ interface PostRowProps {
 
 function PostRow({ post, onEdit, onDelete, onToggleStatus }: PostRowProps) {
   const isPublished = post.status === "published";
-  const isScheduled = !isPublished && !!post.scheduledAt;
 
   const statusBadge = isPublished ? (
     <Badge
@@ -217,13 +216,6 @@ function PostRow({ post, onEdit, onDelete, onToggleStatus }: PostRowProps) {
       className="border-emerald-500/30 bg-emerald-500/15 text-emerald-600"
     >
       Published
-    </Badge>
-  ) : isScheduled ? (
-    <Badge
-      variant="outline"
-      className="border-blue-500/30 bg-blue-500/15 text-blue-600"
-    >
-      Scheduled
     </Badge>
   ) : (
     <Badge
@@ -345,7 +337,9 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const labelClass = "text-xs font-semibold text-white/60 uppercase tracking-widest";
   const fieldStyle = {
     background: "oklch(0.15 0.03 243 / 0.7)",
@@ -365,8 +359,8 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
         content: editTarget.content,
         tags: editTarget.tags.join(", "),
         status: editTarget.status,
-        scheduledAt: editTarget.scheduledAt ?? "",
         featuredImage: editTarget.featuredImage ?? "",
+        images: Array.isArray(editTarget.images) ? editTarget.images : [],
       });
     } else {
       setForm(DEFAULT_FORM);
@@ -419,6 +413,30 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
     }
   }
 
+  async function handleGalleryUpload(
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    setIsUploadingGallery(true);
+    try {
+      const tempId = editTarget?.id ?? `temp-${Date.now()}`;
+      const uploaded = await Promise.all(
+        files.map((file) => uploadBlogImage(file, tempId)),
+      );
+      setForm((prev) => ({
+        ...prev,
+        images: [...prev.images, ...uploaded],
+      }));
+      toast.success("Images uploaded successfully");
+    } catch {
+      toast.error("Failed to upload images");
+    } finally {
+      setIsUploadingGallery(false);
+      if (galleryInputRef.current) galleryInputRef.current.value = "";
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const fieldErrors = validateForm(form);
@@ -442,8 +460,9 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
         content: form.content.trim(),
         tags: tagsArr,
         status: form.status,
-        scheduledAt: form.scheduledAt || undefined,
+        scheduledAt: null,
         featuredImage: form.featuredImage || undefined,
+        images: form.images,
         publishedAt:
           form.status === "published"
             ? (editTarget?.publishedAt ?? new Date().toISOString())
@@ -676,6 +695,63 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
             />
           </div>
 
+          {/* Gallery Images */}
+          <div className="space-y-2">
+            <Label className={labelClass}>Gallery Images</Label>
+            {form.images.length > 0 && (
+              <div className="flex flex-wrap gap-3">
+                {form.images.map((img) => (
+                  <div
+                    key={img}
+                    className="relative h-16 w-24 overflow-hidden rounded-lg border border-border/40"
+                  >
+                    <img
+                      src={img}
+                      alt="Gallery"
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-1 top-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] text-white"
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          images: prev.images.filter((url) => url !== img),
+                        }))
+                      }
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={isUploadingGallery}
+                onClick={() => galleryInputRef.current?.click()}
+                data-ocid="blog-gallery-upload-btn"
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                {isUploadingGallery ? "Uploading…" : "Upload Images"}
+              </Button>
+              <p className="text-xs text-white/40">
+                You can upload multiple images for the blog gallery.
+              </p>
+            </div>
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleGalleryUpload}
+            />
+          </div>
+
           {/* Status Toggle */}
           <div className="flex items-center gap-3 rounded-lg border border-border/40 bg-muted/30 px-4 py-3">
             <Switch
@@ -696,24 +772,6 @@ function BlogDialog({ open, editTarget, onClose }: BlogDialogProps) {
             </Label>
           </div>
 
-          {/* Scheduled Date */}
-          <div className="space-y-1.5">
-            <Label htmlFor="blog-scheduled" className={labelClass}>
-              Scheduled Publish Date (optional)
-            </Label>
-            <Input
-              id="blog-scheduled"
-              type="datetime-local"
-              value={form.scheduledAt}
-              onChange={(e) => setField("scheduledAt", e.target.value)}
-              className="h-10 text-sm text-white"
-              style={{
-                ...fieldStyle,
-                colorScheme: "dark",
-              }}
-              data-ocid="blog-schedule-input"
-            />
-          </div>
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-2">
@@ -814,7 +872,7 @@ export default function AdminBlogPage() {
         publishedAt:
           newStatus === "published"
             ? (post.publishedAt ?? new Date().toISOString())
-            : undefined,
+            : null,
       });
       toast.success(
         newStatus === "published" ? "Post published" : "Post moved to drafts",

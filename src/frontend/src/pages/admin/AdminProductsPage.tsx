@@ -38,6 +38,9 @@ import {
   subscribeToProducts,
   updateProduct,
 } from "@/lib/adminService";
+
+// Helper components for array fields (ensure always present)
+
 //import { storage } from "@/lib/firebase";
 import type { AdminCategory, AdminProduct } from "@/types/admin";
 import {
@@ -62,12 +65,19 @@ interface ProductFormValues {
   name: string;
   sku: string;
   description: string;
+  overview: string;
   price: number;
   originalPrice: number;
   stock: number;
   discount: number;
+  rating?: number;
+  reviews?: number;
   tagsRaw: string;
   isActive: boolean;
+  kitContents: string[];
+  useCases: string[];
+  reviewsArray: { name: string; rating: number; content: string }[];
+  demoVideoUrl: string;
 }
 
 interface ImageUpload {
@@ -300,6 +310,91 @@ function MultiCategorySelector({
   );
 }
 
+// ─── ArrayField (simple add/remove for string arrays) ──────────────
+function ArrayField({ value, onChange, placeholder }: { value: string[]; onChange: (arr: string[]) => void; placeholder?: string }) {
+  const [input, setInput] = useState("");
+  return (
+    <div>
+      <div className="flex gap-2 mb-2">
+        <Input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder={placeholder}
+          className="flex-1 h-9 text-sm"
+          style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }}
+          onKeyDown={e => {
+            if (e.key === "Enter" && input.trim()) {
+              onChange([...value, input.trim()]);
+              setInput("");
+            }
+          }}
+        />
+        <button type="button" onClick={() => { if (input.trim()) { onChange([...value, input.trim()]); setInput(""); } }} className="px-3 rounded bg-blue-500 text-white text-sm">Add</button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {value.map((item, idx) => (
+          <span key={idx} className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-700 text-xs">
+            {item}
+            <button type="button" onClick={() => onChange(value.filter((_, i) => i !== idx))} className="ml-1 text-red-400">×</button>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── ReviewsArrayField (add/remove for reviews array) ──────────────
+function ReviewsArrayField({ value, onChange }: { value: { name: string; rating: number; content: string }[]; onChange: (arr: { name: string; rating: number; content: string }[]) => void }) {
+  const [review, setReview] = useState({ name: "", rating: 5, content: "" });
+  return (
+    <div>
+      <div className="flex gap-2 mb-2">
+        <Input
+          value={review.name}
+          onChange={e => setReview(r => ({ ...r, name: e.target.value }))}
+          placeholder="Name"
+          className="flex-1 h-9 text-sm"
+          style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }}
+        />
+        <Input
+          type="number"
+          min={0}
+          max={5}
+          step={0.1}
+          value={review.rating}
+          onChange={e => setReview(r => ({ ...r, rating: Number(e.target.value) }))}
+          placeholder="Rating"
+          className="w-20 h-9 text-sm"
+          style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }}
+        />
+        <Input
+          value={review.content}
+          onChange={e => setReview(r => ({ ...r, content: e.target.value }))}
+          placeholder="Review content"
+          className="flex-1 h-9 text-sm"
+          style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }}
+        />
+        <button type="button" onClick={() => {
+          if (review.name.trim() && review.content.trim()) {
+            onChange([...value, { ...review, name: review.name.trim(), content: review.content.trim() }]);
+            setReview({ name: "", rating: 5, content: "" });
+          }
+        }} className="px-3 rounded bg-blue-500 text-white text-sm">Add</button>
+      </div>
+      <div className="flex flex-col gap-2">
+        {value.map((item, idx) => (
+          <div key={idx} className="flex items-center gap-2 px-2 py-1 rounded bg-slate-700 text-xs">
+            <span className="font-semibold">{item.name}</span>
+            <span>({item.rating}★)</span>
+            <span className="flex-1">{item.content}</span>
+            <button type="button" onClick={() => onChange(value.filter((_, i) => i !== idx))} className="ml-1 text-red-400">×</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Product Form Modal ───────────────────────────────────────────────────────
 
 function ProductFormModal({
@@ -330,17 +425,27 @@ function ProductFormModal({
       name: "",
       sku: "",
       description: "",
+      overview: "",
       price: 0,
       originalPrice: 0,
       stock: 0,
       discount: 0,
+      rating: 0,
+      reviews: 0,
       tagsRaw: "",
       isActive: true,
+      kitContents: [],
+      useCases: [],
+      reviewsArray: [],
+      demoVideoUrl: "",
     },
   });
 
   const isActive = watch("isActive");
   const tagsRaw = watch("tagsRaw");
+  const kitContents = watch("kitContents");
+  const useCases = watch("useCases");
+  const reviewsArray = watch("reviewsArray");
 
   useEffect(() => {
     if (open && editProduct) {
@@ -348,12 +453,19 @@ function ProductFormModal({
         name: editProduct.name,
         sku: editProduct.sku,
         description: editProduct.description,
+        overview: editProduct.overview ?? "",
         price: editProduct.price,
         originalPrice: editProduct.originalPrice ?? 0,
         stock: editProduct.stock,
         discount: editProduct.discount ?? 0,
+        rating: editProduct.rating ?? 0,
+        reviews: editProduct.reviews ?? 0,
         tagsRaw: (editProduct.tags ?? []).join(", "),
         isActive: editProduct.isActive,
+        kitContents: editProduct.kitContents ?? [],
+        useCases: editProduct.useCases ?? [],
+        reviewsArray: editProduct.reviewsArray ?? [],
+        demoVideoUrl: editProduct.demoVideoUrl ?? "",
       });
       const existingIds =
         Array.isArray(editProduct.categoryIds) &&
@@ -451,6 +563,7 @@ async function uploadPendingImages(
         name: values.name,
         sku: values.sku,
         description: values.description,
+        overview: values.overview,
         price: Number(values.price),
         originalPrice: Number(values.originalPrice),
         categoryId: primaryCategoryId,
@@ -464,10 +577,167 @@ async function uploadPendingImages(
         image: imageUrls[0] ?? "",
         badge:
           Number(values.discount) > 0 ? `${values.discount}% OFF` : "",
-        rating: editProduct?.rating ?? 0,
-        reviews: editProduct?.reviews ?? 0,
+        rating: values.rating ?? 0,
+        reviews: values.reviews ?? 0,
         inStock: Number(values.stock) > 0,
+        kitContents: values.kitContents,
+        useCases: values.useCases,
+        reviewsArray: values.reviewsArray,
+        demoVideoUrl: values.demoVideoUrl,
       };
+          {/* Overview */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+              Overview
+            </Label>
+            <Textarea
+              {...register("overview")}
+              placeholder="Short overview for this product..."
+              rows={2}
+              className="text-sm resize-none"
+              style={{
+                background: "oklch(0.15 0.03 243 / 0.7)",
+                border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+                color: "white",
+              }}
+            />
+          </div>
+
+          {/* Kit Contents (array) */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+              Kit Contents
+            </Label>
+            <ArrayField
+              value={kitContents}
+              onChange={(arr) => setValue("kitContents", arr)}
+              placeholder="Add kit item..."
+            />
+          </div>
+
+          {/* Use Cases (array) */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+              Use Cases
+            </Label>
+            <ArrayField
+              value={useCases}
+              onChange={(arr) => setValue("useCases", arr)}
+              placeholder="Add use case..."
+            />
+          </div>
+
+          {/* Reviews (array of objects) */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+              Reviews
+            </Label>
+            <ReviewsArrayField
+              value={reviewsArray}
+              onChange={(arr) => setValue("reviewsArray", arr)}
+            />
+          </div>
+
+          {/* Demo Video Link */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+              Demo Video Link (YouTube)
+            </Label>
+            <Input
+              {...register("demoVideoUrl")}
+              placeholder="https://youtube.com/..."
+              className="h-10 text-sm"
+              style={{
+                background: "oklch(0.15 0.03 243 / 0.7)",
+                border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+                color: "white",
+              }}
+            />
+          </div>
+// ─── ArrayField (simple add/remove for string arrays) ──────────────
+function ArrayField({ value, onChange, placeholder }: { value: string[]; onChange: (arr: string[]) => void; placeholder?: string }) {
+  const [input, setInput] = useState("");
+  return (
+    <div>
+      <div className="flex gap-2 mb-2">
+        <Input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder={placeholder}
+          className="flex-1 h-9 text-sm"
+          style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }}
+          onKeyDown={e => {
+            if (e.key === "Enter" && input.trim()) {
+              onChange([...value, input.trim()]);
+              setInput("");
+            }
+          }}
+        />
+        <button type="button" onClick={() => { if (input.trim()) { onChange([...value, input.trim()]); setInput(""); } }} className="px-3 rounded bg-blue-500 text-white text-sm">Add</button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {value.map((item, idx) => (
+          <span key={idx} className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-700 text-xs">
+            {item}
+            <button type="button" onClick={() => onChange(value.filter((_, i) => i !== idx))} className="ml-1 text-red-400">×</button>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── ReviewsArrayField (add/remove for reviews array) ──────────────
+function ReviewsArrayField({ value, onChange }: { value: { name: string; rating: number; content: string }[]; onChange: (arr: { name: string; rating: number; content: string }[]) => void }) {
+  const [review, setReview] = useState({ name: "", rating: 5, content: "" });
+  return (
+    <div>
+      <div className="flex gap-2 mb-2">
+        <Input
+          value={review.name}
+          onChange={e => setReview(r => ({ ...r, name: e.target.value }))}
+          placeholder="Name"
+          className="flex-1 h-9 text-sm"
+          style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }}
+        />
+        <Input
+          type="number"
+          min={0}
+          max={5}
+          step={0.1}
+          value={review.rating}
+          onChange={e => setReview(r => ({ ...r, rating: Number(e.target.value) }))}
+          placeholder="Rating"
+          className="w-20 h-9 text-sm"
+          style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }}
+        />
+        <Input
+          value={review.content}
+          onChange={e => setReview(r => ({ ...r, content: e.target.value }))}
+          placeholder="Review content"
+          className="flex-1 h-9 text-sm"
+          style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }}
+        />
+        <button type="button" onClick={() => {
+          if (review.name.trim() && review.content.trim()) {
+            onChange([...value, { ...review, name: review.name.trim(), content: review.content.trim() }]);
+            setReview({ name: "", rating: 5, content: "" });
+          }
+        }} className="px-3 rounded bg-blue-500 text-white text-sm">Add</button>
+      </div>
+      <div className="flex flex-col gap-2">
+        {value.map((item, idx) => (
+          <div key={idx} className="flex items-center gap-2 px-2 py-1 rounded bg-slate-700 text-xs">
+            <span className="font-semibold">{item.name}</span>
+            <span>({item.rating}★)</span>
+            <span className="flex-1">{item.content}</span>
+            <button type="button" onClick={() => onChange(value.filter((_, i) => i !== idx))} className="ml-1 text-red-400">×</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
       if (isEdit && editProduct) {
         await updateProduct(editProduct.id, payload);
@@ -582,6 +852,76 @@ async function uploadPendingImages(
             )}
           </div>
 
+          {/* Overview */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+              Overview
+            </Label>
+            <Textarea
+              {...register("overview")}
+              placeholder="Short overview for this product..."
+              rows={2}
+              className="text-sm resize-none"
+              style={{
+                background: "oklch(0.15 0.03 243 / 0.7)",
+                border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+                color: "white",
+              }}
+            />
+          </div>
+
+          {/* Kit Contents (array) */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+              Kit Contents
+            </Label>
+            <ArrayField
+              value={kitContents}
+              onChange={(arr) => setValue("kitContents", arr)}
+              placeholder="Add kit item..."
+            />
+          </div>
+
+          {/* Use Cases (array) */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+              Use Cases
+            </Label>
+            <ArrayField
+              value={useCases}
+              onChange={(arr) => setValue("useCases", arr)}
+              placeholder="Add use case..."
+            />
+          </div>
+
+          {/* Reviews (array of objects) */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+              Reviews
+            </Label>
+            <ReviewsArrayField
+              value={reviewsArray}
+              onChange={(arr) => setValue("reviewsArray", arr)}
+            />
+          </div>
+
+          {/* Demo Video Link */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+              Demo Video Link (YouTube)
+            </Label>
+            <Input
+              {...register("demoVideoUrl")}
+              placeholder="https://youtube.com/..."
+              className="h-10 text-sm"
+              style={{
+                background: "oklch(0.15 0.03 243 / 0.7)",
+                border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+                color: "white",
+              }}
+            />
+          </div>
+
           {/* Price + Original Price */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -670,7 +1010,7 @@ async function uploadPendingImages(
             )}
           </div>
 
-          {/* Stock + Discount + Tags */}
+          {/* Stock + Discount + Rating */}
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
@@ -706,6 +1046,56 @@ async function uploadPendingImages(
                 {...register("discount", { min: 0, max: 100 })}
                 placeholder="0"
                 data-ocid="product-form-discount"
+                className="h-10 text-sm"
+                style={{
+                  background: "oklch(0.15 0.03 243 / 0.7)",
+                  border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+                  color: "white",
+                }}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+                Rating (0–5)
+              </Label>
+              <Input
+                type="number"
+                min={0}
+                max={5}
+                step={0.1}
+                {...register("rating", {
+                  min: 0,
+                  max: 5,
+                  setValueAs: (v) => (v === "" ? 0 : Number(v)),
+                })}
+                placeholder="4.5"
+                data-ocid="product-form-rating"
+                className="h-10 text-sm"
+                style={{
+                  background: "oklch(0.15 0.03 243 / 0.7)",
+                  border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+                  color: "white",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Reviews + Tags */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+                Reviews Count
+              </Label>
+              <Input
+                type="number"
+                min={0}
+                step={1}
+                {...register("reviews", {
+                  min: 0,
+                  setValueAs: (v) => (v === "" ? 0 : Number(v)),
+                })}
+                placeholder="120"
+                data-ocid="product-form-reviews"
                 className="h-10 text-sm"
                 style={{
                   background: "oklch(0.15 0.03 243 / 0.7)",

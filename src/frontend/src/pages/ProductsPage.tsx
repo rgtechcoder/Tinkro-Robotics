@@ -103,6 +103,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import {
   ChevronDown,
+  Heart,
   ShoppingCart,
   SlidersHorizontal,
   Star,
@@ -113,6 +114,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useToastContext } from "../components/Layout";
 import { useCategories, useProducts } from "../lib/publicDataService";
 import { useCartStore } from "../store/cartStore";
+import { useWishlistStore } from "../store/wishlistStore";
 import type { AdminProduct } from "../types/admin";
 
 // ─── Static filter data ───────────────────────────────────────────────────────
@@ -177,6 +179,9 @@ export function ProductCard({
   onAddToCart,
   onBuyNow,
 }: ProductCardProps) {
+  const toggleItem = useWishlistStore((s) => s.toggleItem);
+  const isInWishlist = useWishlistStore((s) => s.isInWishlist);
+  const wishlisted = isInWishlist(product.id);
   const isPriority = index < 4;
   const heroImages = product.images && product.images.length > 0 ? product.images : [product.image ?? "/placeholder.jpg"];
   const discountPct =
@@ -211,10 +216,30 @@ export function ProductCard({
         </span>
       )}
       {discountPct > 0 && (
-        <span className="absolute top-3 right-3 z-10 text-[10px] font-semibold px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+        <span className="absolute top-3 right-12 z-10 text-[10px] font-semibold px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
           -{discountPct}%
         </span>
       )}
+      <button
+        type="button"
+        aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+        onClick={() =>
+          toggleItem({
+            productId: product.id,
+            name: product.name,
+            image: heroImages[0],
+            price: product.price,
+          })
+        }
+        className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-smooth hover:bg-white"
+        data-ocid={`wishlist-toggle-${product.id}`}
+      >
+        <Heart
+          className={`w-4 h-4 ${
+            wishlisted ? "fill-red-500 text-red-500" : "text-muted-foreground"
+          }`}
+        />
+      </button>
 
       {/* Product images carousel */}
       <Link to="/product/$id" params={{ id: product.id }} className="block">

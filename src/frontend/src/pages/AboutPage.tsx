@@ -173,6 +173,8 @@ const partners = [
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function AboutPage() {
+  const showTeamSection = false;
+
   return (
     <main className="min-h-screen bg-background">
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
@@ -517,72 +519,74 @@ export function AboutPage() {
       </section>
 
       {/* ── Team ───────────────────────────────────────────────────────────── */}
-      <section className="py-24 bg-background relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-primary/4 blur-3xl rounded-full pointer-events-none" />
-        <div className="container max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16 space-y-4"
-          >
-            <p className="text-accent font-semibold text-sm tracking-widest uppercase">
-              The People
-            </p>
-            <h2 className="font-display font-bold text-4xl lg:text-5xl text-foreground">
-              Meet the <span className="gradient-text">Team</span>
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              Builders, educators, and engineers united by a passion for making
-              robotics education accessible to every Indian student.
-            </p>
-          </motion.div>
+      {showTeamSection ? (
+        <section className="py-24 bg-background relative overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-primary/4 blur-3xl rounded-full pointer-events-none" />
+          <div className="container max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-16 space-y-4"
+            >
+              <p className="text-accent font-semibold text-sm tracking-widest uppercase">
+                The People
+              </p>
+              <h2 className="font-display font-bold text-4xl lg:text-5xl text-foreground">
+                Meet the <span className="gradient-text">Team</span>
+              </h2>
+              <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+                Builders, educators, and engineers united by a passion for making
+                robotics education accessible to every Indian student.
+              </p>
+            </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {teamMembers.map((member, i) => (
-              <motion.div
-                key={member.name}
-                initial={{ opacity: 0, y: 28 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{
-                  duration: 0.5,
-                  delay: i * 0.1,
-                  ease: [0.25, 0.1, 0.25, 1],
-                }}
-                whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                className="bg-card border border-border rounded-2xl p-6 text-center space-y-4 hover:border-primary/30 hover:shadow-elevated transition-smooth"
-                data-ocid={`team-member-${i}`}
-              >
-                {/* Avatar */}
-                <div className="mx-auto">
-                  <div
-                    className={`w-20 h-20 rounded-full bg-gradient-to-br ${member.gradient} flex items-center justify-center mx-auto shadow-elevated`}
-                  >
-                    <span className="font-display font-bold text-xl text-white">
-                      {member.initials}
-                    </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {teamMembers.map((member, i) => (
+                <motion.div
+                  key={member.name}
+                  initial={{ opacity: 0, y: 28 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{
+                    duration: 0.5,
+                    delay: i * 0.1,
+                    ease: [0.25, 0.1, 0.25, 1],
+                  }}
+                  whileHover={{ y: -6, transition: { duration: 0.2 } }}
+                  className="bg-card border border-border rounded-2xl p-6 text-center space-y-4 hover:border-primary/30 hover:shadow-elevated transition-smooth"
+                  data-ocid={`team-member-${i}`}
+                >
+                  {/* Avatar */}
+                  <div className="mx-auto">
+                    <div
+                      className={`w-20 h-20 rounded-full bg-gradient-to-br ${member.gradient} flex items-center justify-center mx-auto shadow-elevated`}
+                    >
+                      <span className="font-display font-bold text-xl text-white">
+                        {member.initials}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-1.5">
-                  <h3 className="font-display font-bold text-foreground">
-                    {member.name}
-                  </h3>
-                  <p className="text-sm font-medium text-primary">
-                    {member.role}
+                  <div className="space-y-1.5">
+                    <h3 className="font-display font-bold text-foreground">
+                      {member.name}
+                    </h3>
+                    <p className="text-sm font-medium text-primary">
+                      {member.role}
+                    </p>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {member.bio}
                   </p>
-                </div>
-
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {member.bio}
-                </p>
-              </motion.div>
-            ))}
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       {/* ── Partners ───────────────────────────────────────────────────────── */}
       <section className="py-20 bg-muted/30 relative overflow-hidden">

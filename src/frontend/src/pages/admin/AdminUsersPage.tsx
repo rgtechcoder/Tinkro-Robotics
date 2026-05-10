@@ -83,7 +83,8 @@ function getInitials(user: AdminUserRecord): string {
       ? `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
       : parts[0].slice(0, 2).toUpperCase();
   }
-  return user.email.slice(0, 2).toUpperCase();
+  if (user.email) return user.email.slice(0, 2).toUpperCase();
+  return "NA";
 }
 
 function formatOrderDate(val: AdminOrder["createdAt"]): string {
@@ -333,7 +334,7 @@ function UserDetailDialog({ user, open, onClose }: UserDetailDialogProps) {
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-mono text-foreground truncate">
-                        #{order.id.slice(0, 10)}…
+                        #{order.id ? `${order.id.slice(0, 10)}…` : "—"}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {formatOrderDate(order.createdAt)}
@@ -445,7 +446,7 @@ export default function AdminUsersPage() {
     return users.filter((u) => {
       const matchesSearch =
         !search ||
-        u.email.toLowerCase().includes(search.toLowerCase()) ||
+        (u.email ?? "").toLowerCase().includes(search.toLowerCase()) ||
         (u.displayName ?? "").toLowerCase().includes(search.toLowerCase());
       const matchesStatus =
         statusFilter === "all" ||
@@ -575,14 +576,14 @@ export default function AdminUsersPage() {
           {[
             {
               label: "Total Users",
-              value: stats.total,
+              value: stats.total ?? 0,
               icon: <Users size={20} />,
               gradient: "oklch(0.45 0.12 243 / 0.1)",
               border: "oklch(0.45 0.12 243 / 0.2)",
             },
             {
               label: "Active Users",
-              value: stats.active,
+              value: stats.active ?? 0,
               icon: <User size={20} />,
               gradient: "oklch(0.55 0.15 145 / 0.1)",
               border: "oklch(0.55 0.15 145 / 0.2)",
@@ -604,12 +605,10 @@ export default function AdminUsersPage() {
               style={{ background: card.gradient, borderColor: card.border }}
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-muted-foreground">{card.icon}</span>
+                <span className="text-white/70">{card.icon}</span>
               </div>
-              <p className="text-2xl font-bold text-foreground">{card.value}</p>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {card.label}
-              </p>
+              <p className="text-2xl font-bold text-white">{card.value}</p>
+              <p className="text-sm text-white/60 mt-0.5">{card.label}</p>
             </motion.div>
           ))}
         </div>

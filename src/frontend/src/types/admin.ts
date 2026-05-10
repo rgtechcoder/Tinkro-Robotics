@@ -39,6 +39,16 @@ export interface AdminProduct {
   tags: string[];
   isActive: boolean;
   createdAt: Timestamp | string;
+
+  // New fields for admin-managed content
+  kitContents?: string[];
+  useCases?: string[];
+  reviewsArray?: {
+    name: string;
+    rating: number;
+    content: string;
+  }[];
+  demoVideoUrl?: string;
 }
 
 export interface AdminCategory {
@@ -61,6 +71,9 @@ export interface AdminOrder {
   total: number;
   subtotal: number;
   discount: number;
+  shippingCharge?: number;
+  shippingRuleId?: string | null;
+  shippingRuleName?: string | null;
   coupon: string | null;
   status: OrderStatus | "processing";
   createdAt: Timestamp | string;
@@ -161,9 +174,10 @@ export interface AdminBlogPost {
   content: string;
   excerpt: string;
   featuredImage?: string;
+  images?: string[];
   author: string;
   status: "draft" | "published";
-  publishedAt?: string;
+  publishedAt?: string | null;
   scheduledAt?: string;
   tags: string[];
   views: number;

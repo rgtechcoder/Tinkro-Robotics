@@ -21,13 +21,17 @@ export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
         <div className="flex flex-col items-center gap-4">
           {/* Pulsing logo */}
           <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold text-white animate-pulse"
+            className="w-14 h-14 rounded-2xl flex items-center justify-center animate-pulse bg-white overflow-hidden"
             style={{
-              background:
-                "linear-gradient(135deg, oklch(0.45 0.12 243), oklch(0.7 0.13 195))",
+              boxShadow:
+                "0 0 16px oklch(0.45 0.12 243 / 0.35), 0 0 0 1px oklch(0.20 0.03 243 / 0.6)",
             }}
           >
-            T
+            <img
+              src="/tinkro%20favicon.png"
+              alt="Tinkro"
+              className="h-full w-full object-contain p-1.5"
+            />
           </div>
           <div className="flex gap-1.5">
             {[0, 1, 2].map((i) => (

@@ -1,5 +1,5 @@
-const CACHE_NAME = "tinkro-v1";
-const STATIC_CACHE = "tinkro-static-v1";
+const CACHE_NAME = "tinkro-v2";
+const STATIC_CACHE = "tinkro-static-v2";
 
 const PRE_CACHE_URLS = [
   "/",
@@ -47,7 +47,7 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// Activate: delete old caches
+// Activate: delete old caches and notify clients
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
@@ -61,7 +61,15 @@ self.addEventListener("activate", (event) => {
             .map((name) => caches.delete(name)),
         ),
       )
-      .then(() => self.clients.claim()),
+      .then(() => self.clients.claim())
+      .then(() =>
+        self.clients.matchAll({ type: "window", includeUncontrolled: true })
+          .then((clients) =>
+            clients.forEach((client) =>
+              client.postMessage({ type: "SW_UPDATED" }),
+            ),
+          ),
+      ),
   );
 });
 
@@ -100,7 +108,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cache-first with network fallback for navigation (offline support)
+  // Network-first with cache fallback for navigation (offline support)
   if (isNavigationRequest(event.request)) {
     event.respondWith(
       fetch(event.request)

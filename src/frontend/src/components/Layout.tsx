@@ -3,6 +3,8 @@ import { createContext, useContext, useEffect } from "react";
 import { useRouter, useRouterState } from "@tanstack/react-router";
 import { Footer } from "./Footer";
 import { Navbar } from "./Navbar";
+import { BannerTicker } from "./BannerTicker";
+import { PopupBanners } from "./PopupBanners";
 import { PWAInstallBanner } from "./PWAInstallBanner";
 import { ToastContainer, useToast } from "./Toast";
 
@@ -25,6 +27,9 @@ export function Layout({ children }: LayoutProps) {
   // Use router state to get current location
   const location = useRouterState({ select: (s) => s.location });
   const isDashboardRoute = location.pathname.startsWith("/dashboard");
+  const isAdminRoute = location.pathname.startsWith("/admin");
+  const showPublicChrome = !isDashboardRoute && !isAdminRoute;
+  const isHomeRoute = location.pathname === "/";
 
   // Scroll to top on every route change (by location)
   useEffect(() => {
@@ -34,12 +39,22 @@ export function Layout({ children }: LayoutProps) {
   return (
     <ToastContext.Provider value={{ addToast }}>
       <div className="min-h-screen flex flex-col bg-background">
-        {!isDashboardRoute && <Navbar />}
-        <main className={`flex-1 ${isDashboardRoute ? "" : "pt-20 lg:pt-24"}`}>
+        {showPublicChrome && <BannerTicker />}
+        {showPublicChrome && <Navbar />}
+        <main
+          className={`flex-1 bg-background ${
+            isDashboardRoute || isAdminRoute
+              ? ""
+              : isHomeRoute
+                ? ""
+                : "pt-20 lg:pt-24"
+          }`}
+        >
           {children}
         </main>
-        {!isDashboardRoute && <Footer />}
+        {!isDashboardRoute && !isAdminRoute && <Footer />}
         <ToastContainer toasts={toasts} onDismiss={dismiss} />
+        {showPublicChrome && <PopupBanners />}
         <PWAInstallBanner />
       </div>
     </ToastContext.Provider>

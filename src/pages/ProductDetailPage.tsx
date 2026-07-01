@@ -15,138 +15,8 @@ import { absoluteUrl, normalizeSeoText, truncateSeoText } from "../lib/seo";
 import { getProductRouteParam } from "../lib/slug";
 import { useCartStore } from "../store/cartStore";
 import { useWishlistStore } from "../store/wishlistStore";
-import type { KitContentItem, ProductReview, UseCase } from "../types";
+import type { ProductReview } from "../types";
 import type { AdminCategory, AdminProduct } from "../types/admin";
-
-// ─── Fallback static content ──────────────────────────────────────────────────
-
-const FALLBACK_KIT_CONTENTS: KitContentItem[] = [
-  {
-    iconName: "cpu",
-    label: "Arduino Uno R3",
-    description: "ATmega328P microcontroller",
-    quantity: 1,
-  },
-  {
-    iconName: "truck",
-    label: "Smart Car Chassis",
-    description: "Transparent acrylic, 4-wheel",
-    quantity: 1,
-  },
-  {
-    iconName: "zap",
-    label: "DC Gear Motors",
-    description: "TT motor, 1:48 reduction",
-    quantity: 4,
-  },
-  {
-    iconName: "radio",
-    label: "Ultrasonic Sensor",
-    description: "HC-SR04, 2–400 cm range",
-    quantity: 1,
-  },
-  {
-    iconName: "bluetooth",
-    label: "Bluetooth Module",
-    description: "HC-05, Class 2, 10m range",
-    quantity: 1,
-  },
-  {
-    iconName: "activity",
-    label: "IR Line Sensor",
-    description: "TCRT5000, 5-channel array",
-    quantity: 1,
-  },
-  {
-    iconName: "layers",
-    label: "L298N Motor Driver",
-    description: "Dual H-Bridge, 2A/channel",
-    quantity: 1,
-  },
-  {
-    iconName: "book-open",
-    label: "Project Guidebook",
-    description: "8 illustrated projects",
-    quantity: 1,
-  },
-];
-
-const FALLBACK_USE_CASES: UseCase[] = [
-  {
-    id: "students",
-    audience: "students",
-    icon: "🎓",
-    title: "For Students",
-    description:
-      "Learn real robotics from scratch — no background needed. Build progressively complex projects and gain skills that are valued globally.",
-    benefit: "STEM curriculum aligned",
-  },
-  {
-    id: "schools",
-    audience: "schools",
-    icon: "🏫",
-    title: "For Schools",
-    description:
-      "Bring robotics into every classroom. Our kit supports ATL, STEM Lab, and PM SHRI initiatives with ready-to-teach project packs.",
-    benefit: "Bulk pricing available",
-  },
-  {
-    id: "beginners",
-    audience: "beginners",
-    icon: "🚀",
-    title: "For Beginners",
-    description:
-      "Never touched a microcontroller? That's perfect. The guided path takes you from zero to autonomous robot in under 4 weeks.",
-    benefit: "No prior experience needed",
-  },
-];
-
-const FALLBACK_REVIEWS: ProductReview[] = [
-  {
-    id: "r1",
-    name: "Arjun Mehta",
-    role: "Student",
-    date: "Jan 2025",
-    rating: 5,
-    title: "Built my first robot in 3 hours!",
-    content:
-      "I had zero experience. The step-by-step guide made everything so clear. The Bluetooth car project was my favourite — my whole family was impressed!",
-    verified: true,
-  },
-  {
-    id: "r2",
-    name: "Ms. Priya Sharma",
-    role: "STEM Teacher",
-    date: "Feb 2025",
-    rating: 5,
-    title: "Perfect for classroom use",
-    content:
-      "We ordered 20 kits for our school lab. The quality is top-notch and the teacher guide saved so much prep time. Students love the projects.",
-    verified: true,
-  },
-  {
-    id: "r3",
-    name: "Rohan Iyer",
-    role: "Parent",
-    date: "Mar 2025",
-    rating: 5,
-    title: "Best birthday gift ever",
-    content:
-      "Bought this for my son's 13th birthday. He's spent every evening building robots. The quality is amazing and customer support was very helpful.",
-    verified: true,
-  },
-  {
-    id: "r4",
-    name: "Sneha Patel",
-    role: "College Student",
-    date: "Mar 2025",
-    rating: 4,
-    title: "Great value for money",
-    content:
-      "I wanted something more advanced but this kit taught me a lot of fundamentals. The ultrasonic sensor and line-follower projects are very well designed.",
-    verified: false,
-  },
-];
 
 function getProductDisplayName(product: AdminProduct) {
   return normalizeSeoText(product.name) || "Tinkro STEM Robotics Product";
@@ -175,6 +45,29 @@ function getProductFaqs(product: AdminProduct) {
       answer: normalizeSeoText(faq.answer),
     }))
     .filter((faq) => faq.question && faq.answer);
+}
+
+function getYouTubeEmbedUrl(videoUrl?: string) {
+  if (!videoUrl) return null;
+  const trimmed = videoUrl.trim();
+  try {
+    const normalized = trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
+    const url = new URL(normalized);
+    const hostname = url.hostname.replace("www.", "");
+    if (hostname.includes("youtube.com")) {
+      const videoId = url.searchParams.get("v");
+      if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+      const pathParts = url.pathname.split("/").filter(Boolean);
+      if (pathParts.length > 0) return `https://www.youtube.com/embed/${pathParts[pathParts.length - 1]}`;
+    }
+    if (hostname.includes("youtu.be")) {
+      const pathParts = url.pathname.split("/").filter(Boolean);
+      if (pathParts.length > 0) return `https://www.youtube.com/embed/${pathParts[0]}`;
+    }
+    return trimmed;
+  } catch {
+    return null;
+  }
 }
 
 // ─── Icon map for kit contents ───────────────────────────────────────────────
@@ -865,15 +758,20 @@ function HeroSection({
 }
 
 // ─── Anchor Nav ───────────────────────────────────────────────────────────────
-function AnchorNav({ visible }: { visible: boolean }) {
-  const links = [
-    { id: "overview", label: "Overview" },
-    { id: "video-section", label: "Demo Video" },
-    { id: "kit-contents", label: "Kit Contents" },
-    { id: "use-cases", label: "Use Cases" },
-    { id: "reviews", label: "Reviews" },
-  ];
-  const [active, setActive] = useState("overview");
+function AnchorNav({
+  visible,
+  anchors,
+}: {
+  visible: boolean;
+  anchors: Array<{ id: string; label: string }>;
+}) {
+  const [active, setActive] = useState(anchors[0]?.id ?? "overview");
+
+  useEffect(() => {
+    if (!anchors.some((anchor) => anchor.id === active)) {
+      setActive(anchors[0]?.id ?? "overview");
+    }
+  }, [anchors, active]);
 
   function scrollTo(id: string) {
     document
@@ -901,18 +799,18 @@ function AnchorNav({ visible }: { visible: boolean }) {
               border: "1px solid oklch(0.98 0 0 / 0.1)",
             }}
           >
-            {links.map((l) => (
+            {anchors.map((anchor) => (
               <button
                 type="button"
-                key={l.id}
-                onClick={() => scrollTo(l.id)}
-                data-ocid={`anchor-nav-${l.id}`}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${active === l.id ? "text-white" : "text-white/50 hover:text-white/80"}`}
+                key={anchor.id}
+                onClick={() => scrollTo(anchor.id)}
+                data-ocid={`anchor-nav-${anchor.id}`}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${active === anchor.id ? "text-white" : "text-white/50 hover:text-white/80"}`}
                 style={
-                  active === l.id ? { background: "oklch(0.45 0.12 243)" } : {}
+                  active === anchor.id ? { background: "oklch(0.45 0.12 243)" } : {}
                 }
               >
-                {l.label}
+                {anchor.label}
               </button>
             ))}
           </div>
@@ -923,272 +821,28 @@ function AnchorNav({ visible }: { visible: boolean }) {
 }
 
 // ─── Storytelling Sections ────────────────────────────────────────────────────
-function StorySection({ description }: { description: string }) {
+function StorySection({ overview }: { overview: string }) {
   return (
-    <section id="overview" className="overflow-hidden">
-      {/* Problem */}
+    <section id="overview" className="py-24 lg:py-32 overflow-hidden">
       <div
-        className="py-24 lg:py-32"
+        className="max-w-6xl mx-auto px-6 lg:px-12"
         style={{
-          background:
-            "linear-gradient(180deg, oklch(0.1 0.04 250) 0%, oklch(0.12 0.03 248) 100%)",
+          background: "linear-gradient(180deg, oklch(0.1 0.04 250) 0%, oklch(0.12 0.03 248) 100%)",
         }}
       >
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-16 items-center">
-          <Reveal direction="left">
-            <div className="space-y-6">
-              <span
-                className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest"
-                style={{
-                  background: "oklch(0.65 0.19 22 / 0.15)",
-                  color: "oklch(0.75 0.18 30)",
-                  border: "1px solid oklch(0.65 0.19 22 / 0.3)",
-                }}
-              >
-                The Problem
+        <div className="rounded-[2.5rem] border border-border bg-background/90 p-8 lg:p-14 shadow-glow-primary">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-10">
+              <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                Product Overview
               </span>
-              <h2 className="font-display font-bold text-3xl lg:text-4xl text-white leading-tight">
-                Getting started shouldn't feel like <br />
-                <span style={{ color: "oklch(0.75 0.18 30)" }}>
-                  solving a puzzle blindfolded.
-                </span>
+              <h2 className="font-display font-bold text-4xl lg:text-5xl mt-4 text-foreground">
+                What makes this product unique
               </h2>
-              <p className="text-white/65 text-lg leading-relaxed font-body">
-                Most beginners buy random components and get stuck. No guidance,
-                no context — just confusion.
-              </p>
-              <ul className="space-y-3">
-                {[
-                  "No clear starting point",
-                  "Too many components with no context",
-                  "Tutorials that assume prior knowledge",
-                ].map((p) => (
-                  <li key={p} className="flex items-center gap-3 text-white/60">
-                    <span className="text-red-400 text-lg">✕</span>
-                    <span className="font-body">{p}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
-          </Reveal>
-          <Reveal delay={0.15} direction="right">
-            <div className="relative">
-              <div
-                className="absolute -inset-4 rounded-2xl opacity-30 blur-2xl"
-                style={{
-                  background:
-                    "radial-gradient(circle, oklch(0.65 0.19 22) 0%, transparent 70%)",
-                }}
-              />
-              <div
-                className="relative rounded-2xl overflow-hidden aspect-[4/3]"
-                style={{ border: "1px solid oklch(0.65 0.19 22 / 0.2)" }}
-              >
-                <img
-                  src="/assets/generated/story-problem-overwhelmed.dim_800x600.jpg"
-                  alt="Student overwhelmed by scattered components"
-                  loading="lazy"
-                  decoding="async"
-                  width={800}
-                  height={600}
-                  className="w-full h-full object-cover"
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      "linear-gradient(to top, oklch(0.1 0.04 250) 0%, transparent 40%)",
-                  }}
-                />
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </div>
-
-      {/* Solution */}
-      <div
-        className="py-24 lg:py-32"
-        style={{ background: "oklch(0.96 0.01 250)" }}
-      >
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-16 items-center">
-          <Reveal direction="left">
-            <div className="relative">
-              <div
-                className="absolute -inset-4 rounded-2xl opacity-20 blur-2xl"
-                style={{
-                  background:
-                    "radial-gradient(circle, #2E6DA4 0%, transparent 70%)",
-                }}
-              />
-              <div
-                className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-glow-primary"
-                style={{ border: "1px solid oklch(0.45 0.12 243 / 0.25)" }}
-              >
-                <img
-                  src="/assets/generated/story-solution-kit.dim_800x600.jpg"
-                  alt="Tinkro kit unboxing — everything organized and labeled"
-                  loading="lazy"
-                  decoding="async"
-                  width={800}
-                  height={600}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-          </Reveal>
-          <Reveal delay={0.15} direction="right">
-            <div className="space-y-6">
-              <span
-                className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest"
-                style={{
-                  background: "oklch(0.7 0.13 195 / 0.12)",
-                  color: "#3BBFBF",
-                  border: "1px solid oklch(0.7 0.13 195 / 0.3)",
-                }}
-              >
-                The Solution
-              </span>
-              <h2 className="font-display font-bold text-3xl lg:text-4xl text-foreground leading-tight">
-                32 components. 8 guided projects. <br />
-                <span className="gradient-text">One clear path forward.</span>
-              </h2>
-              <p className="text-muted-foreground text-lg leading-relaxed font-body">
-                {description ||
-                  "Everything you need to go from unboxing to a fully autonomous robot — no experience required."}
-              </p>
-              <ul className="space-y-3">
-                {[
-                  "Pre-matched components that work together",
-                  "Step-by-step illustrated guidebook",
-                  "8 video projects from LED to autonomous robot",
-                  "Community support + teacher resources",
-                ].map((s) => (
-                  <li
-                    key={s}
-                    className="flex items-center gap-3 text-foreground/80"
-                  >
-                    <span className="text-lg" style={{ color: "#3BBFBF" }}>
-                      ✓
-                    </span>
-                    <span className="font-body">{s}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </Reveal>
-        </div>
-      </div>
-
-      {/* Outcome */}
-      <div
-        className="py-24 lg:py-32"
-        style={{
-          background:
-            "linear-gradient(180deg, oklch(0.1 0.04 250) 0%, oklch(0.13 0.04 248) 100%)",
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-16 items-center">
-          <Reveal direction="left">
-            <div className="space-y-6">
-              <span
-                className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest"
-                style={{
-                  background: "oklch(0.71 0.17 48 / 0.15)",
-                  color: "#F47B20",
-                  border: "1px solid oklch(0.71 0.17 48 / 0.3)",
-                }}
-              >
-                The Outcome
-              </span>
-              <h2 className="font-display font-bold text-3xl lg:text-4xl text-white leading-tight">
-                From zero to autonomous robot
-                <br />
-                <span className="gradient-text-orange">in one weekend.</span>
-              </h2>
-              <p className="text-white/65 text-lg leading-relaxed font-body">
-                Students across India are completing their first robotics
-                projects in days, not months. The confidence boost is real.
-              </p>
-            </div>
-          </Reveal>
-          <Reveal delay={0.1} direction="right">
-            <div className="space-y-4">
-              <p className="text-white/50 text-sm font-semibold uppercase tracking-wider mb-5">
-                What you'll build
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  {
-                    name: "Line-Following Robot",
-                    icon: "〰️",
-                    desc: "Week 1 project",
-                  },
-                  {
-                    name: "Obstacle Avoider",
-                    icon: "📡",
-                    desc: "Week 2 project",
-                  },
-                  { name: "Bluetooth Car", icon: "📶", desc: "Week 3 project" },
-                  {
-                    name: "Light Sensor Bot",
-                    icon: "💡",
-                    desc: "Week 4 project",
-                  },
-                ].map((p, i) => (
-                  <Reveal key={p.name} delay={i * 0.08} direction="up">
-                    <div
-                      className="glass-card hover-lift rounded-xl p-4 cursor-default"
-                      style={{
-                        background: "oklch(0.98 0 0 / 0.05)",
-                        border: "1px solid oklch(0.98 0 0 / 0.1)",
-                      }}
-                    >
-                      <div className="text-3xl mb-3">{p.icon}</div>
-                      <p className="font-display font-semibold text-white text-sm">
-                        {p.name}
-                      </p>
-                      <p className="text-white/40 text-xs mt-1">{p.desc}</p>
-                    </div>
-                  </Reveal>
-                ))}
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </div>
-
-      {/* Outcome image full-width */}
-      <div className="relative overflow-hidden" style={{ height: 480 }}>
-        <img
-          src="/assets/generated/story-outcome-success.dim_800x600.jpg"
-          alt="Student holding their completed Tinkro robot"
-          loading="lazy"
-          decoding="async"
-          width={800}
-          height={600}
-          className="w-full h-full object-cover object-center"
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(to right, oklch(0.1 0.04 250 / 0.8) 0%, transparent 50%, oklch(0.1 0.04 250 / 0.6) 100%)",
-          }}
-        />
-        <div className="absolute inset-0 flex items-center">
-          <div className="max-w-7xl mx-auto px-6 lg:px-12 w-full">
-            <Reveal direction="left">
-              <blockquote className="max-w-lg">
-                <p className="font-display text-2xl lg:text-3xl font-bold text-white leading-snug mb-4">
-                  "I had zero experience. Three hours later, my robot was
-                  navigating the floor on its own."
-                </p>
-                <footer className="text-white/60 font-body">
-                  — Arjun Mehta, Student · Grade 10
-                </footer>
-              </blockquote>
-            </Reveal>
+            <p className="text-muted-foreground text-lg leading-relaxed font-body">
+              {overview}
+            </p>
           </div>
         </div>
       </div>
@@ -1197,8 +851,11 @@ function StorySection({ description }: { description: string }) {
 }
 
 // ─── Video Section ────────────────────────────────────────────────────────────
-function VideoSection() {
+function VideoSection({ videoUrl }: { videoUrl: string }) {
   const [isOpen, setIsOpen] = useState(false);
+  const embedUrl = useMemo(() => getYouTubeEmbedUrl(videoUrl), [videoUrl]);
+
+  if (!embedUrl) return null;
 
   function openModal() {
     setIsOpen(true);
@@ -1473,8 +1130,8 @@ function VideoSection() {
               >
                 <iframe
                   className="absolute inset-0 w-full h-full"
-                  src="https://www.youtube.com/embed/pijFRN7fq6M?autoplay=1&rel=0&modestbranding=1"
-                  title="Tinkro Robotics Kit — Build Walkthrough"
+                  src={`${embedUrl}?autoplay=1&rel=0&modestbranding=1`}
+                  title="Product demo video"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
@@ -1577,16 +1234,16 @@ function getProductInfoItems(product: AdminProduct) {
 }
 
 // ─── Kit Contents Section ─────────────────────────────────────────────────────
-function KitContentsSection({
-  items,
-  product,
-}: {
-  items: KitContentItem[];
-  product: AdminProduct;
-}) {
+function KitContentsSection({ product }: { product: AdminProduct }) {
   const [open, setOpen] = useState(false);
+  const contents = useMemo(
+    () => product.kitContents?.length ? product.kitContents : product.packageContents ?? [],
+    [product.kitContents, product.packageContents],
+  );
   const productInfoItems = useMemo(() => getProductInfoItems(product), [product]);
   const showProductInformation = productInfoItems.length > 0;
+
+  if (contents.length === 0) return null;
 
   return (
     <section id="kit-contents" className="py-24 lg:py-32 bg-background">
@@ -1606,32 +1263,18 @@ function KitContentsSection({
           </div>
         </Reveal>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
-          {items.map((item, i) => (
-            <Reveal key={item.label} delay={i * 0.05} direction="up">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+          {contents.map((label, i) => (
+            <Reveal key={`${label}-${i}`} delay={i * 0.05} direction="up">
               <div
                 className="glass-card hover-lift rounded-xl p-5 cursor-default text-center space-y-2 h-full"
                 style={{ border: "1px solid oklch(0.88 0.02 243)" }}
               >
                 <div className="flex justify-center mb-1">
-                  <KitIcon name={item.iconName} />
+                  <KitIcon name="layers" />
                 </div>
                 <p className="font-display font-semibold text-foreground text-sm leading-snug">
-                  {item.label}
-                </p>
-                {item.quantity && item.quantity > 1 && (
-                  <span
-                    className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold"
-                    style={{
-                      background: "oklch(0.7 0.13 195 / 0.12)",
-                      color: "#3BBFBF",
-                    }}
-                  >
-                    ×{item.quantity}
-                  </span>
-                )}
-                <p className="text-muted-foreground text-xs leading-relaxed">
-                  {item.description}
+                  {label}
                 </p>
               </div>
             </Reveal>
@@ -1696,24 +1339,8 @@ function KitContentsSection({
 }
 
 // ─── Use Cases Section ────────────────────────────────────────────────────────
-function UseCasesSection({ useCases }: { useCases: UseCase[] }) {
-  const accent: Record<string, { top: string; bg: string; badge: string }> = {
-    students: {
-      top: "#2E6DA4",
-      bg: "oklch(0.45 0.12 243 / 0.08)",
-      badge: "oklch(0.45 0.12 243 / 0.15)",
-    },
-    schools: {
-      top: "#3BBFBF",
-      bg: "oklch(0.7 0.13 195 / 0.08)",
-      badge: "oklch(0.7 0.13 195 / 0.15)",
-    },
-    beginners: {
-      top: "#F47B20",
-      bg: "oklch(0.71 0.17 48 / 0.08)",
-      badge: "oklch(0.71 0.17 48 / 0.15)",
-    },
-  };
+function UseCasesSection({ useCases }: { useCases: string[] }) {
+  if (useCases.length === 0) return null;
 
   return (
     <section
@@ -1736,42 +1363,27 @@ function UseCasesSection({ useCases }: { useCases: UseCase[] }) {
           </div>
         </Reveal>
         <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-          {useCases.map((uc, i) => {
-            const c = accent[uc.audience] ?? {
-              top: "#2E6DA4",
-              bg: "oklch(0.45 0.12 243 / 0.08)",
-              badge: "oklch(0.45 0.12 243 / 0.15)",
-            };
-            return (
-              <Reveal key={uc.id} delay={i * 0.12} direction="up">
-                <div
-                  className="glass-card hover-lift rounded-2xl overflow-hidden h-full flex flex-col"
-                  style={{ background: c.bg, border: `1px solid ${c.top}30` }}
-                >
-                  <div className="h-1 w-full" style={{ background: c.top }} />
-                  <div className="p-7 flex flex-col gap-5 flex-1">
-                    <div className="text-4xl">{uc.icon}</div>
-                    <div>
-                      <h3 className="font-display font-bold text-xl text-white mb-2">
-                        {uc.title}
-                      </h3>
-                      <p className="text-white/60 text-sm leading-relaxed font-body">
-                        {uc.description}
-                      </p>
-                    </div>
-                    <div className="mt-auto">
-                      <span
-                        className="inline-block px-3 py-1.5 rounded-lg text-xs font-semibold"
-                        style={{ background: c.badge, color: c.top }}
-                      >
-                        ✓ {uc.benefit}
-                      </span>
-                    </div>
+          {useCases.map((title, i) => (
+            <Reveal key={`${title}-${i}`} delay={i * 0.12} direction="up">
+              <div
+                className="glass-card hover-lift rounded-2xl overflow-hidden h-full flex flex-col"
+                style={{ background: "oklch(0.45 0.12 243 / 0.08)", border: "1px solid #2E6DA430" }}
+              >
+                <div className="h-1 w-full" style={{ background: "#2E6DA4" }} />
+                <div className="p-7 flex flex-col gap-5 flex-1">
+                  <div className="text-4xl">💡</div>
+                  <div>
+                    <h3 className="font-display font-bold text-xl text-white mb-2">
+                      {title}
+                    </h3>
+                    <p className="text-white/60 text-sm leading-relaxed font-body">
+                      {title}
+                    </p>
                   </div>
                 </div>
-              </Reveal>
-            );
-          })}
+              </div>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>
@@ -1780,8 +1392,9 @@ function UseCasesSection({ useCases }: { useCases: UseCase[] }) {
 
 // ─── Reviews Section ──────────────────────────────────────────────────────────
 function ReviewsSection({ reviews }: { reviews: ProductReview[] }) {
+  if (reviews.length === 0) return null;
   const [current, setCurrent] = useState(0);
-  const total = Math.max(1, Math.ceil(reviews.length / 2));
+  const total = Math.ceil(reviews.length / 2);
 
   useEffect(() => {
     const t = setInterval(() => setCurrent((p) => (p + 1) % total), 5000);
@@ -2099,6 +1712,46 @@ export function ProductDetailPage() {
   const navigate = useNavigate();
   const heroImage = product?.images?.[0] ?? product?.image ?? "/placeholder.jpg";
 
+  const overviewText = useMemo(
+    () => (product?.overview?.trim() || product?.description?.trim() || ""),
+    [product?.overview, product?.description],
+  );
+
+  const videoEmbedUrl = useMemo(
+    () => getYouTubeEmbedUrl(product?.demoVideoUrl ?? ""),
+    [product?.demoVideoUrl],
+  );
+
+  const useCases = useMemo(() => product?.useCases ?? [], [product?.useCases]);
+
+  const reviews = useMemo(
+    () =>
+      (product?.reviewsArray ?? []).map((review, index) => ({
+        id: `${review.name}-${index}`,
+        name: review.name,
+        role: "",
+        date: "",
+        rating: review.rating,
+        title:
+          review.content.length > 70
+            ? `${review.content.slice(0, 70).trim()}...`
+            : review.content,
+        content: review.content,
+        verified: false,
+      })),
+    [product?.reviewsArray],
+  );
+
+  const anchors = useMemo(() => {
+    const list: Array<{ id: string; label: string }> = [];
+    if (overviewText) list.push({ id: "overview", label: "Overview" });
+    if (videoEmbedUrl) list.push({ id: "video-section", label: "Demo Video" });
+    if ((product?.kitContents?.length ?? product?.packageContents?.length ?? 0) > 0)
+      list.push({ id: "kit-contents", label: "Kit Contents" });
+    if (useCases.length > 0) list.push({ id: "use-cases", label: "Use Cases" });
+    if (reviews.length > 0) list.push({ id: "reviews", label: "Reviews" });
+    return list;
+  }, [overviewText, videoEmbedUrl, product?.kitContents?.length, product?.packageContents?.length, useCases.length, reviews.length]);
 
   // Scroll to top on mount (when navigating to product view)
   useEffect(() => {
@@ -2327,17 +1980,17 @@ export function ProductDetailPage() {
           metaTags={productSeo.metaTags}
         />
       )}
-      <AnchorNav visible={anchorVisible} />
+      <AnchorNav visible={anchorVisible && anchors.length > 0} anchors={anchors} />
       <HeroSection
         product={product}
         heroImage={heroImage}
         categories={categories}
       />
-      <StorySection description={product.description ?? ""} />
-      <VideoSection />
-      <KitContentsSection product={product} items={FALLBACK_KIT_CONTENTS} />
-      <UseCasesSection useCases={FALLBACK_USE_CASES} />
-      <ReviewsSection reviews={FALLBACK_REVIEWS} />
+      {overviewText && <StorySection overview={overviewText} />}
+      {videoEmbedUrl && <VideoSection videoUrl={videoEmbedUrl} />}
+      <KitContentsSection product={product} />
+      <UseCasesSection useCases={useCases} />
+      <ReviewsSection reviews={reviews} />
       {/* Final CTA */}
       <section
         className="py-24 text-center"

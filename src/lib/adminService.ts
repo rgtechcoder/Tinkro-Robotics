@@ -431,6 +431,7 @@ import type {
   AdminBanner,
   AdminBlogPost,
   AdminCategory,
+  AdminCheckoutSettings,
   AdminCoupon,
   AdminEmailTemplate,
   AdminEnquiry,
@@ -446,7 +447,6 @@ import type {
   AdminUserRecord,
   DashboardStats,
 } from "@/types/admin";
-
 import type { OrderStatus } from "@/types/index";
 
 import { auth, db, functions } from "@/lib/firebase";
@@ -466,11 +466,12 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
-  writeBatch,
   query,
   serverTimestamp,
+  setDoc,
   updateDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { normalizeProducts, withProductSeoDefaults } from "./productSeoModel";
@@ -1055,6 +1056,26 @@ export async function updateShippingRule(
 
 export async function deleteShippingRule(id: string): Promise<void> {
   await deleteDoc(doc(db, "shippingRules", id));
+}
+
+export function subscribeToCheckoutSettings(
+  callback: (settings: AdminCheckoutSettings) => void,
+): () => void {
+  const settingsRef = doc(db, "siteSettings", "checkout");
+  return onSnapshot(settingsRef, (snap) => {
+    if (snap.exists()) {
+      callback(snap.data() as AdminCheckoutSettings);
+    } else {
+      callback({ codEnabled: true });
+    }
+  });
+}
+
+export async function updateCheckoutSettings(
+  data: Partial<AdminCheckoutSettings>,
+): Promise<void> {
+  const settingsRef = doc(db, "siteSettings", "checkout");
+  await setDoc(settingsRef, data, { merge: true });
 }
 
 // ================= EMAIL TEMPLATES =================

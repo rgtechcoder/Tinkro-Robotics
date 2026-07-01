@@ -638,6 +638,7 @@ function createCollectionStore<T>(collectionName: string) {
     loading: !cachedData,
     error: null as string | null,
     initialized: Boolean(cachedData),
+    hasRefreshed: false,
     inflight: false,
     listeners: new Set<(state: StoreState<T>) => void>(),
     subscription: null as (() => void) | null,
@@ -657,10 +658,16 @@ function createCollectionStore<T>(collectionName: string) {
       id: docSnapshot.id,
       ...docSnapshot.data(),
     })) as T[];
-    store.data =
+    const normalized =
       collectionName === "products"
         ? (normalizeProducts(data as AdminProduct[]) as T[])
         : data;
+    store.data =
+      collectionName === "products"
+        ? ((normalized as AdminProduct[]).filter(
+            (product) => product.isActive !== false,
+          ) as T[])
+        : normalized;
     writeCachedCollection(collectionName, store.data);
     store.error = null;
     store.initialized = true;
@@ -768,7 +775,7 @@ async function fetchFeaturedProducts(limitCount = 12): Promise<AdminProduct[]> {
     return normalizeProducts(snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    })) as AdminProduct[]);
+    })) as AdminProduct[]).filter(isProductActive);
   } catch {
     return [];
   }
@@ -791,7 +798,7 @@ export async function fetchAllProducts(): Promise<AdminProduct[]> {
     return normalizeProducts(snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    })) as AdminProduct[]);
+    })) as AdminProduct[]).filter(isProductActive);
   } catch {
     return [];
   }
@@ -867,16 +874,16 @@ export async function searchProducts(
     const seen = new Set<string>();
     const results: AdminProduct[] = [];
 
-    function pushFromSnapshot(snapshot: typeof nameSnap) {
+    const pushFromSnapshot = (snapshot: typeof nameSnap) => {
       for (const doc of snapshot.docs) {
         if (seen.has(doc.id)) continue;
         seen.add(doc.id);
-        results.push(
-          withProductSeoDefaults({ id: doc.id, ...doc.data() } as AdminProduct),
-        );
+        const product = withProductSeoDefaults({ id: doc.id, ...doc.data() } as AdminProduct);
+        if (!isProductActive(product)) continue;
+        results.push(product);
         if (results.length >= limitCount) break;
       }
-    }
+    };
 
     pushFromSnapshot(nameSnap);
     if (results.length < limitCount) {
@@ -903,13 +910,18 @@ const couponsStore = createCollectionStore<AdminCoupon>("coupons");
 // UI rather than a generated placeholder.
 
 // PRODUCTS
+function isProductActive(product: AdminProduct) {
+  return product.isActive !== false;
+}
+
 export function useProducts(): {
   products: AdminProduct[];
   loading: boolean;
   error: string | null;
 } {
   const { data, loading, error } = productsStore.useCollection();
-  return { products: data, loading, error };
+  const products = data.filter((product) => isProductActive(product));
+  return { products, loading, error };
 }
 
 // PRODUCTS BY CATEGORY
@@ -1032,9 +1044,11 @@ export function useProductById(id: string) {
           if (snap.exists()) {
             const p = withProductSeoDefaults({ id: snap.id, ...snap.data() } as AdminProduct);
             if (!active) return;
-            setProduct(p);
-            setLoading(false);
-            return;
+            if (isProductActive(p)) {
+              setProduct(p);
+              setLoading(false);
+              return;
+            }
           }
         }
 
@@ -1052,9 +1066,11 @@ export function useProductById(id: string) {
               const d = snaps.docs[0];
               const p = withProductSeoDefaults({ id: d.id, ...d.data() } as AdminProduct);
               if (!active) return;
-              setProduct(p);
-              setLoading(false);
-              return;
+              if (isProductActive(p)) {
+                setProduct(p);
+                setLoading(false);
+                return;
+              }
             }
           }
         }

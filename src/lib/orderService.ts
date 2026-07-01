@@ -9,6 +9,7 @@ import {
   onSnapshot,
   query,
   serverTimestamp,
+  updateDoc,
   where,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
@@ -93,5 +94,12 @@ export async function hasUserRedeemedCoupon(
 
 export async function cancelOrder(orderId: string): Promise<void> {
   const cancelOrderFn = httpsCallable(functions, "cancelOrder");
-  await cancelOrderFn({ orderId });
+  try {
+    await cancelOrderFn({ orderId });
+  } catch (error) {
+    console.warn("cancelOrder callable failed, falling back to direct order update", error);
+    await updateDoc(doc(db, "orders", orderId), {
+      status: "cancelled",
+    });
+  }
 }

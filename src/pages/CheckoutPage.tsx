@@ -16,6 +16,7 @@ import {
   subscribeToUserOrders,
   type SaveOrderData,
 } from "@/lib/orderService";
+import { subscribeToCheckoutSettings } from "@/lib/adminService";
 import { getUserAddresses, saveAddress } from "@/lib/addressService";
 import { useCoupons } from "@/lib/publicDataService";
 import {
@@ -139,6 +140,7 @@ export function CheckoutPage() {
   const [shippingRules, setShippingRules] = useState<AdminShippingRule[]>([]);
   const [shippingCost, setShippingCost] = useState(0);
   const [shippingRule, setShippingRule] = useState<AdminShippingRule | null>(null);
+  const [codEnabled, setCodEnabled] = useState(true);
 
   // Address state
   const [address, setAddress] = useState<FormState>(emptyForm);
@@ -178,6 +180,13 @@ export function CheckoutPage() {
     });
     return unsub;
   }, [user?.uid]);
+
+  useEffect(() => {
+    const unsub = subscribeToCheckoutSettings((settings) => {
+      setCodEnabled(settings.codEnabled ?? true);
+    });
+    return unsub;
+  }, []);
 
   useEffect(() => {
     if (!user?.uid) {
@@ -557,6 +566,10 @@ export function CheckoutPage() {
     if (!user?.uid) {
       toast.error("Please log in to place an order.");
       navigate({ to: "/login" });
+      return;
+    }
+    if (paymentMethod === "cod" && !codEnabled) {
+      toast.error("Cash on Delivery is temporarily unavailable. Please choose online payment.");
       return;
     }
     if (alternateEmail.trim()) {
@@ -1325,12 +1338,12 @@ export function CheckoutPage() {
                   data-ocid="payment-method-cashfree"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow-primary flex-shrink-0">
-                      <Shield className="w-5 h-5 text-primary-foreground" />
+                    <div className="w-10 h-10 rounded-xl bg-white/90 border border-border flex items-center justify-center shadow-sm flex-shrink-0">
+                      <Shield className="w-5 h-5 text-primary" />
                     </div>
                     <div>
                       <p className="font-bold text-foreground text-sm">
-                        Pay Online (Cashfree)
+                        Pay Online
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         UPI · Cards · NetBanking · Wallets · EMI
@@ -1341,12 +1354,18 @@ export function CheckoutPage() {
 
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod("cod")}
+                  onClick={() => codEnabled && setPaymentMethod("cod")}
+                  disabled={!codEnabled}
+                  title={
+                    !codEnabled
+                      ? "Cash on Delivery is temporarily unavailable. Please choose online payment now."
+                      : "Pay with Cash on Delivery"
+                  }
                   className={`rounded-2xl border px-4 py-4 text-left transition-smooth ${
                     paymentMethod === "cod"
                       ? "border-primary/60 bg-primary/5"
                       : "border-border hover:border-primary/30"
-                  }`}
+                  } ${!codEnabled ? "opacity-50 cursor-not-allowed" : ""}`}
                   data-ocid="payment-method-cod"
                 >
                   <div className="flex items-center gap-3">
@@ -1357,7 +1376,7 @@ export function CheckoutPage() {
                       <p className="font-bold text-foreground text-sm">
                         Cash on Delivery (COD)
                       </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <p className="text-xs text-foreground/70 mt-0.5">
                         Pay when you receive your order
                       </p>
                     </div>
@@ -1402,7 +1421,7 @@ export function CheckoutPage() {
                 </div>
               )}
 
-              {paymentMethod === "cod" && (
+              {paymentMethod === "cashfree" && (
                 <div className="rounded-2xl border border-border bg-muted/40 p-4 text-xs text-muted-foreground">
                   COD orders are confirmed instantly and shipped as per delivery
                   rules. Please keep the exact amount ready at the time of delivery.
@@ -1578,7 +1597,9 @@ export function CheckoutPage() {
               ) : (
                 <span className="flex items-center gap-2">
                   <Shield className="w-4 h-4" />
-                  Pay Now · ₹{grandTotal.toLocaleString("en-IN")}
+                  {paymentMethod === "cod"
+                    ? `Order Now · ₹${grandTotal.toLocaleString("en-IN")}`
+                    : `Pay Now · ₹${grandTotal.toLocaleString("en-IN")}`}
                   <ChevronRight className="w-4 h-4" />
                 </span>
               )}

@@ -125,7 +125,7 @@ export function Footer() {
                 hello@tinkro.in
               </a>
               <a
-                href="tel:+918000000000"
+                href="tel:+9196445254299"
                 className="flex items-center gap-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Phone
@@ -184,17 +184,6 @@ export function Footer() {
         <div className="container max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
             © {year} Tinkro. All rights reserved.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {" "}
-            <a
-              href={caffeineUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-foreground transition-colors underline underline-offset-2"
-            >
-              Powered by Caffeine
-            </a>
           </p>
         </div>
       </div>

@@ -358,6 +358,11 @@ export interface AdminShippingRule {
   createdAt: string;
 }
 
+export interface AdminCheckoutSettings {
+  codEnabled: boolean;
+  updatedAt?: string;
+}
+
 export interface AdminEmailTemplate {
   id: string;
   type: "orderPlaced" | "orderShipped" | "orderDelivered" | "orderCancelled";

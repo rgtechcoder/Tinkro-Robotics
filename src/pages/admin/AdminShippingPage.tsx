@@ -24,7 +24,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   addShippingRule,
   deleteShippingRule,
+  subscribeToCheckoutSettings,
   subscribeToShippingRules,
+  updateCheckoutSettings,
   updateShippingRule,
 } from "@/lib/adminService";
 import type { AdminShippingRule } from "@/types/admin";
@@ -683,11 +685,21 @@ export default function AdminShippingPage() {
     null,
   );
   const [testAmount, setTestAmount] = useState("");
+  const [codEnabled, setCodEnabled] = useState(true);
+  const [codSettingsLoading, setCodSettingsLoading] = useState(true);
 
   useEffect(() => {
     const unsub = subscribeToShippingRules((data) => {
       setRules(data);
       setLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    const unsub = subscribeToCheckoutSettings((settings) => {
+      setCodEnabled(settings.codEnabled ?? true);
+      setCodSettingsLoading(false);
     });
     return unsub;
   }, []);
@@ -736,6 +748,19 @@ export default function AdminShippingPage() {
       toast.error("Failed to delete rule");
     } finally {
       setDeleteTarget(null);
+    }
+  }
+
+  async function handleToggleCodEnabled() {
+    const nextCodEnabled = !codEnabled;
+    try {
+      await updateCheckoutSettings({ codEnabled: nextCodEnabled });
+      setCodEnabled(nextCodEnabled);
+      toast.success(
+        `Cash on Delivery ${nextCodEnabled ? "enabled" : "disabled"} successfully`,
+      );
+    } catch {
+      toast.error("Failed to update COD setting");
     }
   }
 
@@ -797,6 +822,38 @@ export default function AdminShippingPage() {
             <Plus size={16} className="mr-2" />
             Add Rule
           </Button>
+        </div>
+
+        {/* COD toggle card */}
+        <div
+          className="flex items-start justify-between gap-4 rounded-xl border p-4"
+          style={{
+            background: "oklch(0.16 0.06 243 / 0.6)",
+            border: "1px solid oklch(0.72 0.14 195 / 0.2)",
+          }}
+        >
+          <div>
+            <p className="text-sm font-semibold text-white">Cash on Delivery</p>
+            <p className="text-sm mt-1" style={{ color: "oklch(0.65 0.05 243)" }}>
+              Control whether COD is available at checkout across the site.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">
+              {codSettingsLoading
+                ? "Loading…"
+                : codEnabled
+                  ? "Enabled"
+                  : "Disabled"}
+            </span>
+            <Switch
+              id="cod-toggle"
+              checked={codEnabled}
+              disabled={codSettingsLoading}
+              onCheckedChange={handleToggleCodEnabled}
+              data-ocid="admin-cod-toggle"
+            />
+          </div>
         </div>
 
         {/* Info card */}

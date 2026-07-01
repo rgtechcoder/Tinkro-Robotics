@@ -116,11 +116,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://tinkro.in/product/bo-motor</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://tinkro.in/product/rfid-rc522-module-with-card-keychain</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -206,11 +201,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://tinkro.in/product/esp32-wifi-board</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://tinkro.in/product/green-led-5mm-pack-of-100</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -242,11 +232,6 @@
   </url>
   <url>
     <loc>https://tinkro.in/product/jumper-cable-male-female</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://tinkro.in/product/hc-sr04-ultrasonic-sensor</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -337,11 +322,6 @@
   </url>
   <url>
     <loc>https://tinkro.in/product/usb-programming-cable-for-arduino-uno</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://tinkro.in/product/arduino-uno-r3-test-board</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

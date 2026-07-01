@@ -1,4 +1,54 @@
-export interface Product {
+export interface ProductSeoFields {
+  metaTitle?: string;
+  metaDescription?: string;
+  focusKeyword?: string;
+  keywords?: string[];
+  canonicalUrl?: string;
+  seoSlug?: string;
+  openGraphTitle?: string;
+  openGraphDescription?: string;
+  openGraphImage?: string;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  brand?: string;
+  sku?: string;
+  gtin?: string;
+  mpn?: string;
+  category?: string;
+  subCategory?: string;
+  tags?: string[];
+  features?: string[];
+  specifications?: Record<
+    string,
+    string | number | boolean | string[] | number[] | null
+  >;
+  compatibility?: string[];
+  applications?: string[];
+  certifications?: string[];
+  warranty?: string;
+  packageContents?: string[];
+  skillLevel?: string;
+  difficulty?: string;
+  weight?:
+    | string
+    | {
+        value?: number | string;
+        unit?: string;
+      };
+  dimensions?:
+    | string
+    | {
+        length?: number | string;
+        width?: number | string;
+        height?: number | string;
+        unit?: string;
+      };
+  material?: string;
+  countryOfOrigin?: string;
+  manufacturer?: string;
+}
+
+export interface Product extends ProductSeoFields {
   id: string;
   name: string;
   price: number;
@@ -111,7 +161,7 @@ export interface Address {
   isDefault: boolean;
 }
 
-export type OrderStatus = "placed" | "shipped" | "delivered";
+export type OrderStatus = "placed" | "shipped" | "delivered" | "cancelled";
 
 export interface Order {
   id: string;
@@ -133,8 +183,12 @@ export interface Order {
   customerEmail?: string;
   customerName?: string;
   invoiceNumber?: string;
+  paymentGateway?: "razorpay" | "cashfree" | "cod";
   razorpayPaymentId?: string;
   razorpayOrderId?: string;
+  cashfreeOrderId?: string;
+  cashfreePaymentId?: string | null;
+  cashfreeCfOrderId?: string | null;
   trackingId?: string | null;
   estimatedDelivery?: string;
 }
@@ -159,7 +213,7 @@ export interface CartStore {
   itemCount: number;
 }
 
-export interface ProductDetailProduct {
+export interface ProductDetailProduct extends ProductSeoFields {
   id: string;
   name: string;
   price: number;

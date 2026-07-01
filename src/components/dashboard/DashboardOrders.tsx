@@ -1,11 +1,12 @@
 import { products } from "@/data/mockData";
 import { generateInvoicePdf } from "@/lib/invoice";
-import { subscribeToUserOrders } from "@/lib/orderService";
+import { cancelOrder, subscribeToUserOrders } from "@/lib/orderService";
 import type { Order, OrderStatus } from "@/types";
 import { ChevronDown, ChevronUp, Package } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useUserAuth } from "@/context/UserAuthContext";
+import { useToastContext } from "@/components/Layout";
 
 type Filter = "all" | "recent" | "delivered" | "pending";
 
@@ -20,6 +21,7 @@ const STATUS_PILL: Record<OrderStatus, string> = {
   placed: "bg-blue-500/20 text-blue-300 border border-blue-500/30",
   shipped: "bg-orange-500/20 text-orange-300 border border-orange-500/30",
   delivered: "bg-green-500/20 text-green-300 border border-green-500/30",
+  cancelled: "bg-red-500/20 text-rose-300 border border-red-500/30",
 };
 
 function productImage(name: string, image?: string): string {
@@ -77,9 +79,11 @@ interface OrderCardProps {
   order: Order;
   expanded: boolean;
   onToggle: () => void;
+  onCancel?: (orderId: string) => void;
+  cancellingOrderId?: string | null;
 }
 
-function OrderCard({ order, expanded, onToggle }: OrderCardProps) {
+function OrderCard({ order, expanded, onToggle, onCancel, cancellingOrderId }: OrderCardProps) {
   const firstItem = order.items[0];
   const img = firstItem
     ? productImage(firstItem.name, firstItem.image)
@@ -96,7 +100,7 @@ function OrderCard({ order, expanded, onToggle }: OrderCardProps) {
       <div className="flex flex-wrap items-center gap-4 p-5">
         <img
           src={img}
-          alt={firstItem?.name ?? "Product"}
+          alt={`${firstItem?.name ?? "Product"} from Tinkro`}
           className="w-16 h-16 rounded-xl object-contain bg-white/5 flex-shrink-0"
         />
         <div className="flex-1 min-w-0">
@@ -210,6 +214,19 @@ function OrderCard({ order, expanded, onToggle }: OrderCardProps) {
                   </div>
                 )}
               </div>
+
+              {order.status === "placed" && onCancel && (
+                <div className="pt-4">
+                  <button
+                    type="button"
+                    disabled={cancellingOrderId === order.id}
+                    onClick={() => onCancel(order.id)}
+                    className="inline-flex items-center justify-center rounded-lg bg-red-500/95 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {cancellingOrderId === order.id ? "Cancelling…" : "Cancel Order"}
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -223,7 +240,33 @@ export function DashboardOrders() {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<Filter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const { user } = useUserAuth();
+  const { addToast } = useToastContext();
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (
+      !window.confirm(
+        "Do you want to cancel this order? This will notify the Tinkro team.",
+      )
+    ) {
+      return;
+    }
+
+    setCancellingOrderId(orderId);
+    try {
+      await cancelOrder(orderId);
+      addToast("Order cancellation requested successfully.", "success");
+    } catch (error) {
+      console.error("Cancel order failed", error);
+      addToast(
+        "Unable to cancel order right now. Please try again later.",
+        "error",
+      );
+    } finally {
+      setCancellingOrderId(null);
+    }
+  };
 
   useEffect(() => {
     if (!user?.uid) {
@@ -296,6 +339,8 @@ export function DashboardOrders() {
               onToggle={() =>
                 setExpandedId(expandedId === order.id ? null : order.id)
               }
+              onCancel={handleCancelOrder}
+              cancellingOrderId={cancellingOrderId}
             />
           ))
         )}

@@ -1,4 +1,23 @@
+import { useEffect } from "react";
+import { upsertLinkTag, upsertMetaTag } from "../lib/seo";
+
 export function WarrantyPage() {
+  useEffect(() => {
+    const title = "Warranty | Tinkro Support";
+    const description =
+      "Warranty coverage details and claim process for Tinkro products.";
+    const canonicalUrl = "https://tinkro.in/warranty";
+
+    document.title = title;
+    upsertLinkTag("canonical", canonicalUrl);
+    upsertMetaTag("name", "description", description);
+    upsertMetaTag("name", "robots", "noindex,follow");
+    upsertMetaTag("property", "og:title", title);
+    upsertMetaTag("property", "og:description", description);
+    upsertMetaTag("property", "og:type", "website");
+    upsertMetaTag("property", "og:url", canonicalUrl);
+  }, []);
+
   return (
     <section className="pt-24 pb-16">
       <div className="container max-w-4xl mx-auto px-4 sm:px-6">

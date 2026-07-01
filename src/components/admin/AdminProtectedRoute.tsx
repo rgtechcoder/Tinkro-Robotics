@@ -28,7 +28,7 @@ export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
             }}
           >
             <img
-              src="/tinkro%20favicon.png"
+              src="/tinkro-favicon.png"
               alt="Tinkro"
               className="h-full w-full object-contain p-1.5"
             />

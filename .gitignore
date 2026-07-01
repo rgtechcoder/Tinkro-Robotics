@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.vite/
+coverage/
+*.log
+build.log
+errorlog.txt
+tsc-result.txt
+tsc-result-ascii.txt
+typecheck-bulk-import.log
+.env
+.env.local

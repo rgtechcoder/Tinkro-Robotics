@@ -1,38 +1,157 @@
+import { useToastContext } from "@/components/Layout";
+import { db } from "@/lib/firebase";
 import { useBlogPosts } from "@/lib/publicDataService";
+import { slugify } from "@/lib/slug";
 import type { AdminBlogPost } from "@/types/admin";
-import { PlayCircle } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { ArrowRight, Calendar, Search, Share2, Tag, User } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useMemo, useState } from "react";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import {
+  removeJsonLd,
+  setJsonLd,
+  upsertLinkTag,
+  upsertMetaTag,
+} from "../lib/seo";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const SKELETON_KEYS = ["sk-a", "sk-b", "sk-c", "sk-d", "sk-e", "sk-f"];
+
+const CATEGORY_COLORS: Record<
+  string,
+  { bg: string; text: string; border: string }
+> = {
+  Tutorials: {
+    bg: "rgba(59,191,191,0.15)",
+    text: "#3BBFBF",
+    border: "rgba(59,191,191,0.35)",
+  },
+  "Case Studies": {
+    bg: "rgba(244,123,32,0.15)",
+    text: "#F47B20",
+    border: "rgba(244,123,32,0.35)",
+  },
+  News: {
+    bg: "rgba(245,166,35,0.15)",
+    text: "#F5A623",
+    border: "rgba(245,166,35,0.35)",
+  },
+  Guides: {
+    bg: "rgba(46,109,164,0.15)",
+    text: "#5b9fd4",
+    border: "rgba(46,109,164,0.4)",
+  },
+};
+
+const DEFAULT_CATEGORY_COLORS = {
+  bg: "rgba(59,191,191,0.15)",
+  text: "#3BBFBF",
+  border: "rgba(59,191,191,0.35)",
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatDate(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  try {
+    return new Date(dateStr).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function ArticleSkeleton() {
+  return (
+    <div
+      className="rounded-2xl overflow-hidden border border-white/10 flex flex-col"
+      style={{
+        background:
+          "linear-gradient(145deg, rgba(15,39,68,0.92) 0%, rgba(10,22,40,0.96) 100%)",
+      }}
+    >
+      <div className="h-44 bg-white/5 animate-pulse" />
+      <div className="p-6 flex flex-col gap-3">
+        <div className="flex gap-2">
+          <div className="h-5 w-20 rounded-full bg-white/10 animate-pulse" />
+          <div className="h-5 w-16 rounded-full bg-white/5 animate-pulse" />
+        </div>
+        <div className="h-5 w-full rounded bg-white/10 animate-pulse" />
+        <div className="h-4 w-4/5 rounded bg-white/8 animate-pulse" />
+        <div className="h-4 w-full rounded bg-white/5 animate-pulse" />
+        <div className="h-4 w-3/4 rounded bg-white/5 animate-pulse" />
+        <div className="flex justify-between pt-4 border-t border-white/10">
+          <div className="h-4 w-24 rounded bg-white/8 animate-pulse" />
+          <div className="h-4 w-16 rounded bg-white/8 animate-pulse" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeaturedSkeleton() {
+  return (
+    <div
+      className="rounded-2xl overflow-hidden border border-white/15 mb-16"
+      style={{
+        background:
+          "linear-gradient(135deg, rgba(15,39,68,0.95) 0%, rgba(10,22,40,0.98) 100%)",
+      }}
+    >
+      <div className="grid md:grid-cols-2 gap-0">
+        <div className="h-64 md:h-80 bg-white/5 animate-pulse" />
+        <div className="p-8 md:p-10 flex flex-col justify-center gap-4">
+          <div className="h-6 w-28 rounded-full bg-white/10 animate-pulse" />
+          <div className="h-8 w-full rounded bg-white/10 animate-pulse" />
+          <div className="h-8 w-3/4 rounded bg-white/10 animate-pulse" />
+          <div className="space-y-2">
+            <div className="h-4 w-full rounded bg-white/6 animate-pulse" />
+            <div className="h-4 w-full rounded bg-white/5 animate-pulse" />
+            <div className="h-4 w-4/5 rounded bg-white/5 animate-pulse" />
+          </div>
+          <div className="flex gap-4">
+            <div className="h-4 w-24 rounded bg-white/8 animate-pulse" />
+            <div className="h-4 w-24 rounded bg-white/8 animate-pulse" />
+          </div>
+          <div className="h-11 w-36 rounded-xl bg-white/10 animate-pulse mt-2" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Featured Article ─────────────────────────────────────────────────────────
 
 function FeaturedArticle({
   post,
   onNavigate,
-}: { post: AdminBlogPost; onNavigate: (id: string) => void }) {
+  onShare,
+}: {
+  post: AdminBlogPost;
+  onNavigate: (id: string) => void;
+  onShare: (post: AdminBlogPost) => void;
+}) {
   const colors = CATEGORY_COLORS[post.category] ?? DEFAULT_CATEGORY_COLORS;
   const heroImage = post.featuredImage || post.images?.[0];
-  const hasVideo = !!post.videoUrl;
 
-  // ...existing code...
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onNavigate(post.id);
-            }}
-            data-ocid="blog-featured-read-more"
-          >
-            Read Article
-            <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
-          </button>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7, ease: "easeOut" }}
       className="relative rounded-2xl overflow-hidden mb-16 group cursor-pointer"
       style={{
         border: "2px solid rgba(244,123,32,0.45)",
         boxShadow: "0 0 50px rgba(244,123,32,0.18), 0 8px 32px rgba(0,0,0,0.4)",
       }}
-      onClick={() => onNavigate(post.id)}
+      onClick={() => onNavigate(post.slug || slugify(post.title))}
       data-ocid="blog-featured-article"
     >
       <div
@@ -59,6 +178,8 @@ function FeaturedArticle({
               alt={post.title}
               loading="lazy"
               decoding="async"
+              width={800}
+              height={600}
               className="absolute inset-0 w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
             />
           ) : (
@@ -127,32 +248,52 @@ function FeaturedArticle({
             )}
           </div>
 
-          <button
-            type="button"
-            className="self-start flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm text-white transition-all duration-300 group/btn"
-            style={{
-              background: "linear-gradient(135deg, #F47B20 0%, #F5A623 100%)",
-              boxShadow: "0 0 20px rgba(244,123,32,0.35)",
-            }}
-            onMouseEnter={(e) => {
-              const el = e.currentTarget as HTMLButtonElement;
-              el.style.boxShadow = "0 0 32px rgba(244,123,32,0.65)";
-              el.style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={(e) => {
-              const el = e.currentTarget as HTMLButtonElement;
-              el.style.boxShadow = "0 0 20px rgba(244,123,32,0.35)";
-              el.style.transform = "translateY(0)";
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onNavigate(post.id);
-            }}
-            data-ocid="blog-featured-read-more"
-          >
-            Read Article
-            <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-white transition-all duration-300"
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                boxShadow: "0 0 10px rgba(0,0,0,0.18)",
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onShare(post);
+              }}
+              data-ocid="blog-featured-share"
+            >
+              <Share2 className="w-4 h-4" />
+              Share
+            </button>
+
+            <button
+              type="button"
+              className="self-start flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm text-white transition-all duration-300 group/btn"
+              style={{
+                background: "linear-gradient(135deg, #F47B20 0%, #F5A623 100%)",
+                boxShadow: "0 0 20px rgba(244,123,32,0.35)",
+              }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget as HTMLButtonElement;
+                el.style.boxShadow = "0 0 32px rgba(244,123,32,0.65)";
+                el.style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLButtonElement;
+                el.style.boxShadow = "0 0 20px rgba(244,123,32,0.35)";
+                el.style.transform = "translateY(0)";
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigate(post.slug || slugify(post.title));
+              }}
+              data-ocid="blog-featured-read-more"
+            >
+              Read Article
+              <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -161,24 +302,19 @@ function FeaturedArticle({
 
 // ─── Article Card ─────────────────────────────────────────────────────────────
 
-
 function ArticleCard({
   post,
   index,
   onNavigate,
-}: { post: AdminBlogPost; index: number; onNavigate: (id: string) => void }) {
+  onShare,
+}: {
+  post: AdminBlogPost;
+  index: number;
+  onNavigate: (id: string) => void;
+  onShare: (post: AdminBlogPost) => void;
+}) {
   const colors = CATEGORY_COLORS[post.category] ?? DEFAULT_CATEGORY_COLORS;
   const heroImage = post.featuredImage || post.images?.[0];
-  const hasVideo = !!post.videoUrl;
-
-  function handleImageClick(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (hasVideo && post.videoUrl) {
-      window.open(post.videoUrl, "_blank");
-    } else {
-      onNavigate(post.id);
-    }
-  }
 
   return (
     <motion.div
@@ -193,7 +329,7 @@ function ArticleCard({
         backdropFilter: "blur(12px)",
         boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
       }}
-      onClick={() => onNavigate(post.id)}
+      onClick={() => onNavigate(post.slug || slugify(post.title))}
       onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLDivElement;
         el.style.boxShadow =
@@ -206,13 +342,15 @@ function ArticleCard({
       data-ocid={`blog-article-card-${post.id}`}
     >
       {/* Image area */}
-      <div className="relative overflow-hidden h-44 flex-shrink-0 bg-[#0a1628] cursor-pointer" onClick={handleImageClick}>
+      <div className="relative overflow-hidden h-44 flex-shrink-0 bg-[#0a1628]">
         {heroImage ? (
           <img
             src={heroImage}
             alt={post.title}
             loading="lazy"
             decoding="async"
+            width={640}
+            height={360}
             className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
@@ -233,11 +371,6 @@ function ArticleCard({
         {!heroImage && (
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-5xl opacity-70">📰</span>
-          </div>
-        )}
-        {hasVideo && (
-          <div className="absolute inset-0 flex items-center justify-center z-20">
-            <PlayCircle className="w-16 h-16 text-white/90 drop-shadow-lg bg-black/30 rounded-full p-1.5" />
           </div>
         )}
         <div className="absolute bottom-0 inset-x-0 h-1/3 bg-gradient-to-t from-[#0a1628] to-transparent" />
@@ -299,18 +432,32 @@ function ArticleCard({
               </span>
             )}
           </div>
-          <button
-            type="button"
-            className="flex items-center gap-1 text-xs font-semibold transition-all duration-200 hover:gap-2 text-[#F47B20]"
-            onClick={(e) => {
-              e.stopPropagation();
-              onNavigate(post.id);
-            }}
-            data-ocid={`blog-article-read-more-${post.id}`}
-          >
-            Read More
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/80 transition-colors duration-200 hover:text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                onShare(post);
+              }}
+              data-ocid={`blog-article-share-${post.id}`}
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              Share
+            </button>
+            <button
+              type="button"
+              className="flex items-center gap-1 text-xs font-semibold transition-all duration-200 hover:gap-2 text-[#F47B20]"
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigate(post.slug || slugify(post.title));
+              }}
+              data-ocid={`blog-article-read-more-${post.id}`}
+            >
+              Read More
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -320,10 +467,35 @@ function ArticleCard({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function BlogPage() {
+  const { addToast } = useToastContext();
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterName, setNewsletterName] = useState("");
+  const [isSubmittingNewsletter, setIsSubmittingNewsletter] = useState(false);
   const { posts, loading } = useBlogPosts();
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSharePost = async (post: AdminBlogPost) => {
+    const slug = post.slug || slugify(post.title);
+    const url = `${window.location.origin}/blog/${slug}`;
+    const title = post.title;
+    const text = post.excerpt
+      ? `${post.excerpt.trim().slice(0, 120)}...`
+      : `Read this Tinkro blog post: ${post.title}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        addToast("Blog link copied to clipboard.", "success");
+      }
+    } catch (error) {
+      console.error("Share failed", error);
+      addToast("Unable to share this blog post.", "error");
+    }
+  };
 
   const categories = useMemo(() => {
     const cats = new Set<string>();
@@ -351,8 +523,106 @@ export function BlogPage() {
   const isDefaultView = activeCategory === "All" && searchQuery.trim() === "";
   const gridPosts = isDefaultView ? filteredPosts.slice(1) : filteredPosts;
 
-  function navigateToBlog(id: string) {
-    void navigate({ to: "/blog/$id", params: { id } });
+  useEffect(() => {
+    const title = "Blog | Tinkro Learning Hub";
+    const description =
+      "Robotics tutorials, STEM education guides, school case studies, and product insights from Tinkro.";
+    const canonicalUrl = "https://tinkro.in/blog";
+
+    document.title = title;
+    upsertLinkTag("canonical", canonicalUrl);
+    upsertMetaTag("name", "description", description);
+    upsertMetaTag("name", "robots", "index,follow");
+    upsertMetaTag("property", "og:title", title);
+    upsertMetaTag("property", "og:description", description);
+    upsertMetaTag("property", "og:type", "website");
+    upsertMetaTag("property", "og:url", canonicalUrl);
+    upsertMetaTag("property", "og:image", "https://tinkro.in/assets/brand/logo.png");
+    upsertMetaTag("property", "og:site_name", "Tinkro");
+    upsertMetaTag("name", "twitter:card", "summary_large_image");
+    upsertMetaTag("name", "twitter:title", title);
+    upsertMetaTag("name", "twitter:description", description);
+    upsertMetaTag("name", "twitter:image", "https://tinkro.in/assets/brand/logo.png");
+
+    const listItems = posts.slice(0, 50).map((post, index) => {
+      const slug = post.slug || slugify(post.title);
+      return {
+        "@type": "ListItem",
+        position: index + 1,
+        url: `https://tinkro.in/blog/${slug}`,
+        name: post.title,
+      };
+    });
+
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Blog",
+          name: "Tinkro Learning Hub",
+          url: "https://tinkro.in/blog",
+          description,
+        },
+        {
+          "@type": "ItemList",
+          itemListOrder: "https://schema.org/ItemListOrderAscending",
+          numberOfItems: listItems.length,
+          itemListElement: listItems,
+        },
+      ],
+    };
+
+    const scriptId = "blog-jsonld";
+    setJsonLd(scriptId, jsonLd);
+    return () => removeJsonLd(scriptId);
+  }, [posts]);
+
+  const handleNewsletterSubmit = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+    const trimmedName = newsletterName.trim();
+    const trimmedEmail = newsletterEmail.trim().toLowerCase();
+
+    if (!trimmedName) {
+      addToast("Please enter your name.", "error");
+      return;
+    }
+
+    if (!trimmedEmail) {
+      addToast("Please enter your email.", "error");
+      return;
+    }
+
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail);
+    if (!isValidEmail) {
+      addToast("Please enter a valid email address.", "error");
+      return;
+    }
+
+    try {
+      setIsSubmittingNewsletter(true);
+      await addDoc(collection(db, "newsletter_subscribers"), {
+        name: trimmedName,
+        email: trimmedEmail,
+        source: "blog",
+        createdAt: serverTimestamp(),
+        path: window.location.pathname,
+        userAgent: navigator.userAgent,
+      });
+      setNewsletterName("");
+      setNewsletterEmail("");
+      addToast("Thanks for subscribing!", "success");
+    } catch (error) {
+      console.error("Newsletter subscribe failed", error);
+      addToast("Something went wrong. Please try again.", "error");
+    } finally {
+      setIsSubmittingNewsletter(false);
+    }
+  };
+
+  function navigateToBlog(slug: string) {
+    void navigate({ to: "/blog/$slug", params: { slug } });
   }
 
   return (
@@ -510,6 +780,7 @@ export function BlogPage() {
               <FeaturedArticle
                 post={featuredPost}
                 onNavigate={navigateToBlog}
+                onShare={handleSharePost}
               />
             )}
 
@@ -576,6 +847,7 @@ export function BlogPage() {
                       post={post}
                       index={index}
                       onNavigate={navigateToBlog}
+                      onShare={handleSharePost}
                     />
                   ))}
                 </motion.div>
@@ -615,27 +887,52 @@ export function BlogPage() {
             to your inbox every week.
           </p>
           <form
-            className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-            onSubmit={(e) => e.preventDefault()}
+            className="flex flex-col gap-3 max-w-md mx-auto"
+            onSubmit={handleNewsletterSubmit}
           >
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 px-4 py-3 rounded-xl text-white placeholder-white/40 text-sm outline-none transition-all duration-200"
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.18)",
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = "rgba(59,191,191,0.5)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)";
-              }}
-              data-ocid="blog-newsletter-email"
-            />
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                placeholder="Enter your name"
+                value={newsletterName}
+                onChange={(e) => setNewsletterName(e.target.value)}
+                disabled={isSubmittingNewsletter}
+                className="flex-1 px-4 py-3 rounded-xl text-white placeholder-white/40 text-sm outline-none transition-all duration-200"
+                style={{
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.18)",
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(59,191,191,0.5)";
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)";
+                }}
+                data-ocid="blog-newsletter-name"
+              />
+              <input
+                type="email"
+                placeholder="Enter your email"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                disabled={isSubmittingNewsletter}
+                className="flex-1 px-4 py-3 rounded-xl text-white placeholder-white/40 text-sm outline-none transition-all duration-200"
+                style={{
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.18)",
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(59,191,191,0.5)";
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)";
+                }}
+                data-ocid="blog-newsletter-email"
+              />
+            </div>
             <button
               type="submit"
+              disabled={isSubmittingNewsletter}
               className="px-6 py-3 rounded-xl font-semibold text-sm text-white transition-all duration-300 hover:opacity-90"
               style={{
                 background: "linear-gradient(135deg, #F47B20 0%, #F5A623 100%)",
@@ -643,7 +940,7 @@ export function BlogPage() {
               }}
               data-ocid="blog-newsletter-subscribe"
             >
-              Subscribe
+              {isSubmittingNewsletter ? "Subscribing..." : "Subscribe"}
             </button>
           </form>
         </motion.div>

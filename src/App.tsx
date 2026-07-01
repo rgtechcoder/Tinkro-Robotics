@@ -5,27 +5,59 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
+import { auth } from "./lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Layout } from "./components/Layout";
 import { AdminProtectedRoute } from "./components/admin/AdminProtectedRoute";
-import { AdminAuthProvider, useAdminAuth } from "./context/AdminAuthContext";
+
+const AdminAuthProvider = lazy(() =>
+  import("./context/AdminAuthContext").then((m) => ({ default: m.AdminAuthProvider })),
+);
 
 // ─── Static public pages (lightweight, always needed) ─────────────────────────
-import { AboutPage } from "./pages/AboutPage";
-import { BlogPage } from "./pages/BlogPage";
-import { ContactPage } from "./pages/ContactPage";
-import { FaqPage } from "./pages/FaqPage";
-import { HomePage } from "./pages/HomePage";
-import { LabsPage } from "./pages/LabsPage";
-import { OrderSuccessPage } from "./pages/OrderSuccessPage";
-import { ProductsPage } from "./pages/ProductsPage";
-import { ReturnsPage } from "./pages/ReturnsPage";
-import { ShippingPolicyPage } from "./pages/ShippingPolicyPage";
-import { TrackOrderPage } from "./pages/TrackOrderPage";
-import { WarrantyPage } from "./pages/WarrantyPage";
-import { WishlistPage } from "./pages/WishlistPage";
-import LoginPage from "./pages/LoginPage";
+const HomePage = lazy(() =>
+  import("./pages/HomePage").then((m) => ({ default: m.HomePage })),
+);
+
+const AboutPage = lazy(() =>
+  import("./pages/AboutPage").then((m) => ({ default: m.AboutPage })),
+);
+const BlogPage = lazy(() =>
+  import("./pages/BlogPage").then((m) => ({ default: m.BlogPage })),
+);
+const ContactPage = lazy(() =>
+  import("./pages/ContactPage").then((m) => ({ default: m.ContactPage })),
+);
+const FaqPage = lazy(() =>
+  import("./pages/FaqPage").then((m) => ({ default: m.FaqPage })),
+);
+const LabsPage = lazy(() =>
+  import("./pages/LabsPage").then((m) => ({ default: m.LabsPage })),
+);
+const OrderSuccessPage = lazy(() =>
+  import("./pages/OrderSuccessPage").then((m) => ({ default: m.OrderSuccessPage })),
+);
+const ProductsPage = lazy(() =>
+  import("./pages/ProductsPage").then((m) => ({ default: m.ProductsPage })),
+);
+const ReturnsPage = lazy(() =>
+  import("./pages/ReturnsPage").then((m) => ({ default: m.ReturnsPage })),
+);
+const ShippingPolicyPage = lazy(() =>
+  import("./pages/ShippingPolicyPage").then((m) => ({ default: m.ShippingPolicyPage })),
+);
+const TrackOrderPage = lazy(() =>
+  import("./pages/TrackOrderPage").then((m) => ({ default: m.TrackOrderPage })),
+);
+const WarrantyPage = lazy(() =>
+  import("./pages/WarrantyPage").then((m) => ({ default: m.WarrantyPage })),
+);
+const WishlistPage = lazy(() =>
+  import("./pages/WishlistPage").then((m) => ({ default: m.WishlistPage })),
+);
+const LoginPage = lazy(() => import("./pages/LoginPage"));
 
 // ─── Lazy-loaded heavy public pages ───────────────────────────────────────────
 const ProductDetailPage = lazy(() =>
@@ -49,6 +81,9 @@ const AdminDashboardPage = lazy(
   () => import("./pages/admin/AdminDashboardPage"),
 );
 const AdminProductsPage = lazy(() => import("./pages/admin/AdminProductsPage"));
+const AdminBulkImportPage = lazy(
+  () => import("./pages/admin/AdminBulkImportPage"),
+);
 const AdminCategoriesPage = lazy(
   () => import("./pages/admin/AdminCategoriesPage"),
 );
@@ -65,6 +100,9 @@ const AdminMediaPage = lazy(() => import("./pages/admin/AdminMediaPage"));
 const AdminShippingPage = lazy(() => import("./pages/admin/AdminShippingPage"));
 const AdminExportPage = lazy(() => import("./pages/admin/AdminExportPage"));
 const AdminEmailPage = lazy(() => import("./pages/admin/AdminEmailPage"));
+const AdminNewsletterPage = lazy(
+  () => import("./pages/admin/AdminNewsletterPage"),
+);
 
 // ─── Skeleton fallbacks ────────────────────────────────────────────────────────
 function AdminPageSkeleton() {
@@ -215,22 +253,25 @@ function PageLoadingSkeleton() {
 
 // ─── Global keyboard shortcut: Ctrl+Shift+A ──────────────────────────────────
 function KeyboardShortcutHandler() {
-  const { adminUser } = useAdminAuth();
+  const [isSignedIn, setIsSignedIn] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsSignedIn(!!user);
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.ctrlKey && e.shiftKey && e.key === "A") {
         e.preventDefault();
-        if (adminUser) {
-          window.location.href = "/admin/dashboard";
-        } else {
-          window.location.href = "/admin/login";
-        }
+        window.location.href = isSignedIn ? "/admin/dashboard" : "/admin/login";
       }
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [adminUser]);
+  }, [isSignedIn]);
 
   return null;
 }
@@ -247,12 +288,18 @@ const rootRoute = createRootRoute({
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  component: HomePage,
+  component: () => (
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoadingSkeleton />}>
+        <HomePage />
+      </Suspense>
+    </ErrorBoundary>
+  ),
 });
 
 const productDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/product/$id",
+  path: "/product/$slug",
   component: () => (
     <ErrorBoundary>
       <Suspense fallback={<PageLoadingSkeleton />}>
@@ -295,7 +342,31 @@ const blogRoute = createRoute({
 
 const blogDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/blog/$id",
+  path: "/blog/$slug",
+  component: () => (
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoadingSkeleton />}>
+        <BlogDetailPage />
+      </Suspense>
+    </ErrorBoundary>
+  ),
+});
+
+const knowledgeHubRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/knowledge-hub",
+  component: () => (
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoadingSkeleton />}>
+        <BlogPage />
+      </Suspense>
+    </ErrorBoundary>
+  ),
+});
+
+const knowledgeHubDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/knowledge-hub/$slug",
   component: () => (
     <ErrorBoundary>
       <Suspense fallback={<PageLoadingSkeleton />}>
@@ -399,7 +470,15 @@ const dashboardRoute = createRoute({
 
 // ─── Admin root — no public Layout, uses its own AdminLayout ─────────────────
 const adminRootRoute = createRootRoute({
-  component: () => <Outlet />,
+  component: () => (
+    <ErrorBoundary>
+      <Suspense fallback={<AdminPageSkeleton />}>
+        <AdminAuthProvider>
+          <Outlet />
+        </AdminAuthProvider>
+      </Suspense>
+    </ErrorBoundary>
+  ),
 });
 
 const adminLoginRoute = createRoute({
@@ -436,6 +515,20 @@ const adminProductsRoute = createRoute({
       <Suspense fallback={<AdminPageSkeleton />}>
         <AdminProtectedRoute>
           <AdminProductsPage />
+        </AdminProtectedRoute>
+      </Suspense>
+    </ErrorBoundary>
+  ),
+});
+
+const adminBulkImportRoute = createRoute({
+  getParentRoute: () => adminRootRoute,
+  path: "/admin/bulk-import",
+  component: () => (
+    <ErrorBoundary>
+      <Suspense fallback={<AdminPageSkeleton />}>
+        <AdminProtectedRoute>
+          <AdminBulkImportPage />
         </AdminProtectedRoute>
       </Suspense>
     </ErrorBoundary>
@@ -515,6 +608,20 @@ const adminUsersRoute = createRoute({
 const adminBlogRoute = createRoute({
   getParentRoute: () => adminRootRoute,
   path: "/admin/blog",
+  component: () => (
+    <ErrorBoundary>
+      <Suspense fallback={<AdminPageSkeleton />}>
+        <AdminProtectedRoute>
+          <AdminBlogPage />
+        </AdminProtectedRoute>
+      </Suspense>
+    </ErrorBoundary>
+  ),
+});
+
+const adminKnowledgeHubRoute = createRoute({
+  getParentRoute: () => adminRootRoute,
+  path: "/admin/knowledge-hub",
   component: () => (
     <ErrorBoundary>
       <Suspense fallback={<AdminPageSkeleton />}>
@@ -610,6 +717,20 @@ const adminEmailRoute = createRoute({
   ),
 });
 
+const adminNewsletterRoute = createRoute({
+  getParentRoute: () => adminRootRoute,
+  path: "/admin/newsletter",
+  component: () => (
+    <ErrorBoundary>
+      <Suspense fallback={<AdminPageSkeleton />}>
+        <AdminProtectedRoute>
+          <AdminNewsletterPage />
+        </AdminProtectedRoute>
+      </Suspense>
+    </ErrorBoundary>
+  ),
+});
+
 const publicRouteTree = rootRoute.addChildren([
   homeRoute,
   productDetailRoute,
@@ -618,6 +739,8 @@ const publicRouteTree = rootRoute.addChildren([
   labsRoute,
   blogRoute,
   blogDetailRoute,
+  knowledgeHubRoute,
+  knowledgeHubDetailRoute,
   aboutRoute,
   faqRoute,
   shippingPolicyRoute,
@@ -635,18 +758,21 @@ const adminRouteTree = adminRootRoute.addChildren([
   adminLoginRoute,
   adminDashboardRoute,
   adminProductsRoute,
+  adminBulkImportRoute,
   adminCategoriesRoute,
   adminOrdersRoute,
   adminLabSetupRoute,
   adminCouponsRoute,
   adminUsersRoute,
   adminBlogRoute,
+  adminKnowledgeHubRoute,
   adminBannersRoute,
   adminEnquiriesRoute,
   adminMediaRoute,
   adminShippingRoute,
   adminExportRoute,
   adminEmailRoute,
+  adminNewsletterRoute,
 ]);
 
 // Determine which route tree to use based on path prefix
@@ -671,9 +797,5 @@ function AppInner() {
 }
 
 export default function App() {
-  return (
-    <AdminAuthProvider>
-      <AppInner />
-    </AdminAuthProvider>
-  );
+  return <AppInner />;
 }

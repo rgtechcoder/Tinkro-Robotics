@@ -7,9 +7,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { Heart } from "lucide-react";
 import { AnimatePresence, motion, useScroll, useTransform } from "motion/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useToastContext } from "../components/Layout";
+import { SEO } from "../components/SEO";
 import { useCategories, useProductById } from "../lib/publicDataService";
+import { absoluteUrl, normalizeSeoText, truncateSeoText } from "../lib/seo";
+import { getProductRouteParam } from "../lib/slug";
 import { useCartStore } from "../store/cartStore";
 import { useWishlistStore } from "../store/wishlistStore";
 import type { KitContentItem, ProductReview, UseCase } from "../types";
@@ -144,6 +147,35 @@ const FALLBACK_REVIEWS: ProductReview[] = [
     verified: false,
   },
 ];
+
+function getProductDisplayName(product: AdminProduct) {
+  return normalizeSeoText(product.name) || "Tinkro STEM Robotics Product";
+}
+
+function getProductSeoDescription(product: AdminProduct, productName: string) {
+  const metaDescription = truncateSeoText(product.metaDescription, 160);
+  if (metaDescription) return metaDescription;
+  const description = truncateSeoText(product.description, 160);
+  if (description) return description;
+  return truncateSeoText(
+    `Shop ${productName} online at Tinkro. Explore STEM, robotics, and electronics learning products with dependable support across India.`,
+    160,
+  );
+}
+
+function getProductImageAlt(productName: string, index?: number) {
+  const suffix = typeof index === "number" ? ` - view ${index + 1}` : "";
+  return `${productName}${suffix} from Tinkro`;
+}
+
+function getProductFaqs(product: AdminProduct) {
+  return (product.faqs ?? [])
+    .map((faq) => ({
+      question: normalizeSeoText(faq.question),
+      answer: normalizeSeoText(faq.answer),
+    }))
+    .filter((faq) => faq.question && faq.answer);
+}
 
 // ─── Icon map for kit contents ───────────────────────────────────────────────
 function KitIcon({ name }: { name: string }) {
@@ -352,27 +384,16 @@ function HeroSection({
           : [];
 
     if (ids.length > 0 && categories.length > 0) {
-      return (
-        <div className="min-h-screen bg-background">
-          <HeroSection product={product} heroImage={product.image} categories={categories} />
-          <AnchorNav visible />
-          <StorySection description={product.description} />
-          {/* Demo Video Section (admin-controlled) */}
-          {product.demoVideo && <DemoVideoSection demoVideo={product.demoVideo} />}
-          {/* Kit Contents Section (admin-controlled) */}
-          {product.kitContents && product.kitContents.length > 0 && (
-            <KitContentsSection items={product.kitContents} />
-          )}
-          {/* Use Cases Section (admin-controlled) */}
-          {product.useCases && product.useCases.length > 0 && (
-            <UseCasesSection useCases={product.useCases} />
-          )}
-          {/* Reviews Section (admin-controlled) */}
-          {product.productReviews && product.productReviews.length > 0 && (
-            <ReviewsSection reviews={product.productReviews} />
-          )}
-        </div>
-      );
+      return ids
+        .map((id) => {
+          const cat = categories.find((c) => c.id === id);
+          return cat ? { id: cat.id, name: cat.name, slug: cat.slug } : null;
+        })
+        .filter(Boolean) as { id: string; name: string; slug: string }[];
+    }
+    // Fallback to product.category string
+    if (product.category) {
+      return [
         {
           id: product.category,
           name: product.category,
@@ -534,24 +555,6 @@ function HeroSection({
                 {product.category}
               </span>
             )}
-            <span
-              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
-              style={
-                product.stock > 0
-                  ? {
-                      background: "oklch(0.55 0.17 145 / 0.15)",
-                      border: "1px solid oklch(0.55 0.17 145 / 0.3)",
-                      color: "#4ade80",
-                    }
-                  : {
-                      background: "oklch(0.65 0.19 22 / 0.15)",
-                      border: "1px solid oklch(0.65 0.19 22 / 0.3)",
-                      color: "#f87171",
-                    }
-              }
-            >
-              {product.stock > 0 ? "✓ In Stock" : "✗ Out of Stock"}
-            </span>
           </motion.div>
 
           {/* Headline */}
@@ -575,6 +578,48 @@ function HeroSection({
               {product.description}
             </motion.p>
           )}
+
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="flex flex-wrap items-center gap-2"
+          >
+            <span
+              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
+              style={
+                product.stock > 0
+                  ? {
+                      background: "oklch(0.55 0.17 145 / 0.15)",
+                      border: "1px solid oklch(0.55 0.17 145 / 0.3)",
+                      color: "#4ade80",
+                    }
+                  : {
+                      background: "oklch(0.65 0.19 22 / 0.15)",
+                      border: "1px solid oklch(0.65 0.19 22 / 0.3)",
+                      color: "#f87171",
+                    }
+              }
+            >
+              {product.stock > 0 ? "✓ In Stock" : "✗ Out of Stock"}
+            </span>
+            {product.sku && (
+              <span
+                className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold"
+                style={{
+                  background: "rgba(244, 123, 32, 0.12)",
+                  border: "1px solid rgba(244, 123, 32, 0.35)",
+                  color: "#ffffff",
+                  boxShadow: "0 0 0 1px rgba(255,255,255,0.08)",
+                }}
+              >
+                <span className="text-[10px] uppercase tracking-[0.24em] text-white/70">
+                  SKU
+                </span>
+                <span className="text-sm font-bold text-white">{product.sku}</span>
+              </span>
+            )}
+          </motion.div>
 
           {/* Rating */}
           {product.rating > 0 && (
@@ -774,7 +819,9 @@ function HeroSection({
                         <CarouselItem key={img} className="flex items-center justify-center aspect-square">
                           <img
                             src={img}
-                            alt={product.name}
+                            alt={getProductImageAlt(getProductDisplayName(product), idx)}
+                            width={800}
+                            height={800}
                             className="w-full h-full object-contain"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = "/placeholder.jpg";
@@ -786,9 +833,9 @@ function HeroSection({
                   </Carousel>
                   {/* Dots indicator */}
                   <div className="flex justify-center gap-1 mt-2">
-                    {heroImages.map((_, idx) => (
+                    {heroImages.map((image, idx) => (
                       <button
-                        key={idx}
+                        key={`hero-dot-${image}`}
                         type="button"
                         aria-label={`View image ${idx + 1}`}
                         onClick={() => api?.scrollTo?.(idx)}
@@ -800,7 +847,9 @@ function HeroSection({
               ) : (
                 <img
                   src={heroImages[0]}
-                  alt={product.name}
+                  alt={getProductImageAlt(getProductDisplayName(product))}
+                  width={800}
+                  height={800}
                   className="w-full h-full object-contain"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = "/placeholder.jpg";
@@ -940,6 +989,8 @@ function StorySection({ description }: { description: string }) {
                   alt="Student overwhelmed by scattered components"
                   loading="lazy"
                   decoding="async"
+                  width={800}
+                  height={600}
                   className="w-full h-full object-cover"
                 />
                 <div
@@ -979,6 +1030,8 @@ function StorySection({ description }: { description: string }) {
                   alt="Tinkro kit unboxing — everything organized and labeled"
                   loading="lazy"
                   decoding="async"
+                  width={800}
+                  height={600}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -1112,6 +1165,8 @@ function StorySection({ description }: { description: string }) {
           alt="Student holding their completed Tinkro robot"
           loading="lazy"
           decoding="async"
+          width={800}
+          height={600}
           className="w-full h-full object-cover object-center"
         />
         <div
@@ -1432,9 +1487,107 @@ function VideoSection() {
   );
 }
 
+function getProductInfoItems(product: AdminProduct) {
+  const items: Array<{ label: string; value: string }> = [];
+
+  const addValue = (label: string, value: unknown) => {
+    if (value === undefined || value === null) return;
+
+    if (typeof value === "string") {
+      const normalized = value.trim();
+      if (normalized) {
+        items.push({ label, value: normalized });
+      }
+      return;
+    }
+
+    if (typeof value === "number" || typeof value === "boolean") {
+      items.push({ label, value: String(value) });
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      const normalized = value
+        .filter(
+          (entry): entry is string | number =>
+            entry !== null && entry !== undefined && String(entry).trim() !== "",
+        )
+        .map((entry) => String(entry).trim())
+        .join(", ");
+
+      if (normalized) {
+        items.push({ label, value: normalized });
+      }
+      return;
+    }
+
+    if (typeof value === "object") {
+      const normalized = Object.entries(value as Record<string, unknown>)
+        .map(([key, entryValue]) => {
+          if (entryValue === undefined || entryValue === null) return null;
+          if (
+            typeof entryValue === "string" ||
+            typeof entryValue === "number" ||
+            typeof entryValue === "boolean"
+          ) {
+            return `${key}: ${String(entryValue)}`;
+          }
+          return null;
+        })
+        .filter(Boolean)
+        .join(", ");
+
+      if (normalized) {
+        items.push({ label, value: normalized });
+      }
+    }
+  };
+
+  addValue("SKU", product.sku);
+  addValue("Brand", product.brand);
+  addValue("Manufacturer", product.manufacturer);
+  addValue("Material", product.material);
+  addValue("Warranty", product.warranty);
+  addValue("Country of Origin", product.countryOfOrigin);
+  addValue("Dimensions", product.dimensions);
+  addValue("Weight", product.weight);
+
+  if (product.specifications) {
+    Object.entries(product.specifications).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      const normalizedKey = key.trim();
+      if (!normalizedKey) return;
+      const ignoredKeys = new Set([
+        "sku",
+        "brand",
+        "manufacturer",
+        "material",
+        "warranty",
+        "countryOfOrigin",
+        "dimensions",
+        "weight",
+      ]);
+
+      if (ignoredKeys.has(normalizedKey.toLowerCase())) return;
+      addValue(normalizedKey, value);
+    });
+  }
+
+  return items;
+}
+
 // ─── Kit Contents Section ─────────────────────────────────────────────────────
-function KitContentsSection({ items }: { items: KitContentItem[] }) {
+function KitContentsSection({
+  items,
+  product,
+}: {
+  items: KitContentItem[];
+  product: AdminProduct;
+}) {
   const [open, setOpen] = useState(false);
+  const productInfoItems = useMemo(() => getProductInfoItems(product), [product]);
+  const showProductInformation = productInfoItems.length > 0;
+
   return (
     <section id="kit-contents" className="py-24 lg:py-32 bg-background">
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
@@ -1485,69 +1638,58 @@ function KitContentsSection({ items }: { items: KitContentItem[] }) {
           ))}
         </div>
 
-        <Reveal delay={0.2}>
-          <div className="mt-10 rounded-2xl border border-border overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setOpen((p) => !p)}
-              data-ocid="specs-accordion-toggle"
-              className="w-full flex items-center justify-between px-6 py-5 bg-card hover:bg-muted/50 transition-colors text-left"
-              aria-expanded={open}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-lg">🔬</span>
-                <span className="font-display font-semibold text-foreground">
-                  Technical Specifications
-                </span>
-              </div>
-              <motion.span
-                animate={{ rotate: open ? 180 : 0 }}
-                transition={{ duration: 0.25 }}
-                className="text-muted-foreground"
+        {showProductInformation && (
+          <Reveal delay={0.2}>
+            <div className="mt-10 rounded-2xl border border-border overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setOpen((p) => !p)}
+                data-ocid="product-info-accordion-toggle"
+                className="w-full flex items-center justify-between px-6 py-5 bg-card hover:bg-muted/50 transition-colors text-left"
+                aria-expanded={open}
               >
-                ▾
-              </motion.span>
-            </button>
-            <AnimatePresence initial={false}>
-              {open && (
-                <motion.div
-                  key="specs"
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.35, ease: "easeInOut" }}
-                  className="overflow-hidden"
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">ℹ️</span>
+                  <span className="font-display font-semibold text-foreground">
+                    Product Information
+                  </span>
+                </div>
+                <motion.span
+                  animate={{ rotate: open ? 180 : 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="text-muted-foreground"
                 >
-                  <div className="px-6 py-6 bg-muted/30 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
-                    {[
-                      ["Microcontroller", "Arduino Uno R3 (ATmega328P)"],
-                      ["Motor Driver", "L298N Dual H-Bridge, 2A per channel"],
-                      ["Ultrasonic Range", "2 cm – 400 cm (HC-SR04)"],
-                      ["Bluetooth", "HC-05, Class 2, 10m range"],
-                      ["Operating Voltage", "7–12V DC (9V recommended)"],
-                      ["Programming", "Arduino IDE (C++), Scratch (optional)"],
-                      ["Chassis Material", "Transparent Acrylic, 3mm"],
-                      ["Motor Speed", "0–200 RPM (PWM controlled)"],
-                      ["Dimensions", "21 × 16 × 9 cm (assembled)"],
-                      ["Weight", "420g (complete kit)"],
-                      ["Warranty", "12 months (components)"],
-                      ["Age Recommendation", "12+ years"],
-                    ].map(([k, v]) => (
-                      <div key={k}>
-                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                          {k}
-                        </p>
-                        <p className="text-sm text-foreground font-semibold mt-0.5">
-                          {v}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </Reveal>
+                  ▾
+                </motion.span>
+              </button>
+              <AnimatePresence initial={false}>
+                {open && (
+                  <motion.div
+                    key="product-info"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.35, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-6 py-6 bg-muted/30 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
+                      {productInfoItems.map((item) => (
+                        <div key={item.label}>
+                          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                            {item.label}
+                          </p>
+                          <p className="text-sm text-foreground font-semibold mt-0.5">
+                            {item.value}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </Reveal>
+        )}
       </div>
     </section>
   );
@@ -1950,10 +2092,12 @@ function StickyBuyPanel({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export function ProductDetailPage() {
-  const { id } = useParams({ from: "/product/$id" });
-  const { product, loading } = useProductById(id);
+  const { slug } = useParams({ from: "/product/$slug" });
+  const { product, loading } = useProductById(slug);
   const { categories } = useCategories();
   const [anchorVisible, setAnchorVisible] = useState(false);
+  const navigate = useNavigate();
+  const heroImage = product?.images?.[0] ?? product?.image ?? "/placeholder.jpg";
 
 
   // Scroll to top on mount (when navigating to product view)
@@ -1966,13 +2110,223 @@ export function ProductDetailPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const canonicalParam = product ? getProductRouteParam(product) : null;
+  useEffect(() => {
+    if (product && canonicalParam && slug !== canonicalParam) {
+      navigate({
+        to: "/product/$slug",
+        params: { slug: canonicalParam },
+        replace: true,
+      });
+    }
+  }, [product, canonicalParam, slug, navigate]);
+
+  const productSeo = useMemo(() => {
+    if (!product) return null;
+
+    const productName = getProductDisplayName(product);
+    const canonicalSlug = canonicalParam ?? slug;
+    const defaultProductUrl = absoluteUrl(`/product/${canonicalSlug}`);
+    const productUrl = normalizeSeoText(product.canonicalUrl)
+      ? absoluteUrl(product.canonicalUrl)
+      : defaultProductUrl;
+    const description = getProductSeoDescription(product, productName);
+    const title = normalizeSeoText(product.metaTitle) || `${productName} | Tinkro`;
+    const productImages = (
+      product.openGraphImage
+        ? [product.openGraphImage]
+        : Array.isArray(product.images) && product.images.length > 0
+          ? product.images
+          : [heroImage]
+    ).map((image) => absoluteUrl(image));
+    const brandName = normalizeSeoText(product.brand) || "Tinkro";
+    const productPrice = Number.isFinite(Number(product.price))
+      ? Number(product.price)
+      : 0;
+    const isInStock = product.inStock !== false && Number(product.stock ?? 0) > 0;
+    const faqs = getProductFaqs(product);
+    const graph: unknown[] = [
+      {
+        "@type": "Product",
+        "@id": `${productUrl}#product`,
+        name: productName,
+        description,
+        image: productImages,
+        brand: {
+          "@type": "Brand",
+          name: brandName,
+        },
+        category: product.subCategory
+          ? `${product.category} > ${product.subCategory}`
+          : product.category,
+        keywords: product.keywords?.join(", "),
+        material: product.material,
+        countryOfOrigin: product.countryOfOrigin,
+        manufacturer: product.manufacturer
+          ? {
+              "@type": "Organization",
+              name: product.manufacturer,
+            }
+          : undefined,
+        additionalProperty: [
+          ...Object.entries(product.specifications ?? {}).map(([name, value]) => ({
+            "@type": "PropertyValue",
+            name,
+            value: Array.isArray(value) ? value.join(", ") : String(value),
+          })),
+          ...(product.dimensions
+            ? [
+                {
+                  "@type": "PropertyValue",
+                  name: "Dimensions",
+                  value:
+                    typeof product.dimensions === "string"
+                      ? product.dimensions
+                      : Object.entries(product.dimensions)
+                          .map(([key, value]) => `${key}: ${value}`)
+                          .join(", "),
+                },
+              ]
+            : []),
+          ...(product.weight
+            ? [
+                {
+                  "@type": "PropertyValue",
+                  name: "Weight",
+                  value:
+                    typeof product.weight === "string"
+                      ? product.weight
+                      : Object.entries(product.weight)
+                          .map(([key, value]) => `${key}: ${value}`)
+                          .join(", "),
+                },
+              ]
+            : []),
+        ],
+        offers: {
+          "@type": "Offer",
+          url: productUrl,
+          priceCurrency: "INR",
+          price: productPrice,
+          availability: isInStock
+            ? "https://schema.org/InStock"
+            : "https://schema.org/OutOfStock",
+        },
+        ...(product.sku
+          ? {
+              sku: product.sku,
+            }
+          : {}),
+        ...(product.gtin ? { gtin: product.gtin } : {}),
+        ...(product.mpn ? { mpn: product.mpn } : {}),
+        ...(product.rating > 0 && product.reviews > 0
+          ? {
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: product.rating,
+                reviewCount: product.reviews,
+              },
+            }
+          : {}),
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${productUrl}#breadcrumb`,
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: absoluteUrl("/"),
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Products",
+            item: absoluteUrl("/products"),
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: productName,
+            item: productUrl,
+          },
+        ],
+      },
+    ];
+
+    if (faqs.length > 0) {
+      graph.push({
+        "@type": "FAQPage",
+        "@id": `${productUrl}#faq`,
+        mainEntity: faqs.map((faq) => ({
+          "@type": "Question",
+          name: faq.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: faq.answer,
+          },
+        })),
+      });
+    }
+
+    return {
+      title,
+      description,
+      canonicalUrl: productUrl,
+      image: {
+        url: productImages[0] ?? absoluteUrl(heroImage),
+        alt: getProductImageAlt(productName),
+      },
+      openGraphTitle: product.openGraphTitle,
+      openGraphDescription: product.openGraphDescription,
+      twitterTitle: product.twitterTitle,
+      twitterDescription: product.twitterDescription,
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@graph": graph,
+      },
+      metaTags: [
+        {
+          attrName: "property" as const,
+          attrValue: "product:price:amount",
+          content: String(productPrice),
+        },
+        {
+          attrName: "property" as const,
+          attrValue: "product:price:currency",
+          content: "INR",
+        },
+        {
+          attrName: "property" as const,
+          attrValue: "product:availability",
+          content: isInStock ? "in stock" : "out of stock",
+        },
+      ],
+    };
+  }, [product, canonicalParam, slug, heroImage]);
+
   if (loading) return <ProductDetailSkeleton />;
   if (!product) return <ProductNotFound />;
 
-  const heroImage = product.images?.[0] ?? product.image ?? "/placeholder.jpg";
-
   return (
     <div className="relative" data-ocid="product-detail-page">
+      {productSeo && (
+        <SEO
+          title={productSeo.title}
+          description={productSeo.description}
+          canonicalUrl={productSeo.canonicalUrl}
+          image={productSeo.image}
+          type="product"
+          openGraphTitle={productSeo.openGraphTitle}
+          openGraphDescription={productSeo.openGraphDescription}
+          twitterTitle={productSeo.twitterTitle}
+          twitterDescription={productSeo.twitterDescription}
+          jsonLd={productSeo.jsonLd}
+          jsonLdId="product-jsonld"
+          metaTags={productSeo.metaTags}
+        />
+      )}
       <AnchorNav visible={anchorVisible} />
       <HeroSection
         product={product}
@@ -1981,7 +2335,7 @@ export function ProductDetailPage() {
       />
       <StorySection description={product.description ?? ""} />
       <VideoSection />
-      <KitContentsSection items={FALLBACK_KIT_CONTENTS} />
+      <KitContentsSection product={product} items={FALLBACK_KIT_CONTENTS} />
       <UseCasesSection useCases={FALLBACK_USE_CASES} />
       <ReviewsSection reviews={FALLBACK_REVIEWS} />
       {/* Final CTA */}

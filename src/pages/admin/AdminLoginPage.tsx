@@ -1,4 +1,5 @@
 import { useAdminAuth } from "@/context/AdminAuthContext";
+import { auth } from "@/lib/firebase";
 import { useRouter } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -11,11 +12,15 @@ import {
 import { motion } from "motion/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { sendPasswordResetEmail } from "firebase/auth";
 
 interface LoginForm {
   email: string;
   password: string;
 }
+
+const ADMIN_EMAILS = ["tinkrokits@gmail.com", "admin@tinkro.in"];
+const RESET_EMAILS = ["tinkrokits@gmail.com"];
 
 const SETUP_STEPS = [
   "Go to Firebase Console (console.firebase.google.com)",
@@ -30,18 +35,27 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const [showPass, setShowPass] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [resetInfo, setResetInfo] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginForm>({
-    defaultValues: { email: "admin@tinkro.in", password: "" },
+    defaultValues: { email: "tinkrokits@gmail.com", password: "" },
   });
 
   async function onSubmit(data: LoginForm) {
     setServerError(null);
+    setResetInfo(null);
+    if (!ADMIN_EMAILS.includes(data.email.trim().toLowerCase())) {
+      setServerError(
+        "This email is not allowed for admin access. Use the approved admin email.",
+      );
+      return;
+    }
     setIsSubmitting(true);
     try {
       await login(data.email, data.password);
@@ -64,6 +78,43 @@ export default function AdminLoginPage() {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handlePasswordReset() {
+    const email = (
+      document.getElementById("admin-email") as HTMLInputElement | null
+    )
+      ?.value?.trim()
+      ?.toLowerCase();
+
+    if (!email) {
+      setServerError("Please enter your admin email to reset password.");
+      setResetInfo(null);
+      return;
+    }
+
+    if (!RESET_EMAILS.includes(email)) {
+      setServerError(
+        "Reset link can only be sent to the approved admin email.",
+      );
+      setResetInfo(null);
+      return;
+    }
+
+    setServerError(null);
+    setResetInfo(null);
+    setIsResetting(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setResetInfo(
+        "Password reset link sent. Please check your email (and spam folder).",
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Password reset failed";
+      setServerError(msg);
+    } finally {
+      setIsResetting(false);
     }
   }
 
@@ -121,7 +172,7 @@ export default function AdminLoginPage() {
               }}
             >
               <img
-                src="/tinkro%20favicon.png"
+                src="/tinkro-favicon.png"
                 alt="Tinkro"
                 className="h-full w-full object-contain p-1.5"
               />
@@ -333,6 +384,24 @@ export default function AdminLoginPage() {
               </motion.div>
             )}
 
+            {/* Reset password info */}
+            {resetInfo && (
+              <motion.div
+                key={resetInfo}
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-xl px-4 py-3 text-sm text-emerald-200 flex items-start gap-2.5"
+                style={{
+                  background: "oklch(0.70 0.14 160 / 0.15)",
+                  border: "1px solid oklch(0.70 0.14 160 / 0.3)",
+                }}
+                data-ocid="admin-reset-info"
+              >
+                <ShieldCheck size={15} className="mt-0.5 shrink-0" />
+                <span>{resetInfo}</span>
+              </motion.div>
+            )}
+
             {/* Submit */}
             <button
               type="submit"
@@ -354,6 +423,27 @@ export default function AdminLoginPage() {
                 </>
               ) : (
                 "Sign In to Admin"
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePasswordReset}
+              disabled={isResetting}
+              className="w-full py-2 rounded-xl text-xs font-semibold text-white/70 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed hover:text-white"
+              style={{
+                background: "oklch(0.16 0.04 243 / 0.6)",
+                border: "1px solid oklch(0.25 0.05 243 / 0.5)",
+              }}
+              data-ocid="admin-reset-password"
+            >
+              {isResetting ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 size={14} className="animate-spin" /> Sending reset
+                  link…
+                </span>
+              ) : (
+                "Forgot password? Send reset link"
               )}
             </button>
           </form>

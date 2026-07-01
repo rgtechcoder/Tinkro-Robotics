@@ -1,4 +1,3 @@
-import { useAdminAuth } from "@/context/AdminAuthContext";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import {
   ChevronDown,
@@ -16,7 +15,8 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useProducts } from "../lib/publicDataService";
+import { getProductRouteParam } from "../lib/slug";
+import { fetchAllProducts, searchProducts } from "../lib/publicDataService";
 import { useCartStore } from "../store/cartStore";
 import { useWishlistStore } from "../store/wishlistStore";
 import type { AdminProduct } from "../types/admin";
@@ -27,6 +27,11 @@ const navLinks = [
   { label: "Blog", to: "/blog" as const },
   { label: "About", to: "/about" as const },
   { label: "Contact", to: "/contact" as const },
+];
+
+const ADMIN_EMAILS = [
+  "admin@tinkro.com",
+  "support@tinkro.com",
 ];
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -49,8 +54,11 @@ function SearchDropdown({
 }) {
   const navigate = useNavigate();
 
-  function handleSelect(id: string) {
-    navigate({ to: "/product/$id", params: { id } });
+  function handleSelect(product: AdminProduct) {
+    navigate({
+      to: "/product/$slug",
+      params: { slug: getProductRouteParam(product) },
+    });
     onSelect();
   }
 
@@ -94,15 +102,17 @@ function SearchDropdown({
             >
               <button
                 type="button"
-                onClick={() => handleSelect(product.id)}
+                onClick={() => handleSelect(product)}
                 className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-primary/10 group transition-colors duration-150"
                 data-ocid={`search-result-${product.id}`}
               >
                 <div className="relative flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-border/20">
-                  <img
+                      <img
                     src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
+                    alt={`${product.name} from Tinkro`}
+                        className="w-full h-full object-cover"
+                        width={40}
+                        height={40}
                   />
                 </div>
                 <div className="flex-1 min-w-0 text-left">
@@ -354,26 +364,48 @@ export function Navbar() {
   const router = useRouter();
   const itemCount = useCartStore((s) => s.itemCount);
   const wishlistCount = useWishlistStore((s) => s.itemCount);
-  const { adminUser } = useAdminAuth();
   const { user } = useUserAuth();
-  const { products: liveProducts } = useProducts();
+  const isAdminUser = Boolean(
+    user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase()),
+  );
+  const [searchResults, setSearchResults] = useState<AdminProduct[]>([]);
 
   const debouncedQuery = useDebounce(searchQuery, 200);
 
-  const searchResults: AdminProduct[] =
-    debouncedQuery.trim().length >= 1
-      ? liveProducts
-          .filter(
-            (p) =>
-              p.name.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
-              p.category.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
-              (Array.isArray(p.tags) &&
-                p.tags.some((t) =>
-                  t.toLowerCase().includes(debouncedQuery.toLowerCase()),
-                )),
-          )
-          .slice(0, 8)
-      : [];
+  useEffect(() => {
+    let active = true;
+
+    const trimmed = debouncedQuery.trim();
+    if (trimmed.length === 0) {
+      setSearchResults([]);
+      return;
+    }
+
+    void (async () => {
+      const results = await searchProducts(trimmed, 8);
+      if (!active) return;
+      if (results.length > 0) {
+        setSearchResults(results);
+        return;
+      }
+
+      const allProducts = await fetchAllProducts();
+      if (!active) return;
+      const fallbackResults = allProducts
+        .filter((p) =>
+          [p.name, p.category, ...(Array.isArray(p.tags) ? p.tags : [])]
+            .join(" ")
+            .toLowerCase()
+            .includes(trimmed.toLowerCase()),
+        )
+        .slice(0, 8);
+      setSearchResults(fallbackResults);
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [debouncedQuery]);
 
   const closeSearch = useCallback(() => {
     setSearchOpen(false);
@@ -477,6 +509,8 @@ export function Navbar() {
             <img
               src="/assets/brand/logo.png"
               alt="Tinkro"
+                  width={140}
+                  height={40}
               className="h-10 w-auto object-contain"
               style={{ maxWidth: "140px" }}
             />
@@ -655,7 +689,7 @@ export function Navbar() {
             </Link>
 
             {/* Admin Panel button — only visible when signed in as admin */}
-            {adminUser && (
+            {isAdminUser && (
               <a
                 href="/admin/dashboard"
                 className="hidden sm:flex items-center gap-1.5 px-3 h-8 rounded-full text-xs font-semibold transition-all duration-200 border"
@@ -792,7 +826,7 @@ export function Navbar() {
               </Link>
             )}
             {/* Admin Panel — mobile, only for admin users */}
-            {adminUser && (
+            {isAdminUser && (
               <a
                 href="/admin/dashboard"
                 onClick={() => setMenuOpen(false)}

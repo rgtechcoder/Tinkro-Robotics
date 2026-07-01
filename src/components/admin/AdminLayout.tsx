@@ -6,6 +6,7 @@ import {
   ExternalLink,
   FileText,
   FlaskConical,
+  FileSpreadsheet,
   HardDrive,
   Image,
   LayoutDashboard,
@@ -47,6 +48,12 @@ const CORE_NAV: NavItem[] = [
     path: "/admin/products",
   },
   {
+    id: "bulk-import",
+    label: "Bulk Product Import",
+    icon: <FileSpreadsheet size={18} />,
+    path: "/admin/bulk-import",
+  },
+  {
     id: "categories",
     label: "Categories",
     icon: <Tag size={18} />,
@@ -77,8 +84,8 @@ const CORE_NAV: NavItem[] = [
     path: "/admin/users",
   },
   {
-    id: "blog",
-    label: "Blog / CMS",
+    id: "knowledge-hub",
+    label: "Knowledge Hub",
     icon: <FileText size={18} />,
     path: "/admin/blog",
   },
@@ -93,6 +100,12 @@ const CORE_NAV: NavItem[] = [
     label: "Enquiries & Leads",
     icon: <Mail size={18} />,
     path: "/admin/enquiries",
+  },
+  {
+    id: "newsletter",
+    label: "Newsletter Leads",
+    icon: <Mail size={18} />,
+    path: "/admin/newsletter",
   },
   {
     id: "media",
@@ -166,7 +179,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             }}
           >
             <img
-              src="/tinkro%20favicon.png"
+              src="/tinkro-favicon.png"
               alt="Tinkro"
               className="h-full w-full object-contain p-1"
             />
@@ -425,7 +438,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             >
               <div className="w-5 h-5 rounded-full flex items-center justify-center overflow-hidden bg-white">
                 <img
-                  src="/tinkro%20favicon.png"
+                  src="/tinkro-favicon.png"
                   alt="Tinkro"
                   className="h-full w-full object-contain p-0.5"
                 />

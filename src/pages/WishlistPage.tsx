@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "@tanstack/react-router";
 import { Heart, ShoppingCart, Trash2 } from "lucide-react";
 import { motion } from "motion/react";
+import { useEffect } from "react";
+import { upsertLinkTag, upsertMetaTag } from "../lib/seo";
 import { useCartStore } from "../store/cartStore";
 import { useWishlistStore } from "../store/wishlistStore";
 
@@ -9,6 +11,17 @@ export function WishlistPage() {
   const navigate = useNavigate();
   const { items, removeItem, clearWishlist } = useWishlistStore();
   const addItem = useCartStore((s) => s.addItem);
+
+  useEffect(() => {
+    const title = "Wishlist | Tinkro";
+    const description = "View and manage your saved Tinkro products.";
+    const canonicalUrl = "https://tinkro.in/wishlist";
+
+    document.title = title;
+    upsertLinkTag("canonical", canonicalUrl);
+    upsertMetaTag("name", "description", description);
+    upsertMetaTag("name", "robots", "noindex,follow");
+  }, []);
 
   if (items.length === 0) {
     return (
@@ -74,7 +87,9 @@ export function WishlistPage() {
               <div className="w-full h-48 rounded-xl bg-white/5 border border-border/40 flex items-center justify-center overflow-hidden">
                 <img
                   src={item.image}
-                  alt={item.name}
+                  alt={`${item.name} from Tinkro`}
+                  width={400}
+                  height={300}
                   className="w-full h-full object-contain"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src =

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { upsertLinkTag, upsertMetaTag } from "../lib/seo";
 
 // ── Confetti particle ─────────────────────────────────────────────────────────
 interface Particle {
@@ -88,6 +89,17 @@ export function OrderSuccessPage() {
   const orderId = search.orderId ?? "";
   const [order, setOrder] = useState<Order | null>(null);
   const particles = useConfetti(70);
+
+  useEffect(() => {
+    const title = "Order Successful | Tinkro";
+    const description = "Your Tinkro order has been placed successfully.";
+    const canonicalUrl = "https://tinkro.in/order-success";
+
+    document.title = title;
+    upsertLinkTag("canonical", canonicalUrl);
+    upsertMetaTag("name", "description", description);
+    upsertMetaTag("name", "robots", "noindex,follow");
+  }, []);
 
   useEffect(() => {
     if (!orderId) return;

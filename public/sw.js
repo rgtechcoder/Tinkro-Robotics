@@ -1,5 +1,5 @@
-const CACHE_NAME = "tinkro-v1";
-const STATIC_CACHE = "tinkro-static-v1";
+const CACHE_NAME = "tinkro-v2";
+const STATIC_CACHE = "tinkro-static-v2";
 
 const PRE_CACHE_URLS = [
   "/",
@@ -11,8 +11,8 @@ const PRE_CACHE_URLS = [
   "/manifest.json",
 ];
 
+const JS_EXTENSIONS = [".js"];
 const STATIC_EXTENSIONS = [
-  ".js",
   ".css",
   ".woff",
   ".woff2",
@@ -24,6 +24,10 @@ const STATIC_EXTENSIONS = [
   ".webp",
   ".ico",
 ];
+
+function isJavascriptAsset(url) {
+  return JS_EXTENSIONS.some((ext) => url.pathname.endsWith(ext));
+}
 
 function isStaticAsset(url) {
   return STATIC_EXTENSIONS.some((ext) => url.pathname.endsWith(ext));
@@ -47,7 +51,7 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// Activate: delete old caches
+// Activate: delete old caches and notify clients
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
@@ -61,7 +65,15 @@ self.addEventListener("activate", (event) => {
             .map((name) => caches.delete(name)),
         ),
       )
-      .then(() => self.clients.claim()),
+      .then(() => self.clients.claim())
+      .then(() =>
+        self.clients.matchAll({ type: "window", includeUncontrolled: true })
+          .then((clients) =>
+            clients.forEach((client) =>
+              client.postMessage({ type: "SW_UPDATED" }),
+            ),
+          ),
+      ),
   );
 });
 
@@ -82,7 +94,22 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cache-first for static assets
+  // Network-first for JavaScript assets to avoid stale bundle/chunk caching.
+  if (isJavascriptAsset(url)) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            caches.open(STATIC_CACHE).then((cache) => cache.put(event.request, response.clone()));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request)),
+    );
+    return;
+  }
+
+  // Cache-first for static non-JS assets
   if (isStaticAsset(url)) {
     event.respondWith(
       caches.open(STATIC_CACHE).then((cache) =>
@@ -100,7 +127,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cache-first with network fallback for navigation (offline support)
+  // Network-first with cache fallback for navigation (offline support)
   if (isNavigationRequest(event.request)) {
     event.respondWith(
       fetch(event.request)

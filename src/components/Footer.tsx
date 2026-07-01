@@ -42,14 +42,15 @@ const socialLinks = [
   { icon: SiFacebook, href: "https://www.facebook.com/profile.php?id=61581192200900", label: "Facebook" },
 ];
 
+const caffeineUrl = "https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=tinkro.in";
+
 export function Footer() {
   const year = new Date().getFullYear();
   const hostname =
-    typeof window !== "undefined"
-      ? encodeURIComponent(window.location.hostname)
-      : "";
-  const caffeineUrl = `https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${hostname}`;
-
+    typeof window !== "undefined" &&
+    !["localhost", "127.0.0.1", "::1"].includes(window.location.hostname)
+      ? window.location.hostname
+      : "tinkro.in";
   return (
     <footer className="bg-card border-t border-border" data-ocid="footer">
       {/* Main footer content */}
@@ -61,6 +62,8 @@ export function Footer() {
               <img
                 src="/assets/brand/logo.png"
                 alt="Tinkro"
+                width={160}
+                height={48}
                 className="h-12 w-auto object-contain"
                 style={{ maxWidth: "160px" }}
               />
@@ -190,7 +193,7 @@ export function Footer() {
               rel="noopener noreferrer"
               className="hover:text-foreground transition-colors underline underline-offset-2"
             >
-            
+              Powered by Caffeine
             </a>
           </p>
         </div>

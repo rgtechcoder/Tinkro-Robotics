@@ -1,9 +1,26 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { upsertLinkTag, upsertMetaTag } from "../lib/seo";
 
 export function TrackOrderPage() {
   const [orderId, setOrderId] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const title = "Track Order | Tinkro Support";
+    const description =
+      "Track your Tinkro order status using your order ID or log in to view dashboard updates.";
+    const canonicalUrl = "https://tinkro.in/track-order";
+
+    document.title = title;
+    upsertLinkTag("canonical", canonicalUrl);
+    upsertMetaTag("name", "description", description);
+    upsertMetaTag("name", "robots", "noindex,follow");
+    upsertMetaTag("property", "og:title", title);
+    upsertMetaTag("property", "og:description", description);
+    upsertMetaTag("property", "og:type", "website");
+    upsertMetaTag("property", "og:url", canonicalUrl);
+  }, []);
 
   function handleTrack() {
     if (!orderId.trim()) return;

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   auth,
   createUserWithEmailAndPassword,
@@ -8,6 +8,7 @@ import {
 } from "../lib/firebase";
 import { useNavigate } from "@tanstack/react-router";
 import { upsertUserProfile } from "@/lib/userService";
+import { upsertLinkTag, upsertMetaTag } from "../lib/seo";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -25,6 +26,17 @@ export default function LoginPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const title = "Login | Tinkro";
+    const description = "Log in to your Tinkro account to track orders and manage your profile.";
+    const canonicalUrl = "https://tinkro.in/login";
+
+    document.title = title;
+    upsertLinkTag("canonical", canonicalUrl);
+    upsertMetaTag("name", "description", description);
+    upsertMetaTag("name", "robots", "noindex,follow");
+  }, []);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });

@@ -37,7 +37,11 @@ import {
   subscribeToCategories,
   subscribeToProducts,
   updateProduct,
+  bulkAdjustProductPrices,
 } from "@/lib/adminService";
+
+// Helper components for array fields (ensure always present)
+
 //import { storage } from "@/lib/firebase";
 import type { AdminCategory, AdminProduct } from "@/types/admin";
 import {
@@ -62,6 +66,21 @@ interface ProductFormValues {
   name: string;
   sku: string;
   description: string;
+  overview: string;
+  metaTitle: string;
+  metaDescription: string;
+  focusKeyword: string;
+  keywordsRaw: string;
+  canonicalUrl: string;
+  seoSlug: string;
+  openGraphTitle: string;
+  openGraphDescription: string;
+  openGraphImage: string;
+  twitterTitle: string;
+  twitterDescription: string;
+  brand: string;
+  gtin: string;
+  mpn: string;
   price: number;
   originalPrice: number;
   stock: number;
@@ -70,6 +89,16 @@ interface ProductFormValues {
   reviews?: number;
   tagsRaw: string;
   isActive: boolean;
+  features: string[];
+  specificationsRaw: string;
+  compatibility: string[];
+  applications: string[];
+  packageContents: string[];
+  faqs: { question: string; answer: string }[];
+  kitContents: string[];
+  useCases: string[];
+  reviewsArray: { name: string; rating: number; content: string }[];
+  demoVideoUrl: string;
 }
 
 interface ImageUpload {
@@ -302,7 +331,340 @@ function MultiCategorySelector({
   );
 }
 
+// ─── ArrayField (simple add/remove for string arrays) ──────────────
+function ArrayField({ value, onChange, placeholder }: { value: string[]; onChange: (arr: string[]) => void; placeholder?: string }) {
+  const [input, setInput] = useState("");
+  return (
+    <div>
+      <div className="flex gap-2 mb-2">
+        <Input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder={placeholder}
+          className="flex-1 h-9 text-sm"
+          style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }}
+          onKeyDown={e => {
+            if (e.key === "Enter" && input.trim()) {
+              onChange([...value, input.trim()]);
+              setInput("");
+            }
+          }}
+        />
+        <button type="button" onClick={() => { if (input.trim()) { onChange([...value, input.trim()]); setInput(""); } }} className="px-3 rounded bg-blue-500 text-white text-sm">Add</button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {value.map((item, idx) => (
+          <span key={idx} className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-700 text-xs">
+            {item}
+            <button type="button" onClick={() => onChange(value.filter((_, i) => i !== idx))} className="ml-1 text-red-400">×</button>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── ReviewsArrayField (add/remove for reviews array) ──────────────
+function ReviewsArrayField({ value, onChange }: { value: { name: string; rating: number; content: string }[]; onChange: (arr: { name: string; rating: number; content: string }[]) => void }) {
+  const [review, setReview] = useState({ name: "", rating: 5, content: "" });
+  return (
+    <div>
+      <div className="flex gap-2 mb-2">
+        <Input
+          value={review.name}
+          onChange={e => setReview(r => ({ ...r, name: e.target.value }))}
+          placeholder="Name"
+          className="flex-1 h-9 text-sm"
+          style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }}
+        />
+        <Input
+          type="number"
+          min={0}
+          max={5}
+          step={0.1}
+          value={review.rating}
+          onChange={e => setReview(r => ({ ...r, rating: Number(e.target.value) }))}
+          placeholder="Rating"
+          className="w-20 h-9 text-sm"
+          style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }}
+        />
+        <Input
+          value={review.content}
+          onChange={e => setReview(r => ({ ...r, content: e.target.value }))}
+          placeholder="Review content"
+          className="flex-1 h-9 text-sm"
+          style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }}
+        />
+        <button type="button" onClick={() => {
+          if (review.name.trim() && review.content.trim()) {
+            onChange([...value, { ...review, name: review.name.trim(), content: review.content.trim() }]);
+            setReview({ name: "", rating: 5, content: "" });
+          }
+        }} className="px-3 rounded bg-blue-500 text-white text-sm">Add</button>
+      </div>
+      <div className="flex flex-col gap-2">
+        {value.map((item, idx) => (
+          <div key={idx} className="flex items-center gap-2 px-2 py-1 rounded bg-slate-700 text-xs">
+            <span className="font-semibold">{item.name}</span>
+            <span>({item.rating}★)</span>
+            <span className="flex-1">{item.content}</span>
+            <button type="button" onClick={() => onChange(value.filter((_, i) => i !== idx))} className="ml-1 text-red-400">×</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Product Form Modal ───────────────────────────────────────────────────────
+
+function FaqArrayField({
+  value,
+  onChange,
+}: {
+  value: { question: string; answer: string }[];
+  onChange: (arr: { question: string; answer: string }[]) => void;
+}) {
+  const [faq, setFaq] = useState({ question: "", answer: "" });
+  return (
+    <div>
+      <div className="grid grid-cols-1 gap-2 mb-2">
+        <Input
+          value={faq.question}
+          onChange={(e) => setFaq((prev) => ({ ...prev, question: e.target.value }))}
+          placeholder="FAQ question"
+          className="h-9 text-sm"
+          style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }}
+        />
+        <Textarea
+          value={faq.answer}
+          onChange={(e) => setFaq((prev) => ({ ...prev, answer: e.target.value }))}
+          placeholder="FAQ answer"
+          rows={2}
+          className="text-sm resize-none"
+          style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }}
+        />
+        <button
+          type="button"
+          onClick={() => {
+            if (faq.question.trim() && faq.answer.trim()) {
+              onChange([...value, { question: faq.question.trim(), answer: faq.answer.trim() }]);
+              setFaq({ question: "", answer: "" });
+            }
+          }}
+          className="w-fit px-3 py-1.5 rounded bg-blue-500 text-white text-sm"
+        >
+          Add FAQ
+        </button>
+      </div>
+      <div className="flex flex-col gap-2">
+        {value.map((item, idx) => (
+          <div key={`${item.question}-${idx}`} className="rounded-lg bg-slate-700/70 p-2 text-xs text-white/80">
+            <div className="flex items-start gap-2">
+              <div className="flex-1">
+                <p className="font-semibold">{item.question}</p>
+                <p className="text-white/60 mt-1">{item.answer}</p>
+              </div>
+              <button type="button" onClick={() => onChange(value.filter((_, i) => i !== idx))} className="text-red-400">
+                Remove
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function parseCommaList(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseSpecifications(value: string) {
+  const result: NonNullable<AdminProduct["specifications"]> = {};
+  for (const line of value.split("\n")) {
+    const [rawKey, ...rawValue] = line.split(":");
+    const key = rawKey?.trim();
+    const specValue = rawValue.join(":").trim();
+    if (key && specValue) result[key] = specValue;
+  }
+  return result;
+}
+
+function formatSpecifications(
+  specifications: AdminProduct["specifications"] | undefined,
+) {
+  if (!specifications) return "";
+  return Object.entries(specifications)
+    .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : String(value ?? "")}`)
+    .join("\n");
+}
+
+function slugifySeo(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function keywordDensity(text: string, keyword: string) {
+  const cleanKeyword = keyword.trim().toLowerCase();
+  const words = text.toLowerCase().match(/[a-z0-9]+/g) ?? [];
+  if (!cleanKeyword || words.length === 0) return 0;
+  const keywordWords = cleanKeyword.match(/[a-z0-9]+/g) ?? [];
+  if (keywordWords.length === 0) return 0;
+  const phrase = keywordWords.join(" ");
+  const matches = words.join(" ").split(phrase).length - 1;
+  return Number(((matches / words.length) * 100).toFixed(2));
+}
+
+function buildSeoAnalysis(values: ProductFormValues, imageUploads: ImageUpload[]) {
+  const title = values.metaTitle || values.name;
+  const description = values.metaDescription || values.description;
+  const density = keywordDensity(
+    `${values.name} ${values.description} ${values.overview} ${values.features.join(" ")}`,
+    values.focusKeyword,
+  );
+  const checks = [
+    title.length >= 30 && title.length <= 60,
+    description.length >= 120 && description.length <= 160,
+    imageUploads.length > 0 && Boolean(values.name.trim()),
+    Boolean(values.name.trim()),
+    Boolean(values.brand.trim() && values.sku.trim()),
+    !values.focusKeyword || (density >= 0.5 && density <= 3),
+    values.faqs.length > 0,
+    Boolean(values.seoSlug.trim() || values.name.trim()),
+  ];
+  return {
+    score: Math.round((checks.filter(Boolean).length / checks.length) * 100),
+    titleLength: title.length,
+    descriptionLength: description.length,
+    missingAlt: imageUploads.length === 0 || !values.name.trim(),
+    missingH1: !values.name.trim(),
+    missingSchema: !values.brand.trim() || !values.sku.trim(),
+    keywordDensity: density,
+  };
+}
+
+function SeoManager({
+  register,
+  values,
+  imageUploads,
+}: {
+  register: ReturnType<typeof useForm<ProductFormValues>>["register"];
+  values: ProductFormValues;
+  imageUploads: ImageUpload[];
+}) {
+  const analysis = buildSeoAnalysis(values, imageUploads);
+  const googleTitle = values.metaTitle || values.name || "Product title";
+  const googleDescription =
+    values.metaDescription || values.description || "Product meta description preview...";
+  const previewUrl = values.canonicalUrl || `https://tinkro.in/product/${values.seoSlug || slugifySeo(values.name || "product")}`;
+  const ogTitle = values.openGraphTitle || googleTitle;
+  const ogDescription = values.openGraphDescription || googleDescription;
+  const twitterTitle = values.twitterTitle || ogTitle;
+  const twitterDescription = values.twitterDescription || ogDescription;
+  const previewImage = values.openGraphImage || imageUploads[0]?.preview || "";
+
+  return (
+    <section className="space-y-5 rounded-2xl p-4" style={{ background: "oklch(0.13 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)" }}>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-bold text-white">Enterprise SEO Manager</h3>
+          <p className="text-xs text-white/50">Metadata, schema inputs, analysis, and social previews.</p>
+        </div>
+        <div className="text-right">
+          <p className="text-2xl font-bold text-orange-400">{analysis.score}</p>
+          <p className="text-[10px] uppercase tracking-widest text-white/40">SEO Score</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">Meta Title</Label>
+          <Input {...register("metaTitle")} placeholder="Buy Arduino Starter Kit Online | Tinkro" className="h-10 text-sm" style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }} />
+          <p className="text-[11px] text-white/40">Title length: {analysis.titleLength}/60</p>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">Focus Keyword</Label>
+          <Input {...register("focusKeyword")} placeholder="arduino starter kit" className="h-10 text-sm" style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }} />
+          <p className="text-[11px] text-white/40">Keyword density: {analysis.keywordDensity}%</p>
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">Meta Description</Label>
+        <Textarea {...register("metaDescription")} rows={3} placeholder="SEO description for search engines..." className="text-sm resize-none" style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }} />
+        <p className="text-[11px] text-white/40">Description length: {analysis.descriptionLength}/160</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">Keywords</Label>
+          <Input {...register("keywordsRaw")} placeholder="arduino, robotics, stem" className="h-10 text-sm" style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">SEO Slug</Label>
+          <Input {...register("seoSlug")} placeholder="arduino-starter-kit" className="h-10 text-sm" style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }} />
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">Canonical URL</Label>
+        <Input {...register("canonicalUrl")} placeholder="https://tinkro.in/product/arduino-starter-kit" className="h-10 text-sm" style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <Input {...register("openGraphTitle")} placeholder="Open Graph title" className="h-10 text-sm" style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }} />
+        <Input {...register("openGraphImage")} placeholder="Open Graph image URL" className="h-10 text-sm" style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }} />
+      </div>
+      <Textarea {...register("openGraphDescription")} rows={2} placeholder="Open Graph description" className="text-sm resize-none" style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }} />
+
+      <div className="grid grid-cols-2 gap-4">
+        <Input {...register("twitterTitle")} placeholder="Twitter title" className="h-10 text-sm" style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }} />
+        <Input {...register("twitterDescription")} placeholder="Twitter description" className="h-10 text-sm" style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }} />
+      </div>
+
+      <div className="grid grid-cols-4 gap-3 text-xs">
+        {[
+          ["Missing Alt", analysis.missingAlt],
+          ["Missing H1", analysis.missingH1],
+          ["Missing Schema", analysis.missingSchema],
+          ["FAQ Schema", values.faqs.length === 0],
+        ].map(([label, issue]) => (
+          <div key={String(label)} className="rounded-lg px-3 py-2 bg-slate-800/70">
+            <p className={issue ? "text-red-300" : "text-emerald-300"}>{issue ? "Needs work" : "OK"}</p>
+            <p className="text-white/50">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="rounded-xl bg-white p-3 text-slate-900">
+          <p className="text-blue-700 text-base truncate">{googleTitle}</p>
+          <p className="text-green-700 text-xs truncate">{previewUrl}</p>
+          <p className="text-xs text-slate-600 line-clamp-3">{googleDescription}</p>
+        </div>
+        <div className="rounded-xl bg-slate-100 overflow-hidden text-slate-900">
+          <div className="h-20 bg-slate-300">{previewImage && <img src={previewImage} alt="" className="h-full w-full object-cover" />}</div>
+          <div className="p-3">
+            <p className="text-xs uppercase text-slate-500">tinkro.in</p>
+            <p className="text-sm font-semibold truncate">{ogTitle}</p>
+            <p className="text-xs text-slate-600 line-clamp-2">{ogDescription}</p>
+          </div>
+        </div>
+        <div className="rounded-xl bg-black p-3 text-white">
+          <p className="font-semibold truncate">{twitterTitle}</p>
+          <p className="text-xs text-white/60 line-clamp-3">{twitterDescription}</p>
+          {previewImage && <img src={previewImage} alt="" className="mt-2 h-20 w-full object-cover rounded-lg" />}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function ProductFormModal({
   open,
@@ -332,6 +694,21 @@ function ProductFormModal({
       name: "",
       sku: "",
       description: "",
+      overview: "",
+      metaTitle: "",
+      metaDescription: "",
+      focusKeyword: "",
+      keywordsRaw: "",
+      canonicalUrl: "",
+      seoSlug: "",
+      openGraphTitle: "",
+      openGraphDescription: "",
+      openGraphImage: "",
+      twitterTitle: "",
+      twitterDescription: "",
+      brand: "Tinkro",
+      gtin: "",
+      mpn: "",
       price: 0,
       originalPrice: 0,
       stock: 0,
@@ -340,11 +717,30 @@ function ProductFormModal({
       reviews: 0,
       tagsRaw: "",
       isActive: true,
+      features: [],
+      specificationsRaw: "",
+      compatibility: [],
+      applications: [],
+      packageContents: [],
+      faqs: [],
+      kitContents: [],
+      useCases: [],
+      reviewsArray: [],
+      demoVideoUrl: "",
     },
   });
 
   const isActive = watch("isActive");
   const tagsRaw = watch("tagsRaw");
+  const formValues = watch();
+  const features = watch("features");
+  const compatibility = watch("compatibility");
+  const applications = watch("applications");
+  const packageContents = watch("packageContents");
+  const faqs = watch("faqs");
+  const kitContents = watch("kitContents");
+  const useCases = watch("useCases");
+  const reviewsArray = watch("reviewsArray");
 
   useEffect(() => {
     if (open && editProduct) {
@@ -352,6 +748,21 @@ function ProductFormModal({
         name: editProduct.name,
         sku: editProduct.sku,
         description: editProduct.description,
+        overview: editProduct.overview ?? "",
+        metaTitle: editProduct.metaTitle ?? "",
+        metaDescription: editProduct.metaDescription ?? "",
+        focusKeyword: editProduct.focusKeyword ?? "",
+        keywordsRaw: (editProduct.keywords ?? []).join(", "),
+        canonicalUrl: editProduct.canonicalUrl ?? "",
+        seoSlug: editProduct.seoSlug ?? "",
+        openGraphTitle: editProduct.openGraphTitle ?? "",
+        openGraphDescription: editProduct.openGraphDescription ?? "",
+        openGraphImage: editProduct.openGraphImage ?? "",
+        twitterTitle: editProduct.twitterTitle ?? "",
+        twitterDescription: editProduct.twitterDescription ?? "",
+        brand: editProduct.brand ?? "Tinkro",
+        gtin: editProduct.gtin ?? "",
+        mpn: editProduct.mpn ?? "",
         price: editProduct.price,
         originalPrice: editProduct.originalPrice ?? 0,
         stock: editProduct.stock,
@@ -360,6 +771,16 @@ function ProductFormModal({
         reviews: editProduct.reviews ?? 0,
         tagsRaw: (editProduct.tags ?? []).join(", "),
         isActive: editProduct.isActive,
+        features: editProduct.features ?? [],
+        specificationsRaw: formatSpecifications(editProduct.specifications),
+        compatibility: editProduct.compatibility ?? [],
+        applications: editProduct.applications ?? [],
+        packageContents: editProduct.packageContents ?? [],
+        faqs: editProduct.faqs ?? [],
+        kitContents: editProduct.kitContents ?? [],
+        useCases: editProduct.useCases ?? [],
+        reviewsArray: editProduct.reviewsArray ?? [],
+        demoVideoUrl: editProduct.demoVideoUrl ?? "",
       });
       const existingIds =
         Array.isArray(editProduct.categoryIds) &&
@@ -442,10 +863,10 @@ async function uploadPendingImages(
       const productId = editProduct?.id ?? crypto.randomUUID();
       const imageUrls = await uploadPendingImages(productId, imageUploads);
       const tags = values.tagsRaw
-        ? values.tagsRaw
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean)
+        ? parseCommaList(values.tagsRaw)
+        : [];
+      const keywords = values.keywordsRaw
+        ? parseCommaList(values.keywordsRaw)
         : [];
       const selectedCategories = categories.filter((c) =>
         selectedCategoryIds.includes(c.id),
@@ -457,6 +878,21 @@ async function uploadPendingImages(
         name: values.name,
         sku: values.sku,
         description: values.description,
+        overview: values.overview,
+        metaTitle: values.metaTitle,
+        metaDescription: values.metaDescription,
+        focusKeyword: values.focusKeyword,
+        keywords,
+        canonicalUrl: values.canonicalUrl,
+        seoSlug: values.seoSlug || slugifySeo(values.name),
+        openGraphTitle: values.openGraphTitle,
+        openGraphDescription: values.openGraphDescription,
+        openGraphImage: values.openGraphImage,
+        twitterTitle: values.twitterTitle,
+        twitterDescription: values.twitterDescription,
+        brand: values.brand,
+        gtin: values.gtin,
+        mpn: values.mpn,
         price: Number(values.price),
         originalPrice: Number(values.originalPrice),
         categoryId: primaryCategoryId,
@@ -473,8 +909,17 @@ async function uploadPendingImages(
         rating: values.rating ?? 0,
         reviews: values.reviews ?? 0,
         inStock: Number(values.stock) > 0,
+        features: values.features,
+        specifications: parseSpecifications(values.specificationsRaw),
+        compatibility: values.compatibility,
+        applications: values.applications,
+        packageContents: values.packageContents,
+        faqs: values.faqs,
+        kitContents: values.kitContents,
+        useCases: values.useCases,
+        reviewsArray: values.reviewsArray,
+        demoVideoUrl: values.demoVideoUrl,
       };
-
       if (isEdit && editProduct) {
         await updateProduct(editProduct.id, payload);
         toast.success("Product updated");
@@ -586,6 +1031,137 @@ async function uploadPendingImages(
                 {errors.description.message}
               </p>
             )}
+          </div>
+
+          {/* Overview */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+              Overview
+            </Label>
+            <Textarea
+              {...register("overview")}
+              placeholder="Short overview for this product..."
+              rows={2}
+              className="text-sm resize-none"
+              style={{
+                background: "oklch(0.15 0.03 243 / 0.7)",
+                border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+                color: "white",
+              }}
+            />
+          </div>
+
+          <SeoManager
+            register={register}
+            values={formValues}
+            imageUploads={imageUploads}
+          />
+
+          {/* Product SEO */}
+          <div className="space-y-3 rounded-2xl p-4" style={{ background: "oklch(0.13 0.03 243 / 0.55)", border: "1px solid oklch(0.28 0.05 243 / 0.45)" }}>
+            <h3 className="text-sm font-bold text-white">Product SEO</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">Brand</Label>
+                <Input {...register("brand")} placeholder="Tinkro" className="h-10 text-sm" style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">SKU</Label>
+                <Input {...register("sku", { required: "Required" })} placeholder="ARD-STR-001" className="h-10 text-sm" style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">GTIN</Label>
+                <Input {...register("gtin")} placeholder="Global Trade Item Number" className="h-10 text-sm" style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">MPN</Label>
+                <Input {...register("mpn")} placeholder="Manufacturer part number" className="h-10 text-sm" style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }} />
+              </div>
+            </div>
+          </div>
+
+          {/* SEO Content */}
+          <div className="space-y-4 rounded-2xl p-4" style={{ background: "oklch(0.13 0.03 243 / 0.55)", border: "1px solid oklch(0.28 0.05 243 / 0.45)" }}>
+            <h3 className="text-sm font-bold text-white">Content</h3>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">Features</Label>
+              <ArrayField value={features} onChange={(arr) => setValue("features", arr)} placeholder="Add feature..." />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">Specifications</Label>
+              <Textarea {...register("specificationsRaw")} rows={4} placeholder={"Input Voltage: 5V\nController: ATmega328P"} className="text-sm resize-none" style={{ background: "oklch(0.15 0.03 243 / 0.7)", border: "1px solid oklch(0.28 0.05 243 / 0.6)", color: "white" }} />
+              <p className="text-[11px] text-white/40">Use one key: value pair per line.</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">Compatibility</Label>
+              <ArrayField value={compatibility} onChange={(arr) => setValue("compatibility", arr)} placeholder="Add compatible board/platform..." />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">Applications</Label>
+              <ArrayField value={applications} onChange={(arr) => setValue("applications", arr)} placeholder="Add application..." />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">Package Contents</Label>
+              <ArrayField value={packageContents} onChange={(arr) => setValue("packageContents", arr)} placeholder="Add package item..." />
+            </div>
+          </div>
+
+          {/* FAQ */}
+          <div className="space-y-3 rounded-2xl p-4" style={{ background: "oklch(0.13 0.03 243 / 0.55)", border: "1px solid oklch(0.28 0.05 243 / 0.45)" }}>
+            <h3 className="text-sm font-bold text-white">FAQ</h3>
+            <FaqArrayField value={faqs} onChange={(arr) => setValue("faqs", arr)} />
+          </div>
+
+          {/* Kit Contents (array) */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+              Kit Contents
+            </Label>
+            <ArrayField
+              value={kitContents}
+              onChange={(arr) => setValue("kitContents", arr)}
+              placeholder="Add kit item..."
+            />
+          </div>
+
+          {/* Use Cases (array) */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+              Use Cases
+            </Label>
+            <ArrayField
+              value={useCases}
+              onChange={(arr) => setValue("useCases", arr)}
+              placeholder="Add use case..."
+            />
+          </div>
+
+          {/* Reviews (array of objects) */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+              Reviews
+            </Label>
+            <ReviewsArrayField
+              value={reviewsArray}
+              onChange={(arr) => setValue("reviewsArray", arr)}
+            />
+          </div>
+
+          {/* Demo Video Link */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+              Demo Video Link (YouTube)
+            </Label>
+            <Input
+              {...register("demoVideoUrl")}
+              placeholder="https://youtube.com/..."
+              className="h-10 text-sm"
+              style={{
+                background: "oklch(0.15 0.03 243 / 0.7)",
+                border: "1px solid oklch(0.28 0.05 243 / 0.6)",
+                color: "white",
+              }}
+            />
           </div>
 
           {/* Price + Original Price */}
@@ -880,6 +1456,8 @@ async function uploadPendingImages(
   );
 }
 
+// ─── Delete Confirmation ────────────────────────────────────────────
+
 // ─── Skeleton Rows ────────────────────────────────────────────────────────────
 
 const SKELETON_IDS = ["s1", "s2", "s3", "s4", "s5"] as const;
@@ -916,7 +1494,13 @@ export default function AdminProductsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<AdminProduct | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminProduct | null>(null);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkPercent, setBulkPercent] = useState<number | string>("");
+  const [confirmBulkOpen, setConfirmBulkOpen] = useState(false);
+  const [bulkApplying, setBulkApplying] = useState(false);
 
   useEffect(() => {
     const unsub = subscribeToProducts((data) => {
@@ -959,6 +1543,28 @@ export default function AdminProductsPage() {
     setEditTarget(null);
   }
 
+  function toggleProductSelection(id: string) {
+    setSelectedProductIds((current) =>
+      current.includes(id)
+        ? current.filter((selectedId) => selectedId !== id)
+        : [...current, id],
+    );
+  }
+
+  function toggleSelectAllVisible() {
+    const visibleIds = filtered.map((product) => product.id);
+    setSelectedProductIds((current) => {
+      const currentSet = new Set(current);
+      const allVisibleSelected = visibleIds.every((id) => currentSet.has(id));
+
+      if (allVisibleSelected) {
+        return current.filter((id) => !visibleIds.includes(id));
+      }
+
+      return Array.from(new Set([...current, ...visibleIds]));
+    });
+  }
+
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -973,6 +1579,47 @@ export default function AdminProductsPage() {
     }
   }
 
+  async function handleBulkDelete() {
+    if (selectedProductIds.length === 0) return;
+
+    setBulkDeleting(true);
+    try {
+      for (const id of selectedProductIds) {
+        await deleteProduct(id);
+      }
+      toast.success(
+        `${selectedProductIds.length} product${selectedProductIds.length === 1 ? "" : "s"} deleted`,
+      );
+      setSelectedProductIds([]);
+    } catch {
+      toast.error("Failed to delete selected products. Please try again.");
+    } finally {
+      setBulkDeleting(false);
+      setBulkDeleteOpen(false);
+    }
+  }
+
+  async function handleConfirmBulk() {
+    if (bulkPercent === "") return;
+    const percent = Number(bulkPercent);
+    if (Number.isNaN(percent)) {
+      toast.error("Enter a valid percentage");
+      return;
+    }
+    setBulkApplying(true);
+    try {
+      await bulkAdjustProductPrices(percent);
+      toast.success(`Applied ${percent}% to all product prices`);
+      setBulkPercent("");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to apply price changes. Try again.");
+    } finally {
+      setBulkApplying(false);
+      setConfirmBulkOpen(false);
+    }
+  }
+
   return (
     <AdminLayout>
       <motion.div
@@ -983,7 +1630,7 @@ export default function AdminProductsPage() {
         data-ocid="admin-products-page"
       >
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl font-display font-bold text-white">
               Products
@@ -997,20 +1644,65 @@ export default function AdminProductsPage() {
                 : `${products.length} product${products.length !== 1 ? "s" : ""} total`}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={openAdd}
-            data-ocid="add-product-btn"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white transition-all duration-200 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shrink-0"
-            style={{
-              background:
-                "linear-gradient(135deg, oklch(0.71 0.17 48) 0%, oklch(0.76 0.16 72) 100%)",
-              boxShadow: "0 0 18px oklch(0.71 0.17 48 / 0.3)",
-            }}
-          >
-            <Plus size={16} />
-            Add Product
-          </button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {selectedProductIds.length > 0 && (
+              <div
+                className="flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2"
+                style={{
+                  background: "oklch(0.14 0.03 243 / 0.7)",
+                  borderColor: "oklch(0.28 0.05 243 / 0.45)",
+                }}
+              >
+                <span
+                  className="rounded-full px-2.5 py-1 text-xs font-semibold"
+                  style={{
+                    background: "oklch(0.22 0.05 72 / 0.25)",
+                    color: "oklch(0.78 0.16 72)",
+                  }}
+                >
+                  {selectedProductIds.length} selected
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setBulkDeleteOpen(true)}
+                  className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold text-white transition-all duration-200 hover:opacity-90"
+                  style={{
+                    background: "oklch(0.45 0.22 25)",
+                    border: "1px solid oklch(0.56 0.22 25 / 0.4)",
+                  }}
+                >
+                  <Trash2 size={14} />
+                  Delete Selected
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedProductIds([])}
+                  className="rounded-lg px-3 py-1.5 text-sm font-semibold transition-all duration-200"
+                  style={{
+                    background: "oklch(0.16 0.04 243 / 0.6)",
+                    color: "oklch(0.70 0.06 243)",
+                    border: "1px solid oklch(0.26 0.05 243 / 0.4)",
+                  }}
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={openAdd}
+              data-ocid="add-product-btn"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white transition-all duration-200 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shrink-0"
+              style={{
+                background:
+                  "linear-gradient(135deg, oklch(0.71 0.17 48) 0%, oklch(0.76 0.16 72) 100%)",
+                boxShadow: "0 0 18px oklch(0.71 0.17 48 / 0.3)",
+              }}
+            >
+              <Plus size={16} />
+              Add Product
+            </button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -1067,6 +1759,32 @@ export default function AdminProductsPage() {
               ))}
             </SelectContent>
           </Select>
+          {/* Bulk price adjust control */}
+          <div className="flex items-center gap-2 ml-auto">
+            <Label className="text-xs font-semibold text-white/60 uppercase tracking-widest">
+              Bulk price adjust (%)
+            </Label>
+            <Input
+              type="number"
+              value={bulkPercent}
+              onChange={(e) => setBulkPercent(e.target.value)}
+              placeholder="e.g. 10 or -5"
+              className="h-10 w-36 text-sm"
+              style={{
+                background: "oklch(0.14 0.03 243 / 0.8)",
+                border: "1px solid oklch(0.26 0.05 243 / 0.5)",
+                color: "white",
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setConfirmBulkOpen(true)}
+              className="px-3 py-2 rounded-xl bg-blue-600 text-white text-sm"
+              disabled={bulkPercent === ""}
+            >
+              Apply to all
+            </button>
+          </div>
         </div>
 
         {/* Table card */}
@@ -1086,6 +1804,27 @@ export default function AdminProductsPage() {
                     borderBottom: "1px solid oklch(0.22 0.05 243 / 0.4)",
                   }}
                 >
+                  <th
+                    className="px-4 py-3 text-left"
+                    style={{ color: "oklch(0.48 0.05 243)" }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={
+                          filtered.length > 0 &&
+                          filtered.every((product) =>
+                            selectedProductIds.includes(product.id),
+                          )
+                        }
+                        onCheckedChange={() => toggleSelectAllVisible()}
+                        aria-label="Select all visible products"
+                        className="border-white/30 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
+                      />
+                      <span className="text-[11px] font-semibold uppercase tracking-widest">
+                        Select
+                      </span>
+                    </div>
+                  </th>
                   {[
                     "Image",
                     "Name",
@@ -1123,6 +1862,8 @@ export default function AdminProductsPage() {
                         .map((id) => categories.find((c) => c.id === id))
                         .filter(Boolean) as AdminCategory[];
 
+                      const isSelected = selectedProductIds.includes(product.id);
+
                       return (
                         <motion.tr
                           key={product.id}
@@ -1147,6 +1888,14 @@ export default function AdminProductsPage() {
                           }}
                           data-ocid={`product-row-${product.id}`}
                         >
+                          <td className="px-4 py-3 w-14">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleProductSelection(product.id)}
+                              aria-label={`Select ${product.name}`}
+                              className="border-white/30 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
+                            />
+                          </td>
                           <td className="px-4 py-3">
                             <div
                               className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center shrink-0"
@@ -1157,7 +1906,7 @@ export default function AdminProductsPage() {
                               {product.image ? (
                                 <img
                                   src={product.image}
-                                  alt={product.name}
+                                  alt={`${product.name} from Tinkro`}
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
@@ -1408,6 +2157,80 @@ export default function AdminProductsPage() {
             >
               {deleting && <Loader2 size={14} className="animate-spin" />}
               Delete Product
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={bulkDeleteOpen}
+        onOpenChange={(open) => !open && setBulkDeleteOpen(false)}
+      >
+        <AlertDialogContent
+          style={{
+            background:
+              "linear-gradient(180deg, oklch(0.12 0.04 243) 0%, oklch(0.10 0.03 250) 100%)",
+            border: "1px solid oklch(0.25 0.05 243 / 0.5)",
+            color: "white",
+          }}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">
+              Delete selected products?
+            </AlertDialogTitle>
+            <AlertDialogDescription style={{ color: "oklch(0.60 0.04 243)" }}>
+              You are about to delete <strong className="text-white">{selectedProductIds.length}</strong> selected product{selectedProductIds.length === 1 ? "" : "s"}. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={bulkDeleting}
+              style={{
+                background: "oklch(0.18 0.04 243 / 0.6)",
+                border: "1px solid oklch(0.28 0.05 243 / 0.5)",
+                color: "white",
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={bulkDeleting}
+              className="flex items-center gap-2"
+              style={{
+                background: "oklch(0.45 0.22 25)",
+                color: "white",
+                border: "none",
+              }}
+            >
+              {bulkDeleting && <Loader2 size={14} className="animate-spin" />}
+              Delete Selected
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ─── Bulk Price Adjust Confirmation ─────────────────────────────── */}
+      <AlertDialog
+        open={confirmBulkOpen}
+        onOpenChange={(open) => !open && setConfirmBulkOpen(false)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apply price change to all products</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will {Number(bulkPercent) >= 0 ? "increase" : "decrease"} the price of every product by <strong>{bulkPercent}%</strong>. This action cannot be undone — make sure you have a backup or are comfortable with the change.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkApplying}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmBulk}
+              disabled={bulkApplying}
+              data-ocid="bulk-price-apply-confirm"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {bulkApplying ? "Applying..." : "Apply"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

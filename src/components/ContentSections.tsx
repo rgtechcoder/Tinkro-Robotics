@@ -473,6 +473,10 @@ export function StorytellingSection() {
               <img
                 src="/assets/generated/storytelling-student.dim_800x600.jpg"
                 alt="Student building robot in STEM lab"
+                loading="lazy"
+                decoding="async"
+                width={800}
+                height={600}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent" />

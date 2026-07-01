@@ -1,4 +1,23 @@
+import { useEffect } from "react";
+import { upsertLinkTag, upsertMetaTag } from "../lib/seo";
+
 export function ShippingPolicyPage() {
+  useEffect(() => {
+    const title = "Shipping Policy | Tinkro";
+    const description =
+      "Shipping timelines, processing time, and delivery information for Tinkro orders.";
+    const canonicalUrl = "https://tinkro.in/shipping-policy";
+
+    document.title = title;
+    upsertLinkTag("canonical", canonicalUrl);
+    upsertMetaTag("name", "description", description);
+    upsertMetaTag("name", "robots", "noindex,follow");
+    upsertMetaTag("property", "og:title", title);
+    upsertMetaTag("property", "og:description", description);
+    upsertMetaTag("property", "og:type", "website");
+    upsertMetaTag("property", "og:url", canonicalUrl);
+  }, []);
+
   return (
     <section className="pt-24 pb-16">
       <div className="container max-w-4xl mx-auto px-4 sm:px-6">

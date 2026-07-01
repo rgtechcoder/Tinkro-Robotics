@@ -1,8 +1,17 @@
 import { useBlogPostById, useBlogPosts } from "@/lib/publicDataService";
+import { slugify } from "@/lib/slug";
 import type { AdminBlogPost } from "@/types/admin";
 import { useParams } from "@tanstack/react-router";
-import { ArrowLeft, Calendar, Clock, Eye, Tag, User, PlayCircle } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Eye, Share2, Tag, User } from "lucide-react";
 import { motion } from "motion/react";
+import { useEffect } from "react";
+import { useToastContext } from "@/components/Layout";
+import {
+  removeJsonLd,
+  setJsonLd,
+  upsertLinkTag,
+  upsertMetaTag,
+} from "../lib/seo";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -108,10 +117,11 @@ function BlogDetailSkeleton() {
 function RelatedCard({ post }: { post: AdminBlogPost }) {
   const colors = CATEGORY_COLORS[post.category] ?? DEFAULT_COLORS;
   const heroImage = post.featuredImage || post.images?.[0];
+  const slug = post.slug || slugify(post.title);
 
   return (
     <motion.a
-      href={`/blog/${post.id}`}
+      href={`/blog/${slug}`}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -131,6 +141,10 @@ function RelatedCard({ post }: { post: AdminBlogPost }) {
           <img
             src={heroImage}
             alt={post.title}
+            loading="lazy"
+            decoding="async"
+            width={640}
+            height={360}
             className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
@@ -181,9 +195,136 @@ function RelatedCard({ post }: { post: AdminBlogPost }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export function BlogDetailPage() {
-  const { id } = useParams({ from: "/blog/$id" });
-  const { post, loading } = useBlogPostById(id);
+  const { addToast } = useToastContext();
+  const { slug } = useParams({ from: "/blog/$slug" });
+  const { post, loading } = useBlogPostById(slug);
   const { posts: allPosts } = useBlogPosts();
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/blog/${post?.slug || post?.id}`;
+    const title = post?.title ?? "Tinkro Blog";
+    const text = post?.excerpt
+      ? `${post.excerpt.trim().slice(0, 120)}...`
+      : "Read this Tinkro blog post.";
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        addToast("Blog link copied to clipboard.", "success");
+      }
+    } catch (error) {
+      console.error("Share failed", error);
+      addToast("Unable to share this blog post.", "error");
+    }
+  };
+
+  const colors = post ? (CATEGORY_COLORS[post.category] ?? DEFAULT_COLORS) : DEFAULT_COLORS;
+  const readTime = post
+    ? typeof post.readingTime === "number"
+      ? `${post.readingTime} min read`
+      : estimateReadTime(post.content)
+    : "4 min read";
+  const heroImage = post
+    ? post.featuredImage || post.images?.[0] || post.openGraphImage || post.twitterImage
+    : null;
+  const relatedPosts = post
+    ? allPosts
+        .filter((p) => p.id !== post.id && p.category === post.category)
+        .slice(0, 3)
+    : [];
+
+  useEffect(() => {
+    if (!post) return;
+    const title =
+      post.metaTitle?.trim() ||
+      post.openGraphTitle?.trim() ||
+      `${post.title} | Tinkro Blog`;
+    const description =
+      post.metaDescription?.trim() ||
+      post.openGraphDescription?.trim() ||
+      post.excerpt?.trim().slice(0, 160) ||
+      "Read the latest robotics tutorials, STEM guides, and insights from Tinkro.";
+    const canonicalUrl =
+      post.canonicalUrl?.trim() ||
+      `https://tinkro.in/blog/${post.slug || post.id}`;
+    const ogTitle = post.openGraphTitle?.trim() || title;
+    const ogDescription = post.openGraphDescription?.trim() || description;
+    const twitterTitle = post.twitterTitle?.trim() || title;
+    const twitterDescription = post.twitterDescription?.trim() || description;
+
+    document.title = title;
+    upsertLinkTag("canonical", canonicalUrl);
+    upsertMetaTag("name", "description", description);
+    upsertMetaTag("name", "robots", "index,follow");
+    upsertMetaTag("property", "og:title", ogTitle);
+    upsertMetaTag("property", "og:description", ogDescription);
+    upsertMetaTag("property", "og:type", "article");
+    upsertMetaTag("property", "og:url", canonicalUrl);
+    if (heroImage) {
+      upsertMetaTag("property", "og:image", heroImage);
+      upsertMetaTag("name", "twitter:image", heroImage);
+    }
+    upsertMetaTag("property", "og:site_name", "Tinkro");
+    upsertMetaTag("name", "twitter:card", "summary_large_image");
+    upsertMetaTag("name", "twitter:title", twitterTitle);
+    upsertMetaTag("name", "twitter:description", twitterDescription);
+
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "BlogPosting",
+          headline: title,
+          description,
+          image: heroImage ? [heroImage] : undefined,
+          author: {
+            "@type": "Person",
+            name: post.author,
+          },
+          publisher: {
+            "@type": "Organization",
+            name: "Tinkro",
+            logo: {
+              "@type": "ImageObject",
+              url: "https://tinkro.in/assets/brand/logo.png",
+            },
+          },
+          datePublished: post.publishedAt ?? undefined,
+          dateModified: post.updatedAt ?? post.publishedAt ?? undefined,
+          mainEntityOfPage: canonicalUrl,
+        },
+        {
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            {
+              "@type": "ListItem",
+              position: 1,
+              name: "Home",
+              item: "https://tinkro.in/",
+            },
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: "Blog",
+              item: "https://tinkro.in/blog",
+            },
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: title,
+              item: canonicalUrl,
+            },
+          ],
+        },
+      ],
+    };
+
+    const scriptId = "blog-post-jsonld";
+    setJsonLd(scriptId, jsonLd);
+    return () => removeJsonLd(scriptId);
+  }, [post, heroImage]);
 
   if (loading) return <BlogDetailSkeleton />;
 
@@ -217,13 +358,6 @@ export function BlogDetailPage() {
     );
   }
 
-  const colors = CATEGORY_COLORS[post.category] ?? DEFAULT_COLORS;
-  const readTime = estimateReadTime(post.content);
-  const heroImage = post.featuredImage || post.images?.[0];
-  const relatedPosts = allPosts
-    .filter((p) => p.id !== post.id && p.category === post.category)
-    .slice(0, 3);
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -249,9 +383,8 @@ export function BlogDetailPage() {
 
       {/* ── Hero ── */}
       <div
-        className="relative overflow-hidden bg-[#0a1628] group"
-        style={{ height: "clamp(280px, 50vh, 520px)", cursor: post.videoUrl ? "pointer" : undefined }}
-        onClick={post.videoUrl ? () => window.open(post.videoUrl, "_blank") : undefined}
+        className="relative overflow-hidden bg-[#0a1628]"
+        style={{ height: "clamp(280px, 50vh, 520px)" }}
       >
         {heroImage ? (
           <motion.img
@@ -270,12 +403,6 @@ export function BlogDetailPage() {
                 "linear-gradient(135deg, #0f2744 0%, #1a4a8c 50%, #0a1628 100%)",
             }}
           />
-        )}
-        {/* Play icon overlay if videoUrl */}
-        {post.videoUrl && (
-          <div className="absolute inset-0 flex items-center justify-center z-20">
-            <PlayCircle className="w-24 h-24 text-white/90 drop-shadow-lg bg-black/30 rounded-full p-2 opacity-90 group-hover:scale-110 transition-transform" />
-          </div>
         )}
         {/* Gradient overlays */}
         <div
@@ -349,6 +476,15 @@ export function BlogDetailPage() {
                 {post.views.toLocaleString()} views
               </span>
             )}
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold text-white/90 bg-white/10 border border-white/10 transition-all duration-200 hover:bg-white/15"
+              onClick={handleShare}
+              data-ocid="blog-detail-share"
+            >
+              <Share2 className="w-4 h-4" />
+              Share
+            </button>
           </motion.div>
         </div>
       </div>
@@ -395,6 +531,10 @@ export function BlogDetailPage() {
                   <img
                     src={img}
                     alt={post.title}
+                    loading="lazy"
+                    decoding="async"
+                    width={600}
+                    height={360}
                     className="w-full h-56 object-contain"
                   />
                 </div>

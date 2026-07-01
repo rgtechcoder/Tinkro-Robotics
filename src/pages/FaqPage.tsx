@@ -1,4 +1,6 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useEffect } from "react";
+import { removeJsonLd, setJsonLd, upsertLinkTag, upsertMetaTag } from "../lib/seo";
 
 const FAQS = [
   {
@@ -69,6 +71,44 @@ const FAQS = [
 ];
 
 export function FaqPage() {
+  useEffect(() => {
+    const title = "FAQs | Tinkro Support";
+    const description =
+      "Frequently asked questions about Tinkro kits, robotics learning, and school programs.";
+    const canonicalUrl = "https://tinkro.in/faq";
+
+    document.title = title;
+    upsertLinkTag("canonical", canonicalUrl);
+    upsertMetaTag("name", "description", description);
+    upsertMetaTag("name", "robots", "index,follow");
+    upsertMetaTag("property", "og:title", title);
+    upsertMetaTag("property", "og:description", description);
+    upsertMetaTag("property", "og:type", "website");
+    upsertMetaTag("property", "og:url", canonicalUrl);
+  }, []);
+
+  useEffect(() => {
+    const canonicalUrl = "https://tinkro.in/faq";
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "@id": `${canonicalUrl}#faqpage`,
+      url: canonicalUrl,
+      mainEntity: FAQS.map((faq) => ({
+        "@type": "Question",
+        name: faq.question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: faq.answer,
+        },
+      })),
+    };
+
+    const scriptId = "faq-jsonld";
+    setJsonLd(scriptId, jsonLd);
+    return () => removeJsonLd(scriptId);
+  }, []);
+
   return (
     <section className="pt-24 pb-16">
       <div className="container max-w-4xl mx-auto px-4 sm:px-6">

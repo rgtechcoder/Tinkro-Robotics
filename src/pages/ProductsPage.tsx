@@ -71,9 +71,11 @@ function ProductImageCarousel({
             <CarouselItem key={img} className="flex items-center justify-center h-52">
               <img
                 src={shouldLoad ? img : "/placeholder.jpg"}
-                alt={productName}
+                alt={`${productName} product view ${idx + 1} from Tinkro`}
                 loading={priority && idx === 0 ? "eager" : "lazy"}
                 decoding="async"
+                width={320}
+                height={320}
                 className="h-full w-full object-contain"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "/placeholder.jpg";
@@ -112,6 +114,16 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useToastContext } from "../components/Layout";
+import { getProductRouteParam } from "../lib/slug";
+import {
+  SITE_NAME,
+  SITE_URL,
+  absoluteUrl,
+  removeJsonLd,
+  setJsonLd,
+  upsertLinkTag,
+  upsertMetaTag,
+} from "../lib/seo";
 import { useCategories, useProducts } from "../lib/publicDataService";
 import { useCartStore } from "../store/cartStore";
 import { useWishlistStore } from "../store/wishlistStore";
@@ -179,6 +191,7 @@ export function ProductCard({
   onAddToCart,
   onBuyNow,
 }: ProductCardProps) {
+  const productParam = getProductRouteParam(product);
   const toggleItem = useWishlistStore((s) => s.toggleItem);
   const isInWishlist = useWishlistStore((s) => s.isInWishlist);
   const wishlisted = isInWishlist(product.id);
@@ -242,7 +255,7 @@ export function ProductCard({
       </button>
 
       {/* Product images carousel */}
-      <Link to="/product/$id" params={{ id: product.id }} className="block">
+      <Link to="/product/$slug" params={{ slug: productParam }} className="block">
         <div className="product-image-container h-52 mx-4 mt-4 rounded-xl relative">
           {heroImages.length > 1 ? (
             <ProductImageCarousel
@@ -253,9 +266,11 @@ export function ProductCard({
           ) : (
             <img
               src={heroImages[0]}
-              alt={product.name}
+              alt={`${product.name} from Tinkro`}
               loading={isPriority ? "eager" : "lazy"}
               decoding="async"
+              width={320}
+              height={320}
               className="h-full w-full object-contain"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = "/placeholder.jpg";
@@ -277,7 +292,7 @@ export function ProductCard({
             {product.category}
           </p>
 
-          <Link to="/product/$id" params={{ id: product.id }}>
+          <Link to="/product/$slug" params={{ slug: productParam }}>
             <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 hover:text-primary transition-colors duration-200 min-h-[40px]">
               {product.name}
             </h3>
@@ -413,6 +428,99 @@ interface CategoryOption {
   id: string;
   name: string;
   slug: string;
+}
+
+interface CategoryFaq {
+  question: string;
+  answer: string;
+}
+
+function getCategoryCanonicalUrl(category: CategoryOption | null) {
+  if (!category) return `${SITE_URL}/products`;
+  return `${SITE_URL}/products?category=${encodeURIComponent(category.slug)}`;
+}
+
+function getCategoryProductUrl(product: AdminProduct) {
+  return `${SITE_URL}/product/${getProductRouteParam(product)}`;
+}
+
+function getCategoryImage(product: AdminProduct | null) {
+  return absoluteUrl(product?.images?.[0] ?? product?.image ?? "/assets/brand/logo.png");
+}
+
+function buildCategorySeoTitle(categoryName: string | null) {
+  return categoryName
+    ? `Buy ${categoryName} Online in India | ${SITE_NAME}`
+    : `Buy Robotics Kits, STEM Products & Electronics Online | ${SITE_NAME}`;
+}
+
+function buildCategoryMetaDescription(
+  categoryName: string | null,
+  productCount: number,
+) {
+  const name = categoryName ?? "robotics kits, STEM products, sensors, boards, and electronics components";
+  const countText =
+    productCount > 0 ? ` Browse ${productCount} curated products` : " Browse curated products";
+  return `${countText} in ${name} at Tinkro. Shop reliable maker, school, and robotics supplies online in India with clear specs and fast delivery.`;
+}
+
+function buildCategoryLongDescription(
+  categoryName: string | null,
+  products: AdminProduct[],
+) {
+  const name = categoryName ?? "robotics kits, STEM products, sensors, boards, and electronics components";
+  const featuredNames = products
+    .slice(0, 5)
+    .map((product) => product.name)
+    .filter(Boolean)
+    .join(", ");
+  const featuredSentence = featuredNames
+    ? `Featured options in this collection include ${featuredNames}, helping buyers compare practical choices before they order.`
+    : "The collection is refreshed as new classroom, maker, and prototyping products become available.";
+
+  return `Buy ${name} online in India from Tinkro, a focused ecommerce store for students, makers, educators, robotics clubs, labs, and engineering teams. This category brings together products selected for real projects, learning outcomes, repair work, experimentation, and repeat classroom use. You can explore parts and kits that support electronics prototyping, automation, coding practice, embedded systems, mechanical builds, sensor experiments, and STEM activities. Each product page is designed to help you evaluate what the item does, how it can be used, and whether it fits your build requirements before adding it to cart. ${featuredSentence} Tinkro keeps the shopping experience practical by grouping related products, showing clear pricing in INR, and maintaining product information that supports informed decisions. Whether you are ordering for a school lab, a workshop, a hobby project, a competition prototype, or a small production run, this category helps you discover compatible tools and components without moving through unrelated listings. Use the product cards to compare prices, ratings, images, availability, and category fit. For best results, review specifications, compatibility, warranty, package contents, and application notes on individual product pages when available.`;
+}
+
+function buildCategoryFaqs(categoryName: string | null): CategoryFaq[] {
+  const name = categoryName ?? "Tinkro robotics and STEM products";
+  return [
+    {
+      question: `Where can I buy ${name} online in India?`,
+      answer: `You can buy ${name} online from Tinkro with category-wise browsing, product images, pricing in INR, and delivery support across India.`,
+    },
+    {
+      question: `How do I choose the right ${name}?`,
+      answer:
+        "Compare the product description, specifications, compatibility, application notes, package contents, ratings, and stock status before placing an order.",
+    },
+    {
+      question: `Are ${name} suitable for schools and maker projects?`,
+      answer:
+        "Tinkro curates products for students, educators, makers, robotics clubs, prototyping, workshops, STEM labs, and hands-on electronics learning.",
+    },
+    {
+      question: `Do product pages include technical details for ${name}?`,
+      answer:
+        "Product pages can include descriptions, images, features, specifications, compatibility, applications, warranty, and related ecommerce details when available in the catalog.",
+    },
+  ];
+}
+
+function buildRelatedCategories(
+  selectedCategoryId: string,
+  categoryOptions: CategoryOption[],
+) {
+  return categoryOptions
+    .filter((category) => category.id !== selectedCategoryId)
+    .slice(0, 8);
+}
+
+function buildFeaturedProducts(products: AdminProduct[]) {
+  return products
+    .filter((product) => product.isActive !== false)
+    .slice()
+    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+    .slice(0, 8);
 }
 
 interface FilterPanelProps {
@@ -684,13 +792,175 @@ export function ProductsPage() {
   }, [selectedCategoryId, minPrice, maxPrice, sortBy, products]);
 
   // Derive display name for the active category chip
-  const selectedCategoryName = useMemo(() => {
+  const selectedCategoryOption = useMemo(() => {
     if (selectedCategoryId === "all") return null;
     return (
-      categoryOptions.find((c) => c.id === selectedCategoryId)?.name ??
-      selectedCategoryId
+      categoryOptions.find((category) => category.id === selectedCategoryId) ??
+      null
     );
   }, [selectedCategoryId, categoryOptions]);
+
+  const selectedCategoryName = useMemo(() => {
+    if (selectedCategoryId === "all") return null;
+    return selectedCategoryOption?.name ?? selectedCategoryId;
+  }, [selectedCategoryId, selectedCategoryOption]);
+
+  useEffect(() => {
+    const categoryTitle = buildCategorySeoTitle(selectedCategoryName);
+    const description = buildCategoryMetaDescription(
+      selectedCategoryName,
+      filteredProducts.length,
+    );
+    const longDescription = buildCategoryLongDescription(
+      selectedCategoryName,
+      filteredProducts,
+    );
+    const canonicalUrl = getCategoryCanonicalUrl(selectedCategoryOption);
+    const featuredProducts = buildFeaturedProducts(filteredProducts);
+    const ogImage = getCategoryImage(featuredProducts[0] ?? null);
+    const relatedCategories = buildRelatedCategories(
+      selectedCategoryId,
+      categoryOptions,
+    );
+    const faqs = buildCategoryFaqs(selectedCategoryName);
+    const relatedCategoryLinks = relatedCategories.map((category) =>
+      getCategoryCanonicalUrl(category),
+    );
+    const featuredProductLinks = featuredProducts.map(getCategoryProductUrl);
+
+    document.title = categoryTitle;
+    upsertLinkTag("canonical", canonicalUrl);
+    upsertMetaTag("name", "description", description);
+    upsertMetaTag("name", "robots", "index,follow");
+    upsertMetaTag("property", "og:title", categoryTitle);
+    upsertMetaTag("property", "og:description", description);
+    upsertMetaTag("property", "og:type", "website");
+    upsertMetaTag("property", "og:url", canonicalUrl);
+    upsertMetaTag("property", "og:image", ogImage);
+    upsertMetaTag("property", "og:site_name", SITE_NAME);
+    upsertMetaTag("name", "twitter:card", "summary_large_image");
+    upsertMetaTag("name", "twitter:title", categoryTitle);
+    upsertMetaTag("name", "twitter:description", description);
+    upsertMetaTag("name", "twitter:image", ogImage);
+
+    const listItems = filteredProducts.slice(0, 50).map((p, index) => {
+      return {
+        "@type": "ListItem",
+        position: index + 1,
+        item: {
+          "@type": "Product",
+          "@id": `${getCategoryProductUrl(p)}#product`,
+          name: p.name,
+          url: getCategoryProductUrl(p),
+          image: getCategoryImage(p),
+          description: p.metaDescription || p.description || `${p.name} from Tinkro`,
+          brand: {
+            "@type": "Brand",
+            name: p.brand || SITE_NAME,
+          },
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "INR",
+            price: p.price,
+            availability:
+              p.inStock !== false && p.stock !== 0
+                ? "https://schema.org/InStock"
+                : "https://schema.org/OutOfStock",
+            url: getCategoryProductUrl(p),
+          },
+        },
+      };
+    });
+
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "CollectionPage",
+          "@id": `${canonicalUrl}#collection`,
+          name: categoryTitle,
+          url: canonicalUrl,
+          description: longDescription,
+          isPartOf: {
+            "@type": "WebSite",
+            "@id": `${SITE_URL}/#website`,
+            name: SITE_NAME,
+            url: SITE_URL,
+          },
+          mainEntity: {
+            "@id": `${canonicalUrl}#itemlist`,
+          },
+          about: selectedCategoryName ?? "Robotics kits, STEM products, and electronics",
+          relatedLink: relatedCategoryLinks,
+          significantLink: featuredProductLinks,
+        },
+        {
+          "@type": "ItemList",
+          "@id": `${canonicalUrl}#itemlist`,
+          name: selectedCategoryName
+            ? `${selectedCategoryName} products`
+            : "Tinkro products",
+          description,
+          itemListOrder: "https://schema.org/ItemListOrderAscending",
+          numberOfItems: listItems.length,
+          itemListElement: listItems,
+        },
+        {
+          "@type": "BreadcrumbList",
+          "@id": `${canonicalUrl}#breadcrumb`,
+          itemListElement: [
+            {
+              "@type": "ListItem",
+              position: 1,
+              name: "Home",
+              item: `${SITE_URL}/`,
+            },
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: "Products",
+              item: `${SITE_URL}/products`,
+            },
+            ...(selectedCategoryName
+              ? [
+                  {
+                    "@type": "ListItem",
+                    position: 3,
+                    name: selectedCategoryName,
+                    item: canonicalUrl,
+                  },
+                ]
+              : []),
+          ],
+        },
+        {
+          "@type": "FAQPage",
+          "@id": `${canonicalUrl}#faq`,
+          mainEntity: faqs.map((faq) => ({
+            "@type": "Question",
+            name: faq.question,
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: faq.answer,
+            },
+          })),
+        },
+      ],
+    };
+
+    const scriptId = "products-jsonld";
+    setJsonLd(scriptId, jsonLd);
+
+    return () => {
+      removeJsonLd(scriptId);
+    };
+  }, [
+    categoryOptions,
+    filteredProducts,
+    selectedCategoryId,
+    selectedCategoryName,
+    selectedCategoryOption,
+  ]);
 
   const filterPanelProps: FilterPanelProps = {
     selectedCategoryId,

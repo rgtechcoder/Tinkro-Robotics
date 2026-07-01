@@ -436,6 +436,9 @@ import type {
   AdminEnquiry,
   AdminLabSetup,
   AdminMedia,
+  AdminNewsletterSubscriber,
+  AdminNewsletterBroadcast,
+  AdminNewsletterMessage,
   AdminOrder,
   AdminProduct,
   AdminShippingRule,
@@ -463,12 +466,14 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
+  writeBatch,
   query,
   serverTimestamp,
   updateDoc,
   where,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
+import { normalizeProducts, withProductSeoDefaults } from "./productSeoModel";
 
 // ================= AUTH =================
 
@@ -505,20 +510,40 @@ export function subscribeToAdminAuth(callback: (user: AdminUser | null) => void)
 export function subscribeToProducts(callback: (products: AdminProduct[]) => void) {
   return onSnapshot(collection(db, "products"), (snap) => {
     const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    callback(data as AdminProduct[]);
+    callback(normalizeProducts(data as AdminProduct[]));
   });
 }
 
 export async function addProduct(product: any) {
   const docRef = await addDoc(collection(db, "products"), {
-    ...product,
+    ...withProductSeoDefaults(product),
     createdAt: serverTimestamp(),
   });
   return docRef.id;
 }
 
 export async function updateProduct(id: string, data: any) {
-  await updateDoc(doc(db, "products", id), data);
+  const { id: _generatedId, ...payload } = withProductSeoDefaults({ id, ...data });
+  await updateDoc(doc(db, "products", id), payload);
+}
+
+export async function bulkAdjustProductPrices(percentage: number): Promise<void> {
+  // percentage may be positive (increase) or negative (decrease)
+  const snap = await getDocs(collection(db, "products"));
+  const batch = writeBatch(db);
+
+  snap.forEach((docSnap) => {
+    const raw = docSnap.data() as any;
+    const current = Number(raw.price ?? 0);
+    const factor = 1 + percentage / 100;
+    const updated = Math.round(current * factor * 100) / 100;
+    batch.update(doc(db, "products", docSnap.id), {
+      price: updated,
+      priceUpdatedAt: serverTimestamp(),
+    });
+  });
+
+  await batch.commit();
 }
 
 export async function deleteProduct(id: string) {
@@ -585,6 +610,78 @@ export async function deleteEnquiry(id: string): Promise<void> {
   await deleteDoc(doc(db, "enquiries", id));
 }
 
+// ================= NEWSLETTER SUBSCRIBERS =================
+
+export function subscribeToNewsletterSubscribers(
+  callback: (subscribers: AdminNewsletterSubscriber[]) => void,
+): () => void {
+  return onSnapshot(collection(db, "newsletter_subscribers"), (snap) => {
+    const data = snap.docs.map((docSnap) => {
+      const raw = {
+        id: docSnap.id,
+        ...docSnap.data(),
+      } as AdminNewsletterSubscriber;
+      return normalizeDates(raw, ["createdAt", "confirmationSentAt"]);
+    });
+
+    const sorted = [...data].sort((a, b) => {
+      const aTime = new Date(String(a.createdAt)).getTime();
+      const bTime = new Date(String(b.createdAt)).getTime();
+      return bTime - aTime;
+    });
+
+    callback(sorted);
+  });
+}
+
+export function subscribeToNewsletterMessages(
+  subscriberId: string,
+  callback: (messages: AdminNewsletterMessage[]) => void,
+): () => void {
+  const messagesRef = collection(
+    db,
+    "newsletter_subscribers",
+    subscriberId,
+    "messages",
+  );
+  return onSnapshot(messagesRef, (snap) => {
+    const data = snap.docs.map((docSnap) => {
+      const raw = { id: docSnap.id, ...docSnap.data() } as AdminNewsletterMessage;
+      return normalizeDates(raw, ["sentAt"]);
+    });
+
+    const sorted = [...data].sort((a, b) => {
+      const aTime = new Date(String(a.sentAt)).getTime();
+      const bTime = new Date(String(b.sentAt)).getTime();
+      return bTime - aTime;
+    });
+
+    callback(sorted);
+  });
+}
+
+export function subscribeToNewsletterBroadcasts(
+  callback: (messages: AdminNewsletterBroadcast[]) => void,
+): () => void {
+  return onSnapshot(collection(db, "newsletter_messages"), (snap) => {
+    const data = snap.docs.map((docSnap) => {
+      const raw = {
+        id: docSnap.id,
+        ...docSnap.data(),
+      } as AdminNewsletterBroadcast;
+      return normalizeDates(raw, ["sentAt"]);
+    });
+
+    const sorted = [...data].sort((a, b) => {
+      const aTime = new Date(String(a.sentAt)).getTime();
+      const bTime = new Date(String(b.sentAt)).getTime();
+      return bTime - aTime;
+    });
+
+    callback(sorted);
+  });
+}
+
 // ================= ORDERS =================
 
 export function subscribeToAllOrders(callback: (orders: AdminOrder[]) => void) {
@@ -628,7 +725,7 @@ export async function addBlogPost(
   data: Omit<AdminBlogPost, "id" | "createdAt" | "views">,
 ): Promise<string> {
   const docRef = await addDoc(collection(db, "blogs"), {
-    ...data,
+    ...stripUndefined(data),
     views: 0,
     createdAt: serverTimestamp(),
   });
@@ -639,7 +736,7 @@ export async function updateBlogPost(
   id: string,
   data: Partial<AdminBlogPost>,
 ): Promise<void> {
-  await updateDoc(doc(db, "blogs", id), data);
+  await updateDoc(doc(db, "blogs", id), stripUndefined(data));
 }
 
 export async function deleteBlogPost(id: string): Promise<void> {
@@ -650,8 +747,8 @@ export async function deleteBlogPost(id: string): Promise<void> {
 
 export function subscribeToUsers(callback: (users: AdminUserRecord[]) => void) {
   return onSnapshot(collection(db, "users"), (snap) => {
-    const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    callback(data as AdminUserRecord[]);
+    const data = snap.docs.map((doc) => ({ id: doc.id, ...(doc.data() as AdminUserRecord) }));
+    callback(data);
   });
 }
 
@@ -688,8 +785,13 @@ export function subscribeToDashboardStats(callback: (stats: DashboardStats) => v
 // 🔁 realtime fetch
 export function subscribeToLabSetups(callback: (data: AdminLabSetup[]) => void) {
   return onSnapshot(collection(db, "labSetups"), (snap) => {
-    const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    callback(data as AdminLabSetup[]);
+    const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as AdminLabSetup[];
+    const sorted = [...data].sort((a, b) => {
+      const orderDiff = Number(a.order || 0) - Number(b.order || 0);
+      if (orderDiff !== 0) return orderDiff;
+      return a.name.localeCompare(b.name);
+    });
+    callback(sorted);
   });
 }
 
@@ -725,17 +827,17 @@ const toIsoString = (value: unknown) =>
     ? (value as { toDate: () => Date }).toDate().toISOString()
     : value;
 
-const normalizeDates = <T extends Record<string, unknown>>(
-  data: T,
-  keys: Array<keyof T>,
-) => {
-  const next = { ...data };
+const normalizeDates = <T>(data: T, keys: Array<keyof T>) => {
+  // Work with a loose record internally to allow passing strongly-typed
+  // admin models (which may not have an index signature). Return the same
+  // generic type T after normalizing any Firestore Timestamp-like values.
+  const next = { ...(data as unknown as Record<string, unknown>) };
   keys.forEach((key) => {
-    if (key in next && next[key]) {
-      next[key] = toIsoString(next[key]) as T[keyof T];
+    if (key in next && next[key as string]) {
+      next[key as string] = toIsoString(next[key as string]);
     }
   });
-  return next;
+  return next as unknown as T;
 };
 
 const stripUndefined = <T extends Record<string, unknown>>(data: T): T => {
@@ -1005,6 +1107,18 @@ export interface PromoEmailPayload {
 
 export async function sendPromoEmail(payload: PromoEmailPayload) {
   const fn = httpsCallable(functions, "sendPromoEmail");
+  const res = await fn(payload);
+  return res.data as { sent: number; skipped: number };
+}
+
+export interface NewsletterEmailPayload {
+  audience?: "all" | "confirmed";
+  subject: string;
+  message: string;
+}
+
+export async function sendNewsletterEmail(payload: NewsletterEmailPayload) {
+  const fn = httpsCallable(functions, "sendNewsletterEmail");
   const res = await fn(payload);
   return res.data as { sent: number; skipped: number };
 }

@@ -26,6 +26,7 @@ import {
   ShoppingCart,
   Truck,
   X,
+  XCircle,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -83,6 +84,12 @@ const STATUS_CONFIG: Record<
     color: "oklch(0.72 0.14 145)",
     icon: <CheckCheck size={11} />,
   },
+  cancelled: {
+    label: "Cancelled",
+    bg: "oklch(0.06 0.12 20 / 0.35)",
+    color: "oklch(0.75 0.15 20)",
+    icon: <XCircle size={11} />,
+  },
 };
 
 const TIMELINE_STEPS: { key: string; label: string }[] = [
@@ -90,6 +97,7 @@ const TIMELINE_STEPS: { key: string; label: string }[] = [
   { key: "processing", label: "Processing" },
   { key: "shipped", label: "Shipped" },
   { key: "delivered", label: "Delivered" },
+  { key: "cancelled", label: "Cancelled" },
 ];
 
 function getStepIndex(status: string) {
@@ -418,7 +426,7 @@ function OrderDetailDrawer({ order, onClose }: DrawerProps) {
                     >
                       <img
                         src={item.image}
-                        alt={item.name}
+                        alt={`${item.name} from Tinkro`}
                         className="w-9 h-9 rounded-lg object-cover shrink-0"
                         style={{
                           border: "1px solid oklch(0.22 0.05 243 / 0.3)",
@@ -536,7 +544,7 @@ function OrderDetailDrawer({ order, onClose }: DrawerProps) {
                       border: "1px solid oklch(0.22 0.05 243 / 0.5)",
                     }}
                   >
-                    {["placed", "processing", "shipped", "delivered"].map(
+                    {["placed", "processing", "shipped", "delivered", "cancelled"].map(
                       (s) => (
                         <SelectItem
                           key={s}
@@ -665,6 +673,7 @@ const FILTER_TABS: { key: AllStatus; label: string }[] = [
   { key: "processing", label: "Processing" },
   { key: "shipped", label: "Shipped" },
   { key: "delivered", label: "Delivered" },
+  { key: "cancelled", label: "Cancelled" },
 ];
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -953,17 +962,29 @@ export default function AdminOrdersPage() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.2, delay: i * 0.03 }}
-                      className="group transition-colors duration-150 cursor-pointer"
+                      className="group transition-colors duration-150 cursor-pointer relative"
                       style={{
                         borderBottom: "1px solid oklch(0.18 0.03 243 / 0.6)",
+                        borderLeft:
+                          order.status === "cancelled"
+                            ? "4px solid oklch(0.65 0.20 20)"
+                            : "4px solid transparent",
+                        background:
+                          order.status === "cancelled"
+                            ? "oklch(0.12 0.08 20 / 0.15)"
+                            : "transparent",
                       }}
                       onMouseEnter={(e) => {
                         (e.currentTarget as HTMLElement).style.background =
-                          "oklch(0.15 0.03 243 / 0.4)";
+                          order.status === "cancelled"
+                            ? "oklch(0.12 0.08 20 / 0.25)"
+                            : "oklch(0.15 0.03 243 / 0.4)";
                       }}
                       onMouseLeave={(e) => {
                         (e.currentTarget as HTMLElement).style.background =
-                          "transparent";
+                          order.status === "cancelled"
+                            ? "oklch(0.12 0.08 20 / 0.15)"
+                            : "transparent";
                       }}
                       onClick={() => setSelectedOrder(order)}
                       data-ocid={`order-row-${order.id}`}
@@ -998,7 +1019,21 @@ export default function AdminOrdersPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <StatusPill status={order.status} />
+                        <div className="flex items-center gap-2">
+                          <StatusPill status={order.status} />
+                          {order.status === "cancelled" && (
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight"
+                              style={{
+                                background: "oklch(0.65 0.20 20 / 0.25)",
+                                color: "oklch(0.75 0.18 20)",
+                                border: "1px solid oklch(0.65 0.20 20 / 0.5)",
+                              }}
+                            >
+                              ⚠ Alert
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-xs text-white/40">
@@ -1040,6 +1075,7 @@ export default function AdminOrdersPage() {
                                 "processing",
                                 "shipped",
                                 "delivered",
+                                "cancelled",
                               ].map((status) => (
                                 <SelectItem
                                   key={status}

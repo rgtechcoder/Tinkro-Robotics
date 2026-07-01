@@ -1,5 +1,5 @@
 import type { Order } from "@/types";
-import { db } from "@/lib/firebase";
+import { db, functions } from "@/lib/firebase";
 import {
   addDoc,
   collection,
@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   where,
 } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
 
 export type SaveOrderData = Omit<Order, "id" | "createdAt"> & {
   createdAt?: string;
@@ -21,17 +22,14 @@ const toIsoString = (value: unknown) =>
     ? (value as { toDate: () => Date }).toDate().toISOString()
     : value;
 
-const normalizeDates = <T extends Record<string, unknown>>(
-  data: T,
-  keys: Array<keyof T>,
-) => {
-  const next = { ...data };
+const normalizeDates = <T>(data: T, keys: Array<keyof T>) => {
+  const next = { ...(data as unknown as Record<string, unknown>) };
   keys.forEach((key) => {
-    if (key in next && next[key]) {
-      next[key] = toIsoString(next[key]) as T[keyof T];
+    if (key in next && next[key as string]) {
+      next[key as string] = toIsoString(next[key as string]);
     }
   });
-  return next;
+  return next as unknown as T;
 };
 
 export async function saveOrder(order: SaveOrderData): Promise<string> {
@@ -53,7 +51,7 @@ export async function getUserOrders(userId: string): Promise<Order[]> {
     return normalizeDates(raw, ["createdAt"]);
   });
   return data.sort((a, b) =>
-    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    new Date(String(b.createdAt)).getTime() - new Date(String(a.createdAt)).getTime(),
   );
 }
 
@@ -70,9 +68,8 @@ export function subscribeToUserOrders(
       const raw = { id: docSnap.id, ...docSnap.data() } as Order;
       return normalizeDates(raw, ["createdAt"]);
     });
-    const sorted = data.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    const sorted = data.sort((a, b) =>
+      new Date(String(b.createdAt)).getTime() - new Date(String(a.createdAt)).getTime(),
     );
     callback(sorted);
   });
@@ -92,4 +89,9 @@ export async function hasUserRedeemedCoupon(
   const redemptionId = `${couponId}_${userId}`;
   const snap = await getDoc(doc(db, "couponRedemptions", redemptionId));
   return snap.exists();
+}
+
+export async function cancelOrder(orderId: string): Promise<void> {
+  const cancelOrderFn = httpsCallable(functions, "cancelOrder");
+  await cancelOrderFn({ orderId });
 }

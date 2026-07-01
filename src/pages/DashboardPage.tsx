@@ -13,6 +13,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import type { ComponentType } from "react";
 import { useState } from "react";
+import { upsertLinkTag, upsertMetaTag } from "../lib/seo";
 
 type Section =
   | "overview"
@@ -35,6 +36,17 @@ export function DashboardPage() {
   const [activeSection, setActiveSection] = useState<Section>("overview");
   const { user, isLoading } = useUserAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const title = "Dashboard | Tinkro";
+    const description = "Manage your Tinkro orders, addresses, and profile.";
+    const canonicalUrl = "https://tinkro.in/dashboard";
+
+    document.title = title;
+    upsertLinkTag("canonical", canonicalUrl);
+    upsertMetaTag("name", "description", description);
+    upsertMetaTag("name", "robots", "noindex,follow");
+  }, []);
 
   useEffect(() => {
     if (!isLoading && !user) {

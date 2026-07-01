@@ -18,35 +18,11 @@ export interface AdminUser {
   createdAt: Timestamp | string;
 }
 
-export interface KitContentItem {
-  iconName: string;
-  label: string;
-  description: string;
-  quantity: number;
-}
-
-export interface UseCase {
-  audience: string;
-  icon: string;
-  title: string;
-  description: string;
-  benefit: string;
-}
-
-export interface ProductReview {
-  name: string;
-  role: string;
-  date: string;
-  rating: number;
-  title: string;
-  content: string;
-  verified: boolean;
-}
-
 export interface AdminProduct {
   id: string;
   name: string;
   description: string;
+  overview?: string;
   price: number;
   originalPrice: number;
   image: string;
@@ -64,10 +40,64 @@ export interface AdminProduct {
   tags: string[];
   isActive: boolean;
   createdAt: Timestamp | string;
-  kitContents?: KitContentItem[];
-  useCases?: UseCase[];
-  productReviews?: ProductReview[];
-  demoVideo?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  focusKeyword?: string;
+  keywords?: string[];
+  canonicalUrl?: string;
+  seoSlug?: string;
+  openGraphTitle?: string;
+  openGraphDescription?: string;
+  openGraphImage?: string;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  brand?: string;
+  gtin?: string;
+  mpn?: string;
+  subCategory?: string;
+  features?: string[];
+  specifications?: Record<
+    string,
+    string | number | boolean | string[] | number[] | null
+  >;
+  compatibility?: string[];
+  applications?: string[];
+  certifications?: string[];
+  warranty?: string;
+  packageContents?: string[];
+  skillLevel?: string;
+  difficulty?: string;
+  weight?:
+    | string
+    | {
+        value?: number | string;
+        unit?: string;
+      };
+  dimensions?:
+    | string
+    | {
+        length?: number | string;
+        width?: number | string;
+        height?: number | string;
+        unit?: string;
+      };
+  material?: string;
+  countryOfOrigin?: string;
+  manufacturer?: string;
+  faqs?: {
+    question: string;
+    answer: string;
+  }[];
+
+  // New fields for admin-managed content
+  kitContents?: string[];
+  useCases?: string[];
+  reviewsArray?: {
+    name: string;
+    rating: number;
+    content: string;
+  }[];
+  demoVideoUrl?: string;
 }
 
 export interface AdminCategory {
@@ -190,19 +220,50 @@ export interface AdminBlogPost {
   title: string;
   slug: string;
   category: string;
+  subCategory?: string;
+  articleType?: string;
   content: string;
   excerpt: string;
+  summary?: string;
   featuredImage?: string;
   images?: string[];
+  featuredVideo?: string;
   author: string;
-  status: "draft" | "published";
+  authorBio?: string;
+  authorImage?: string;
+  authorLinkedIn?: string;
+  authorGithub?: string;
+  authorWebsite?: string;
+  status: "draft" | "published" | "scheduled" | "private";
+  pinned?: boolean;
+  featured?: boolean;
+  trending?: boolean;
+  readingTime?: number;
   publishedAt?: string | null;
   scheduledAt?: string;
   tags: string[];
+  difficulty?: string;
+  ageGroup?: string;
+  educationLevel?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  focusKeyword?: string;
+  keywords?: string[];
+  canonicalUrl?: string;
+  robots?: string;
+  openGraphTitle?: string;
+  openGraphDescription?: string;
+  openGraphImage?: string;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  twitterImage?: string;
+  seoScore?: number;
+  googlePreview?: string;
+  facebookPreview?: string;
+  twitterPreview?: string;
   views: number;
   createdAt: string;
   updatedAt?: string;
-  videoUrl?: string;
 }
 
 export interface AdminBanner {
@@ -233,6 +294,39 @@ export interface AdminEnquiry {
   notes?: string;
   createdAt: string;
   respondedAt?: string;
+}
+
+export interface AdminNewsletterSubscriber {
+  id: string;
+  name?: string;
+  email: string;
+  source?: string;
+  path?: string;
+  userAgent?: string;
+  confirmationSent?: boolean;
+  confirmationSentAt?: string;
+  lastNewsletterSubject?: string;
+  lastNewsletterSentAt?: string;
+  createdAt: string;
+}
+
+export interface AdminNewsletterMessage {
+  id: string;
+  subject: string;
+  message: string;
+  audience?: "all" | "confirmed";
+  sentAt: string;
+  emailId?: string | null;
+}
+
+export interface AdminNewsletterBroadcast {
+  id: string;
+  subject: string;
+  message: string;
+  audience?: "all" | "confirmed";
+  sentAt: string;
+  sentCount?: number;
+  skippedCount?: number;
 }
 
 export interface AdminMedia {

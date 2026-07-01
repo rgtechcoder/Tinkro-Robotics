@@ -6,6 +6,7 @@ import { Heart, ShoppingCart, Star, Zap } from "lucide-react";
 import { motion } from "motion/react";
 import { memo, useCallback, useState } from "react";
 import { useToastContext } from "../components/Layout";
+import { getProductRouteParam } from "../lib/slug";
 import { useCartStore } from "../store/cartStore";
 import { useWishlistStore } from "../store/wishlistStore";
 import type { AdminProduct } from "../types/admin";
@@ -39,6 +40,7 @@ const ProductCard = memo(function ProductCard({
   onAddToCart,
   onBuyNow,
 }: ProductCardProps) {
+  const productParam = getProductRouteParam(product);
   const toggleItem = useWishlistStore((s) => s.toggleItem);
   const isInWishlist = useWishlistStore((s) => s.isInWishlist);
   const wishlisted = isInWishlist(product.id);
@@ -75,11 +77,11 @@ const ProductCard = memo(function ProductCard({
       }}
       data-ocid="product-card"
     >
-      <Link to="/product/$id" params={{ id: product.id }} className="block">
+      <Link to="/product/$slug" params={{ slug: productParam }} className="block">
         <div className="relative overflow-hidden flex items-center justify-center" style={{ height: "200px", background: "transparent" }}>
           <img
             src={productImage}
-            alt={product.name}
+            alt={`${product.name} from Tinkro`}
             loading="lazy"
             decoding="async"
             width={200}
@@ -159,8 +161,8 @@ const ProductCard = memo(function ProductCard({
 
       <div className="p-5 flex flex-col gap-3 flex-1">
         <Link
-          to="/product/$id"
-          params={{ id: product.id }}
+          to="/product/$slug"
+          params={{ slug: productParam }}
           className="block space-y-1 hover:no-underline"
         >
           <p
@@ -213,8 +215,8 @@ const ProductCard = memo(function ProductCard({
           </div>
           <div className="flex items-center gap-1.5 flex-nowrap">
             <Link
-              to="/product/$id"
-              params={{ id: product.id }}
+              to="/product/$slug"
+              params={{ slug: productParam }}
               className="text-xs font-medium px-2 h-8 rounded-lg border transition-smooth hover:opacity-80 flex items-center justify-center"
               style={{
                 borderColor: "rgba(46,109,164,0.3)",

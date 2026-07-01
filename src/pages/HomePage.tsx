@@ -1,23 +1,50 @@
 import { AnimatePresence, motion } from "motion/react";
-import { CategoriesSection } from "../components/CategoriesSection";
-import {
-  FinalCTASection,
-  HowItWorksSection,
-  StarterJourneySection,
-  StorytellingSection,
-  WhyChooseTinkro,
-} from "../components/ContentSections";
-import { FeaturedProducts } from "../components/FeaturedProducts";
-import { HeroSection } from "../components/HeroSection";
-import { useNavigate } from "@tanstack/react-router";
-import { LabTiersSection } from "../components/LabTiersSection";
-import { TestimonialsSection } from "../components/TestimonialsSection";
+import { Suspense, lazy, useEffect } from "react";
+const CategoriesSection = lazy(() =>
+  import("../components/CategoriesSection").then((m) => ({ default: m.CategoriesSection })),
+);
+const LabTiersSection = lazy(() =>
+  import("../components/LabTiersSection").then((m) => ({ default: m.LabTiersSection })),
+);
+const FeaturedProducts = lazy(() =>
+  import("../components/FeaturedProducts").then((m) => ({ default: m.FeaturedProducts })),
+);
+const HeroSection = lazy(() =>
+  import("../components/HeroSection").then((m) => ({ default: m.HeroSection })),
+);
+const WhyChooseTinkro = lazy(() =>
+  import("../components/ContentSections").then((m) => ({ default: m.WhyChooseTinkro })),
+);
+const HowItWorksSection = lazy(() =>
+  import("../components/ContentSections").then((m) => ({ default: m.HowItWorksSection })),
+);
+const StarterJourneySection = lazy(() =>
+  import("../components/ContentSections").then((m) => ({ default: m.StarterJourneySection })),
+);
+const StorytellingSection = lazy(() =>
+  import("../components/ContentSections").then((m) => ({ default: m.StorytellingSection })),
+);
+const TestimonialsSection = lazy(() =>
+  import("../components/TestimonialsSection").then((m) => ({ default: m.TestimonialsSection })),
+);
+const FinalCTASection = lazy(() =>
+  import("../components/ContentSections").then((m) => ({ default: m.FinalCTASection })),
+);
 import {
   useBanners,
   useCategories,
+  useFeaturedProducts,
   useLabSetups,
-  useProducts,
 } from "../lib/publicDataService";
+import {
+  SITE_NAME,
+  SITE_URL,
+  removeJsonLd,
+  setJsonLd,
+  upsertLinkTag,
+  upsertMetaTag,
+} from "../lib/seo";
+import { getProductRouteParam } from "../lib/slug";
 
 // ─── Skeleton helpers ──────────────────────────────────────────────────────────
 
@@ -255,12 +282,223 @@ const testimonials = [
   },
 ];
 
+const HOME_URL = `${SITE_URL}/`;
+const LOGO_URL = `${SITE_URL}/assets/brand/logo.png`;
+const HERO_IMAGE_URL = `${SITE_URL}/assets/generated/hero-robot-3d.dim_800x900.png`;
+const CONTACT_EMAIL = "hello@tinkro.in";
+const CONTACT_PHONE = "+91-9644525429";
+const SOCIAL_LINKS = [
+  "https://www.facebook.com/profile.php?id=61581192200900",
+  "https://www.instagram.com/tinkrokits",
+  "https://www.linkedin.com/company/tinkrokits/",
+  "https://youtube.com/@tinkro",
+];
+
+const HOME_SEO_DESCRIPTION =
+  "Tinkro is a premium robotics and STEM brand for schools, students, and makers. Explore robotics kits, Arduino, AI kits, electronics components, and full STEM lab setups in India.";
+
 export function HomePage() {
-  const navigate = useNavigate();
-  const { products, loading: productsLoading } = useProducts();
+  const { products, loading: productsLoading } = useFeaturedProducts(12);
   const { categories, loading: categoriesLoading } = useCategories();
   const { labSetups, loading: labSetupsLoading } = useLabSetups();
   const { banners, loading: bannersLoading } = useBanners();
+
+  useEffect(() => {
+    const title =
+      categories.length > 0
+        ? `${SITE_NAME} | Robotics Kits, STEM Labs & Electronics Components`
+        : `${SITE_NAME} | Build Code Innovate`;
+    const description = HOME_SEO_DESCRIPTION;
+    const canonicalUrl = HOME_URL;
+
+    document.title = title;
+    upsertLinkTag("canonical", canonicalUrl);
+    upsertMetaTag("name", "description", description);
+    upsertMetaTag("name", "robots", "index,follow");
+    upsertMetaTag("property", "og:title", title);
+    upsertMetaTag("property", "og:description", description);
+    upsertMetaTag("property", "og:type", "website");
+    upsertMetaTag("property", "og:url", canonicalUrl);
+    upsertMetaTag("property", "og:image", HERO_IMAGE_URL);
+    upsertMetaTag("property", "og:image:alt", "Tinkro robotics and STEM learning kits");
+    upsertMetaTag("property", "og:site_name", SITE_NAME);
+    upsertMetaTag("name", "twitter:card", "summary_large_image");
+    upsertMetaTag("name", "twitter:title", title);
+    upsertMetaTag("name", "twitter:description", description);
+    upsertMetaTag("name", "twitter:image", HERO_IMAGE_URL);
+    upsertMetaTag("name", "twitter:image:alt", "Tinkro robotics and STEM learning kits");
+  }, [categories.length]);
+
+  useEffect(() => {
+    const heroPreload = document.createElement("link");
+    heroPreload.setAttribute("rel", "preload");
+    heroPreload.setAttribute("as", "image");
+    heroPreload.setAttribute(
+      "href",
+      "/assets/generated/hero-robot-3d.dim_800x900.png",
+    );
+    heroPreload.setAttribute("fetchpriority", "high");
+    heroPreload.setAttribute("type", "image/png");
+    heroPreload.setAttribute("data-hero-preload", "true");
+    document.head.appendChild(heroPreload);
+
+    return () => {
+      heroPreload.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    const title =
+      categories.length > 0
+        ? `${SITE_NAME} | Robotics Kits, STEM Labs & Electronics Components`
+        : `${SITE_NAME}: Build Code Innovate`;
+    const description = HOME_SEO_DESCRIPTION;
+
+    const featuredProducts = products.slice(0, 12).map((p, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `${SITE_URL}/product/${getProductRouteParam(p)}`,
+      name: p.name,
+    }));
+
+    const categoryItems = categories.slice(0, 20).map((c, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `${SITE_URL}/products?category=${encodeURIComponent(c.slug)}`,
+      name: c.name,
+    }));
+
+    const labItems = labSetups.slice(0, 8).map((lab, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: {
+        "@type": "Service",
+        name: lab.name,
+        description: lab.description ?? "",
+        url: `${SITE_URL}/labs`,
+        provider: {
+          "@type": "Organization",
+          name: SITE_NAME,
+        },
+        offers: {
+          "@type": "AggregateOffer",
+          priceCurrency: "INR",
+          lowPrice: lab.priceRange?.min ?? undefined,
+          highPrice: lab.priceRange?.max ?? undefined,
+        },
+        areaServed: "IN",
+        serviceType: "STEM Lab Setup",
+      },
+    }));
+
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": `${HOME_URL}#organization`,
+          name: SITE_NAME,
+          url: HOME_URL,
+          logo: {
+            "@type": "ImageObject",
+            url: LOGO_URL,
+          },
+          email: CONTACT_EMAIL,
+          telephone: CONTACT_PHONE,
+          contactPoint: [
+            {
+              "@type": "ContactPoint",
+              telephone: CONTACT_PHONE,
+              email: CONTACT_EMAIL,
+              contactType: "customer support",
+              availableLanguage: ["en", "hi"],
+              areaServed: "IN",
+            },
+          ],
+          sameAs: SOCIAL_LINKS,
+        },
+        {
+          "@type": "WebSite",
+          "@id": `${HOME_URL}#website`,
+          name: SITE_NAME,
+          url: HOME_URL,
+          publisher: {
+            "@id": `${HOME_URL}#organization`,
+          },
+          potentialAction: {
+            "@type": "SearchAction",
+            target: `${SITE_URL}/products?category={search_term_string}`,
+            "query-input": "required name=search_term_string",
+          },
+        },
+        {
+          "@type": "LocalBusiness",
+          "@id": `${HOME_URL}#localbusiness`,
+          name: SITE_NAME,
+          url: HOME_URL,
+          image: LOGO_URL,
+          logo: LOGO_URL,
+          email: CONTACT_EMAIL,
+          telephone: CONTACT_PHONE,
+          parentOrganization: {
+            "@id": `${HOME_URL}#organization`,
+          },
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: "Indore",
+            addressRegion: "Madhya Pradesh",
+            addressCountry: "IN",
+          },
+          areaServed: {
+            "@type": "Country",
+            name: "India",
+          },
+        },
+        {
+          "@type": "WebPage",
+          "@id": `${HOME_URL}#webpage`,
+          url: HOME_URL,
+          name: title,
+          description,
+          isPartOf: {
+            "@id": `${HOME_URL}#website`,
+          },
+          about: {
+            "@id": `${HOME_URL}#organization`,
+          },
+          primaryImageOfPage: {
+            "@type": "ImageObject",
+            url: HERO_IMAGE_URL,
+          },
+        },
+        {
+          "@type": "ItemList",
+          name: "Featured Products",
+          itemListOrder: "https://schema.org/ItemListOrderAscending",
+          numberOfItems: featuredProducts.length,
+          itemListElement: featuredProducts,
+        },
+        {
+          "@type": "ItemList",
+          name: "Shop by Category",
+          itemListOrder: "https://schema.org/ItemListOrderAscending",
+          numberOfItems: categoryItems.length,
+          itemListElement: categoryItems,
+        },
+        {
+          "@type": "ItemList",
+          name: "Lab Setup Solutions",
+          itemListOrder: "https://schema.org/ItemListOrderAscending",
+          numberOfItems: labItems.length,
+          itemListElement: labItems,
+        },
+      ],
+    };
+
+    const scriptId = "home-jsonld";
+    setJsonLd(scriptId, jsonLd);
+    return () => removeJsonLd(scriptId);
+  }, [products, categories, labSetups]);
 
   const scrollTo = (id: string) => {
     document
@@ -288,19 +526,23 @@ export function HomePage() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
           >
-            <HeroSection
-              banners={banners}
-              loading={false}
-              onShopNow={() => {
-                navigate({ to: "/products#all-products" });
-              }}
-              onExploreLabs={() => scrollTo("lab-tiers")}
-            />
+            <Suspense fallback={<HeroSkeleton />}>
+              <HeroSection
+                banners={banners}
+                loading={false}
+                onShopNow={() => {
+                  window.location.href = "/products#all-products";
+                }}
+                onExploreLabs={() => scrollTo("lab-tiers")}
+              />
+            </Suspense>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <WhyChooseTinkro />
+      <Suspense fallback={null}>
+        <WhyChooseTinkro />
+      </Suspense>
 
       {/* Lab Tiers — show skeleton while loading */}
       <AnimatePresence mode="wait">
@@ -320,7 +562,9 @@ export function HomePage() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
           >
-            <LabTiersSection labSetups={labSetups} loading={false} />
+            <Suspense fallback={<LabsTiersSkeleton />}>
+              <LabTiersSection labSetups={labSetups} loading={false} />
+            </Suspense>
           </motion.div>
         )}
       </AnimatePresence>
@@ -343,7 +587,9 @@ export function HomePage() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
           >
-            <CategoriesSection categories={categories} loading={false} />
+            <Suspense fallback={<CategoriesSkeleton />}>
+              <CategoriesSection categories={categories} loading={false} />
+            </Suspense>
           </motion.div>
         )}
       </AnimatePresence>
@@ -366,16 +612,28 @@ export function HomePage() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
           >
-            <FeaturedProducts products={products} loading={false} />
+            <Suspense fallback={<ProductsSkeleton />}>
+              <FeaturedProducts products={products} loading={false} />
+            </Suspense>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <HowItWorksSection steps={howItWorksSteps} />
-      <StarterJourneySection />
-      <StorytellingSection />
-      <TestimonialsSection testimonials={testimonials} />
-      <FinalCTASection />
+      <Suspense fallback={null}>
+        <HowItWorksSection steps={howItWorksSteps} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <StarterJourneySection />
+      </Suspense>
+      <Suspense fallback={null}>
+        <StorytellingSection />
+      </Suspense>
+      <Suspense fallback={null}>
+        <TestimonialsSection testimonials={testimonials} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <FinalCTASection />
+      </Suspense>
     </>
   );
 }

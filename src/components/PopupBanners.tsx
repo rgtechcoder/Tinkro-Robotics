@@ -98,6 +98,8 @@ export function PopupBanners() {
             <img
               src={active.imageUrl}
               alt={active.title}
+              width={800}
+              height={480}
               className="h-48 w-full object-cover"
             />
           </div>

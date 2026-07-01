@@ -20,7 +20,8 @@ import {
   Wrench,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { removeJsonLd, setJsonLd, upsertLinkTag, upsertMetaTag } from "../lib/seo";
 
 // ─────────────────────────────────────────────────────────
 // Type badge label map
@@ -841,6 +842,67 @@ function CTABanner() {
 // Page
 // ─────────────────────────────────────────────────────────
 export function LabsPage() {
+  const { labSetups } = useLabSetups();
+
+  useEffect(() => {
+    const title = "Lab Setup Solutions | Tinkro";
+    const description =
+      "Complete STEM lab setup solutions for schools across India. Choose from Starter, Growth, Advanced, and Premium lab tiers with full support.";
+    const canonicalUrl = "https://tinkro.in/labs";
+
+    document.title = title;
+    upsertLinkTag("canonical", canonicalUrl);
+    upsertMetaTag("name", "description", description);
+    upsertMetaTag("name", "robots", "index,follow");
+    upsertMetaTag("property", "og:title", title);
+    upsertMetaTag("property", "og:description", description);
+    upsertMetaTag("property", "og:type", "website");
+    upsertMetaTag("property", "og:url", canonicalUrl);
+    upsertMetaTag("property", "og:image", "https://tinkro.in/assets/brand/logo.png");
+    upsertMetaTag("property", "og:site_name", "Tinkro");
+    upsertMetaTag("name", "twitter:card", "summary_large_image");
+    upsertMetaTag("name", "twitter:title", title);
+    upsertMetaTag("name", "twitter:description", description);
+    upsertMetaTag("name", "twitter:image", "https://tinkro.in/assets/brand/logo.png");
+  }, []);
+
+  useEffect(() => {
+    const listItems = labSetups.slice(0, 12).map((lab, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: {
+        "@type": "Service",
+        name: lab.name,
+        description: lab.description ?? "",
+        provider: {
+          "@type": "Organization",
+          name: "Tinkro",
+        },
+        offers: {
+          "@type": "AggregateOffer",
+          priceCurrency: "INR",
+          lowPrice: lab.priceRange?.min ?? undefined,
+          highPrice: lab.priceRange?.max ?? undefined,
+        },
+        areaServed: "IN",
+        serviceType: "STEM Lab Setup",
+      },
+    }));
+
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: "Lab Setup Solutions",
+      itemListOrder: "https://schema.org/ItemListOrderAscending",
+      numberOfItems: listItems.length,
+      itemListElement: listItems,
+    };
+
+    const scriptId = "labs-jsonld";
+    setJsonLd(scriptId, jsonLd);
+    return () => removeJsonLd(scriptId);
+  }, [labSetups]);
+
   return (
     <div className="min-h-screen bg-[oklch(0.07_0.025_258)]">
       <HeroSection />

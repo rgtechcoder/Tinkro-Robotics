@@ -315,8 +315,8 @@ function OrdersExportCard({
     try {
       const snap = await getDocs(collection(db, "orders"));
       const rows = snap.docs.map((doc) => ({
-        id: doc.id,
         ...(doc.data() as AdminOrder),
+        id: doc.id,
       }));
 
       const filtered = rows.filter((order) => {
@@ -347,8 +347,8 @@ function OrdersExportCard({
     try {
       const snap = await getDocs(collection(db, "orders"));
       const orders = snap.docs.map((doc) => ({
-        id: doc.id,
         ...(doc.data() as AdminOrder),
+        id: doc.id,
       }));
 
       const filtered = orders.filter((order) => {
@@ -674,8 +674,8 @@ function EnquiriesExportCard({
     try {
       const snap = await getDocs(collection(db, "enquiries"));
       const rows = snap.docs.map((doc) => ({
-        id: doc.id,
         ...(doc.data() as AdminEnquiry),
+        id: doc.id,
       }));
       const filtered = rows.filter((enquiry) => {
         const date = normalizeDate(enquiry.createdAt);
@@ -707,8 +707,8 @@ function EnquiriesExportCard({
     try {
       const snap = await getDocs(collection(db, "enquiries"));
       const enquiries = snap.docs.map((doc) => ({
-        id: doc.id,
         ...(doc.data() as AdminEnquiry),
+        id: doc.id,
       }));
 
       const filtered = enquiries.filter((enquiry) => {

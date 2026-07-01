@@ -564,8 +564,26 @@
 // Firebase ENABLED version — real data from Firestore
 
 import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  startAt,
+  endAt,
+  where,
+  doc,
+  getDoc,
+  type CollectionReference,
+  type DocumentData,
+  type Query,
+  type QuerySnapshot,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { normalizeProducts, withProductSeoDefaults } from "@/lib/productSeoModel";
+import { parseProductRouteParam, slugify } from "@/lib/slug";
 
 import type {
   AdminBanner,
@@ -576,6 +594,35 @@ import type {
   AdminProduct,
 } from "@/types/admin";
 
+const CACHE_STORAGE_PREFIX = "tinkro_public_data_cache";
+
+function getCacheKey(collectionName: string) {
+  return `${CACHE_STORAGE_PREFIX}:${collectionName}`;
+}
+
+function readCachedCollection<T>(collectionName: string): T[] | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(getCacheKey(collectionName));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as T[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedCollection<T>(collectionName: string, data: T[]) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(getCacheKey(collectionName), JSON.stringify(data));
+  } catch {
+    // Ignore cache write failures and continue with runtime data.
+  }
+}
+
 // ─── Hooks (NOW FIREBASE ENABLED) ─────────────────────────────────────────────
 
 type StoreState<T> = {
@@ -585,13 +632,15 @@ type StoreState<T> = {
 };
 
 function createCollectionStore<T>(collectionName: string) {
+  const cachedData = readCachedCollection<T>(collectionName);
   const store = {
-    data: [] as T[],
-    loading: true,
+    data: (cachedData ?? []) as T[],
+    loading: !cachedData,
     error: null as string | null,
-    initialized: false,
+    initialized: Boolean(cachedData),
     inflight: false,
     listeners: new Set<(state: StoreState<T>) => void>(),
+    subscription: null as (() => void) | null,
   };
 
   const notify = () => {
@@ -603,22 +652,77 @@ function createCollectionStore<T>(collectionName: string) {
     store.listeners.forEach((listener) => listener(state));
   };
 
+  const applySnapshot = (snapshot: QuerySnapshot<DocumentData>) => {
+    const data = snapshot.docs.map((docSnapshot) => ({
+      id: docSnapshot.id,
+      ...docSnapshot.data(),
+    })) as T[];
+    store.data =
+      collectionName === "products"
+        ? (normalizeProducts(data as AdminProduct[]) as T[])
+        : data;
+    writeCachedCollection(collectionName, store.data);
+    store.error = null;
+    store.initialized = true;
+    store.loading = false;
+    store.inflight = false;
+    notify();
+  };
+
+  const connectLiveUpdates = () => {
+    if (store.subscription) return;
+
+    let queryRef: CollectionReference<DocumentData> | Query<DocumentData>;
+    if (collectionName === "products") {
+      queryRef = query(
+        collection(db, collectionName),
+        orderBy("createdAt", "desc"),
+        limit(200),
+      );
+    } else if (collectionName === "blogs") {
+      queryRef = query(collection(db, collectionName), orderBy("publishedAt", "desc"), limit(50));
+    } else {
+      queryRef = collection(db, collectionName);
+    }
+
+    store.subscription = onSnapshot(
+      queryRef,
+      (snapshot) => {
+        applySnapshot(snapshot);
+      },
+      () => {
+        if (store.data.length > 0) {
+          store.error = null;
+        } else {
+          store.error = "Failed to load data";
+        }
+        store.loading = false;
+        store.inflight = false;
+        notify();
+      },
+    );
+  };
+
   const load = async () => {
-    if (store.inflight) return;
+    if (store.inflight || store.initialized) return;
     store.inflight = true;
     store.loading = true;
     notify();
     try {
-      const snapshot = await getDocs(collection(db, collectionName));
-      store.data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as T[];
-      store.error = null;
-      store.initialized = true;
+      const queryRef =
+        collectionName === "products"
+          ? query(collection(db, collectionName), orderBy("createdAt", "desc"), limit(200))
+          : collectionName === "blogs"
+            ? query(collection(db, collectionName), orderBy("publishedAt", "desc"), limit(50))
+            : collection(db, collectionName);
+      const snapshot = await getDocs(queryRef);
+      applySnapshot(snapshot);
     } catch {
-      store.error = "Failed to load data";
-    } finally {
+      if (store.data.length > 0) {
+        store.error = null;
+      } else {
+        store.error = "Failed to load data";
+      }
       store.loading = false;
       store.inflight = false;
       notify();
@@ -634,11 +738,16 @@ function createCollectionStore<T>(collectionName: string) {
 
     useEffect(() => {
       store.listeners.add(setState);
+      connectLiveUpdates();
       if (!store.initialized) {
         void load();
       }
       return () => {
         store.listeners.delete(setState);
+        if (store.listeners.size === 0 && store.subscription) {
+          store.subscription();
+          store.subscription = null;
+        }
       };
     }, []);
 
@@ -648,12 +757,150 @@ function createCollectionStore<T>(collectionName: string) {
   return { useCollection };
 }
 
+async function fetchFeaturedProducts(limitCount = 12): Promise<AdminProduct[]> {
+  try {
+    const featuredQuery = query(
+      collection(db, "products"),
+      orderBy("createdAt", "desc"),
+      limit(limitCount),
+    );
+    const snapshot = await getDocs(featuredQuery);
+    return normalizeProducts(snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as AdminProduct[]);
+  } catch {
+    return [];
+  }
+}
+
+// Simple in-memory cache for featured products to avoid repeated queries on navigation.
+const _featuredCache = new Map<number, AdminProduct[]>();
+
+export async function fetchFeaturedProductsCached(limitCount = 12): Promise<AdminProduct[]> {
+  const cached = _featuredCache.get(limitCount);
+  if (cached) return cached;
+  const data = await fetchFeaturedProducts(limitCount);
+  _featuredCache.set(limitCount, data);
+  return data;
+}
+
+export async function fetchAllProducts(): Promise<AdminProduct[]> {
+  try {
+    const snapshot = await getDocs(collection(db, "products"));
+    return normalizeProducts(snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as AdminProduct[]);
+  } catch {
+    return [];
+  }
+}
+
+export function useFeaturedProducts(limitCount = 12): {
+  products: AdminProduct[];
+  loading: boolean;
+  error: string | null;
+} {
+  const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadFeatured() {
+      setLoading(true);
+      setError(null);
+      try {
+        const featured = await fetchFeaturedProductsCached(limitCount);
+        if (!active) return;
+        setProducts(featured);
+      } catch (err) {
+        if (!active) return;
+        setError("Failed to load featured products");
+      } finally {
+        if (!active) return;
+        setLoading(false);
+      }
+    }
+
+    void loadFeatured();
+    return () => {
+      active = false;
+    };
+  }, [limitCount]);
+
+  return { products, loading, error };
+}
+
+export async function searchProducts(
+  queryTerm: string,
+  limitCount = 8,
+): Promise<AdminProduct[]> {
+  const term = queryTerm.trim();
+  if (!term) return [];
+
+  const normalizedCategory = term;
+  const prefixEnd = `${term}\uf8ff`;
+
+  const nameQuery = query(
+    collection(db, "products"),
+    orderBy("name"),
+    startAt(term),
+    endAt(prefixEnd),
+    limit(limitCount),
+  );
+
+  const categoryQuery = query(
+    collection(db, "products"),
+    where("category", "==", normalizedCategory),
+    limit(limitCount),
+  );
+
+  try {
+    const [nameSnap, categorySnap] = await Promise.all([
+      getDocs(nameQuery),
+      getDocs(categoryQuery),
+    ]);
+
+    const seen = new Set<string>();
+    const results: AdminProduct[] = [];
+
+    function pushFromSnapshot(snapshot: typeof nameSnap) {
+      for (const doc of snapshot.docs) {
+        if (seen.has(doc.id)) continue;
+        seen.add(doc.id);
+        results.push(
+          withProductSeoDefaults({ id: doc.id, ...doc.data() } as AdminProduct),
+        );
+        if (results.length >= limitCount) break;
+      }
+    }
+
+    pushFromSnapshot(nameSnap);
+    if (results.length < limitCount) {
+      pushFromSnapshot(categorySnap);
+    }
+
+    return results;
+  } catch {
+    return [];
+  }
+}
+
 const productsStore = createCollectionStore<AdminProduct>("products");
 const categoriesStore = createCollectionStore<AdminCategory>("categories");
 const labSetupsStore = createCollectionStore<AdminLabSetup>("labSetups");
 const bannersStore = createCollectionStore<AdminBanner>("banners");
 const blogsStore = createCollectionStore<AdminBlogPost>("blogs");
 const couponsStore = createCollectionStore<AdminCoupon>("coupons");
+
+// NOTE: removed synthetic fallback product generation. When a product is not
+// present in the in-memory collection we now attempt an explicit Firestore
+// resolution (by document id, seoSlug, slug, or name). If no real document is
+// found, callers will receive `product: null` and should render the Not Found
+// UI rather than a generated placeholder.
 
 // PRODUCTS
 export function useProducts(): {
@@ -697,7 +944,12 @@ export function useLabSetups(): {
   error: string | null;
 } {
   const { data, loading, error } = labSetupsStore.useCollection();
-  return { labSetups: data, loading, error };
+  const sorted = [...data].sort((a, b) => {
+    const orderDiff = Number(a.order || 0) - Number(b.order || 0);
+    if (orderDiff !== 0) return orderDiff;
+    return a.name.localeCompare(b.name);
+  });
+  return { labSetups: sorted, loading, error };
 }
 // BANNERS
 export function useBanners(): {
@@ -716,7 +968,8 @@ export function useBlogPosts(): {
   error: string | null;
 } {
   const { data, loading, error } = blogsStore.useCollection();
-  return { posts: data, loading, error };
+  const publishedPosts = data.filter((post) => post.status === "published");
+  return { posts: publishedPosts, loading, error };
 }
 
 // COUPONS
@@ -731,17 +984,201 @@ export function useCoupons(): {
 
 // SINGLE PRODUCT
 export function useProductById(id: string) {
-  const { products } = useProducts();
-  const product = products.find((p) => p.id === id) ?? null;
+  const { products, loading: collectionLoading, error: collectionError } = useProducts();
+  const { id: parsedId, slug } = parseProductRouteParam(id);
 
-  return { product, loading: false, error: null };
+  const [product, setProduct] = useState<AdminProduct | null>(null);
+  const [loading, setLoading] = useState<boolean>(collectionLoading);
+  const [error, setError] = useState<string | null>(collectionError);
+
+  useEffect(() => {
+    let active = true;
+
+    setError(collectionError);
+
+    // 1) Try to resolve from the in-memory collection first (fast-path)
+    const byId = products.find((p) => p.id === parsedId || p.id === id) ?? null;
+    if (byId) {
+      setProduct(byId);
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    const targetSlug = slug ? slugify(slug) : slugify(id);
+    const bySlug =
+      products.find((p) => p.seoSlug && slugify(p.seoSlug) === targetSlug) ||
+      products.find((p) => slugify(p.name) === targetSlug) ||
+      null;
+
+    if (bySlug) {
+      setProduct(bySlug);
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    // 2) Not in collection: perform Firestore lookups to find the real document.
+    setLoading(true);
+
+    async function resolveFromFirestore() {
+      try {
+        // Try direct document id lookup first (most reliable)
+        if (parsedId) {
+          const dref = doc(db, "products", parsedId);
+          const snap = await getDoc(dref);
+          if (snap.exists()) {
+            const p = withProductSeoDefaults({ id: snap.id, ...snap.data() } as AdminProduct);
+            if (!active) return;
+            setProduct(p);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Next try searching by SEO slug, then by stored slug, then by name equality
+        if (slug) {
+          const slugQueries = [
+            query(collection(db, "products"), where("seoSlug", "==", slug), limit(1)),
+            query(collection(db, "products"), where("slug", "==", slug), limit(1)),
+            query(collection(db, "products"), where("name", "==", slug), limit(1)),
+          ];
+
+          for (const q of slugQueries) {
+            const snaps = await getDocs(q);
+            if (snaps.docs.length > 0) {
+              const d = snaps.docs[0];
+              const p = withProductSeoDefaults({ id: d.id, ...d.data() } as AdminProduct);
+              if (!active) return;
+              setProduct(p);
+              setLoading(false);
+              return;
+            }
+          }
+        }
+
+        // As a last resort, try a prefix/name-based search using startAt/endAt on 'name'
+        const namePrefix = id.trim();
+        if (namePrefix) {
+          const prefixEnd = `${namePrefix}\uf8ff`;
+          const nameQuery = query(
+            collection(db, "products"),
+            orderBy("name"),
+            startAt(namePrefix),
+            endAt(prefixEnd),
+            limit(1),
+          );
+          const snaps = await getDocs(nameQuery);
+          if (snaps.docs.length > 0) {
+            const d = snaps.docs[0];
+            const p = withProductSeoDefaults({ id: d.id, ...d.data() } as AdminProduct);
+            if (!active) return;
+            setProduct(p);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Nothing found
+        if (!active) return;
+        setProduct(null);
+        setLoading(false);
+      } catch (e) {
+        if (!active) return;
+        setError("Failed to load product");
+        setLoading(false);
+      }
+    }
+
+    void resolveFromFirestore();
+
+    return () => {
+      active = false;
+    };
+  }, [id, parsedId, slug, products, collectionError]);
+
+  return { product, loading, error };
 }
 
 // SINGLE BLOG
 export function useBlogPostById(id: string) {
-  const { posts } = useBlogPosts();
-  const post =
-    posts.find((p) => p.id === id || p.slug === id) ?? null;
+  const { posts, loading: collectionLoading, error: collectionError } = useBlogPosts();
+  const [post, setPost] = useState<AdminBlogPost | null>(null);
+  const [loading, setLoading] = useState<boolean>(collectionLoading);
+  const [error, setError] = useState<string | null>(collectionError);
 
-  return { post, loading: false, error: null };
+  useEffect(() => {
+    let active = true;
+
+    setError(collectionError);
+
+    const directMatch =
+      posts.find((p) => p.id === id || p.slug === id || slugify(p.title) === slugify(id)) ?? null;
+
+    if (directMatch) {
+      setPost(directMatch);
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    setLoading(true);
+
+    async function resolveFromFirestore() {
+      try {
+        const trimmedId = id.trim();
+        if (!trimmedId) {
+          if (!active) return;
+          setPost(null);
+          setLoading(false);
+          return;
+        }
+
+        const directRef = doc(db, "blogs", trimmedId);
+        const directSnap = await getDoc(directRef);
+        if (directSnap.exists()) {
+          if (!active) return;
+          setPost({ id: directSnap.id, ...directSnap.data() } as AdminBlogPost);
+          setLoading(false);
+          return;
+        }
+
+        const slugQueries = [
+          query(collection(db, "blogs"), where("slug", "==", trimmedId), limit(1)),
+          query(collection(db, "blogs"), where("seoSlug", "==", trimmedId), limit(1)),
+          query(collection(db, "blogs"), where("slug", "==", slugify(trimmedId)), limit(1)),
+        ];
+
+        for (const queryRef of slugQueries) {
+          const snaps = await getDocs(queryRef);
+          if (snaps.docs.length > 0) {
+            const docSnap = snaps.docs[0];
+            if (!active) return;
+            setPost({ id: docSnap.id, ...docSnap.data() } as AdminBlogPost);
+            setLoading(false);
+            return;
+          }
+        }
+
+        if (!active) return;
+        setPost(null);
+        setLoading(false);
+      } catch (e) {
+        if (!active) return;
+        setError("Failed to load blog post");
+        setLoading(false);
+      }
+    }
+
+    void resolveFromFirestore();
+
+    return () => {
+      active = false;
+    };
+  }, [id, posts, collectionError]);
+
+  return { post, loading, error };
 }

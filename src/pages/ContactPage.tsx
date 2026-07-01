@@ -18,6 +18,7 @@ import { Linkedin } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { SiFacebook, SiInstagram, SiWhatsapp, SiYoutube } from "react-icons/si";
+import { removeJsonLd, setJsonLd, upsertLinkTag, upsertMetaTag } from "../lib/seo";
 
 // ─── Subject options ──────────────────────────────────────
 const LAB_SUBJECT_OPTIONS = [
@@ -164,6 +165,61 @@ export function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPrefilled, setIsPrefilled] = useState(!!prefillSubject);
+
+  useEffect(() => {
+    const title = "Contact Tinkro | Sales & Support";
+    const description =
+      "Get in touch with Tinkro for lab setup enquiries, bulk orders, partnerships, and support. We reply within 24 hours.";
+    const canonicalUrl = "https://tinkro.in/contact";
+
+    document.title = title;
+    upsertLinkTag("canonical", canonicalUrl);
+    upsertMetaTag("name", "description", description);
+    upsertMetaTag("name", "robots", "index,follow");
+    upsertMetaTag("property", "og:title", title);
+    upsertMetaTag("property", "og:description", description);
+    upsertMetaTag("property", "og:type", "website");
+    upsertMetaTag("property", "og:url", canonicalUrl);
+    upsertMetaTag("property", "og:image", "https://tinkro.in/assets/brand/logo.png");
+    upsertMetaTag("property", "og:site_name", "Tinkro");
+    upsertMetaTag("name", "twitter:card", "summary_large_image");
+    upsertMetaTag("name", "twitter:title", title);
+    upsertMetaTag("name", "twitter:description", description);
+    upsertMetaTag("name", "twitter:image", "https://tinkro.in/assets/brand/logo.png");
+  }, []);
+
+  useEffect(() => {
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "Tinkro",
+      url: "https://tinkro.in/",
+      logo: "https://tinkro.in/assets/brand/logo.png",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Indore",
+        addressCountry: "IN",
+      },
+      contactPoint: [
+        {
+          "@type": "ContactPoint",
+          telephone: "+91-9644525429",
+          contactType: "customer support",
+          availableLanguage: ["en", "hi"],
+        },
+      ],
+      sameAs: [
+        "https://www.instagram.com/tinkrokits",
+        "https://youtube.com/@tinkro",
+        "https://www.linkedin.com/company/tinkrokits/",
+        "https://www.facebook.com/profile.php?id=61581192200900",
+      ],
+    };
+
+    const scriptId = "contact-jsonld";
+    setJsonLd(scriptId, jsonLd);
+    return () => removeJsonLd(scriptId);
+  }, []);
 
   // Sync pre-fill if the URL param changes (e.g., browser back/forward)
   useEffect(() => {

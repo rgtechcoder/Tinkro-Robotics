@@ -16,6 +16,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { AlertCircle, CheckCircle2, FileSpreadsheet, Play, ShieldCheck, UploadCloud, Download } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useToastContext } from "@/components/Layout";
 import type { AdminProduct } from "@/types/admin";
 
 const TARGET_FIELDS = [
@@ -103,6 +104,7 @@ export function AdminBulkImportPage() {
   const [history, setHistory] = useState<ImportReport[]>(() => readImportHistory());
 
   const previewRows = useMemo(() => parsedFile?.rows.slice(0, 20) ?? [], [parsedFile]);
+  const { addToast } = useToastContext();
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -120,7 +122,10 @@ export function AdminBulkImportPage() {
     try {
       const parsed = await parseBulkImportFile(file);
       setParsedFile(parsed);
-      setMapping(getAutoColumnMapping(parsed.headers));
+      const autoMap = getAutoColumnMapping(parsed.headers);
+      setMapping(autoMap);
+      // Store first data row SKU globally for end-to-end tracing in other modules
+      // No runtime tracing in production
       setValidationSummary(null);
       setReport(null);
       setMessage(`Preview ready for ${parsed.rows.length} rows from ${parsed.sheetName}.`);
@@ -133,6 +138,7 @@ export function AdminBulkImportPage() {
 
   async function handleValidate() {
     if (!parsedFile) return;
+    addToast("Running Dry Run...", "info");
 
     setIsProcessing(true);
     setMessage("Validating rows and checking Firestore data...");
@@ -168,6 +174,7 @@ export function AdminBulkImportPage() {
 
       setValidationSummary(summary);
       setMessage(`Validation complete. ${summary.rowsToCreate} create, ${summary.rowsToUpdate} update, ${summary.rowsToSkip} skip.`);
+      addToast("Dry Run completed successfully.", summary.errors || summary.warnings ? "info" : "success");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Validation failed.");
     } finally {
@@ -177,6 +184,7 @@ export function AdminBulkImportPage() {
 
   async function handleImport() {
     if (!parsedFile) return;
+    addToast(options.dryRun ? "Running Dry Run..." : "Import started...", "info");
 
     setIsProcessing(true);
     setProgress(0);
@@ -201,8 +209,62 @@ export function AdminBulkImportPage() {
       }
       setValidationSummary(result.validation.summary);
       setMessage(options.dryRun ? "Dry run completed. No Firestore writes were made." : "Import completed successfully.");
+      if (result.report.rowsImported === 0) {
+        addToast("No changes detected.", "info");
+      } else if (result.report.failed || (result.report.warnings && result.report.warnings.length > 0)) {
+        addToast(options.dryRun ? "Dry Run completed with warnings." : "Import completed with warnings.", "info");
+      } else {
+        addToast(options.dryRun ? "Dry Run completed successfully." : "Import completed successfully.", "success");
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Import failed.");
+      addToast("Import failed.", "error");
+    } finally {
+      setIsProcessing(false);
+    }
+  }
+
+  // Explicit real import runner that forces dryRun=false so callers (UI) can
+  // reliably start a true import regardless of the checkbox state.
+  async function handleRealImport() {
+    if (!parsedFile) return;
+    addToast("Import started...", "info");
+
+    setIsProcessing(true);
+    setProgress(0);
+    setMessage("Importing products into Firestore...");
+
+    try {
+      const result = await runBulkProductImport({
+        rows: parsedFile.rows,
+        mapping,
+        // force a real import
+        options: { ...options, dryRun: false },
+        adminEmail: adminUser?.email || "unknown-admin",
+        onProgress: (percent, text) => {
+          setProgress(percent);
+          setMessage(text);
+        },
+      });
+
+      setReport(result.report);
+      // persist history only for real imports
+      saveImportHistory(result.report);
+      setHistory(readImportHistory());
+
+      setValidationSummary(result.validation.summary);
+      setMessage("Import completed successfully.");
+
+      if (result.report.rowsImported === 0) {
+        addToast("No changes detected.", "info");
+      } else if (result.report.failed || (result.report.warnings && result.report.warnings.length > 0)) {
+        addToast("Import completed with warnings.", "info");
+      } else {
+        addToast("Import completed successfully.", "success");
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Import failed.");
+      addToast("Import failed.", "error");
     } finally {
       setIsProcessing(false);
     }
@@ -361,6 +423,16 @@ export function AdminBulkImportPage() {
                     style={{ background: "oklch(0.71 0.17 48 / 0.8)" }}
                   >
                     {options.dryRun ? "Run Dry Run" : "Import Products"}
+                  </button>
+                  {/* Explicit Import button to trigger a real import regardless of the Dry Run checkbox. */}
+                  <button
+                    type="button"
+                    onClick={handleRealImport}
+                    disabled={!parsedFile || isProcessing}
+                    className="rounded-xl border border-green-500/40 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{ background: "oklch(0.18 0.06 130 / 0.85)" }}
+                  >
+                    Import Products
                   </button>
                 </div>
               </div>

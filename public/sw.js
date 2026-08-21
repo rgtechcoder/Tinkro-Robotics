@@ -100,7 +100,13 @@ self.addEventListener("fetch", (event) => {
       fetch(event.request)
         .then((response) => {
           if (response.ok) {
-            caches.open(STATIC_CACHE).then((cache) => cache.put(event.request, response.clone()));
+            caches.open(STATIC_CACHE).then((cache) => {
+              try {
+                cache.put(event.request, response.clone());
+              } catch (err) {
+                console.warn('SW: failed to clone response for JS asset', event.request.url, err);
+              }
+            });
           }
           return response;
         })
@@ -117,7 +123,11 @@ self.addEventListener("fetch", (event) => {
           if (cached) return cached;
           return fetch(event.request).then((response) => {
             if (response.ok) {
-              cache.put(event.request, response.clone());
+              try {
+                cache.put(event.request, response.clone());
+              } catch (err) {
+                console.warn('SW: failed to clone response for static asset', event.request.url, err);
+              }
             }
             return response;
           });
@@ -133,17 +143,20 @@ self.addEventListener("fetch", (event) => {
       fetch(event.request)
         .then((response) => {
           if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) =>
-              cache.put(event.request, clone),
-            );
+            try {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+            } catch (err) {
+              console.warn('SW: failed to clone response for navigation', event.request.url, err);
+            }
           }
           return response;
         })
         .catch(() =>
-          caches.match(event.request).then(
-            (cached) => cached || caches.match("/"),
-          ),
+          caches
+            .match(event.request)
+            .then((cached) => cached || caches.match("/"))
+            .then((res) => res || new Response("Offline", { status: 503, headers: { "Content-Type": "text/plain" } })),
         ),
     );
     return;
@@ -151,6 +164,11 @@ self.addEventListener("fetch", (event) => {
 
   // Default: network with cache fallback
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request)),
+    fetch(event.request).catch(() =>
+      caches
+        .match(event.request)
+        .then((cached) => cached || caches.match("/"))
+        .then((res) => res || new Response("Offline", { status: 503, headers: { "Content-Type": "text/plain" } })),
+    ),
   );
 });

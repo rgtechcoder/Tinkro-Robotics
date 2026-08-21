@@ -93,7 +93,15 @@ function fallbackFeatures(product: ProductInput) {
 }
 
 export function withProductSeoDefaults<T extends ProductInput>(product: T): T {
-  const productName = cleanText(product.name) || "Tinkro Product";
+  // IMPORTANT: `productNameForSeo` is a LOCAL fallback used only to build
+  // SEO metadata (meta title/description, keywords, etc.) when those fields
+  // are missing. It must NEVER be written back onto the real `name` field —
+  // doing so previously caused every product missing SEO copy to have its
+  // actual Firestore `name` silently replaced with the placeholder string
+  // "Tinkro Product" for display purposes. The real `product.name` (and
+  // `product.sku`) are intentionally left untouched below so the UI always
+  // renders the exact values stored in Firestore.
+  const productNameForSeo = cleanText(product.name) || "Tinkro Product";
   const brand = cleanText(product.brand) || DEFAULT_BRAND;
   const category = cleanText(product.category) || DEFAULT_CATEGORY;
   const subCategory = cleanText(product.subCategory) || category;
@@ -106,24 +114,25 @@ export function withProductSeoDefaults<T extends ProductInput>(product: T): T {
 
   return {
     ...product,
-    name: productName,
+    // name and sku are NOT overwritten — always reflect the real Firestore
+    // values. A missing SKU stays missing (no generated/fabricated SKU is
+    // ever produced from the document id or product name).
     description,
     metaTitle:
       cleanText(product.metaTitle) ||
-      fallbackMetaTitle(productName, brand, category),
+      fallbackMetaTitle(productNameForSeo, brand, category),
     metaDescription:
       cleanText(product.metaDescription) ||
-      fallbackMetaDescription(productName, brand, category, description),
+      fallbackMetaDescription(productNameForSeo, brand, category, description),
     keywords: cleanArray(product.keywords).length
       ? cleanArray(product.keywords)
-      : fallbackKeywords({ ...product, brand, category, subCategory }, productName),
+      : fallbackKeywords({ ...product, brand, category, subCategory }, productNameForSeo),
     brand,
-    sku: cleanText(product.sku) || cleanText(product.id) || productName,
     gtin: cleanText(product.gtin),
     mpn: cleanText(product.mpn) || cleanText(product.sku) || cleanText(product.id),
     category,
     subCategory,
-    tags: tags.length ? tags : fallbackKeywords(product, productName).slice(0, 8),
+    tags: tags.length ? tags : fallbackKeywords(product, productNameForSeo).slice(0, 8),
     features,
     specifications: cleanSpecifications(product.specifications),
     compatibility: cleanArray(product.compatibility),

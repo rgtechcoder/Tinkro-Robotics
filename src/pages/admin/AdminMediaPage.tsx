@@ -5,6 +5,7 @@ import {
   updateMedia,
   uploadMedia,
 } from "@/lib/adminService";
+import { validateAdminUploadFile } from "@/lib/adminUploadValidation";
 import type { AdminMedia } from "@/types/admin";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -338,7 +339,7 @@ function UploadZone({ onUpload, uploading, progress, queue }: UploadZoneProps) {
           id="media-file-input"
           ref={inputRef}
           type="file"
-          accept="image/*,video/*"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,application/pdf"
           multiple
           className="sr-only"
           onChange={handleChange}
@@ -356,7 +357,7 @@ function UploadZone({ onUpload, uploading, progress, queue }: UploadZoneProps) {
             ? "Drop files to upload"
             : "Drag & drop or click to select files"}
         </p>
-        <p className="text-xs text-white/35 mt-1">Supports images and videos</p>
+        <p className="text-xs text-white/35 mt-1">Supports images and PDF files</p>
       </label>
 
       {uploading && (
@@ -747,12 +748,26 @@ export default function AdminMediaPage() {
 
   // Upload queue processing
   async function handleUpload(files: File[]) {
-    const names = files.map((f) => f.name);
+    const validFiles: File[] = [];
+    for (const file of files) {
+      const validation = validateAdminUploadFile(file, "image-or-pdf");
+      if (!validation.ok) {
+        toast.error(`${file.name}: ${validation.message}`);
+        continue;
+      }
+      validFiles.push(file);
+    }
+
+    if (validFiles.length === 0) {
+      return;
+    }
+
+    const names = validFiles.map((f) => f.name);
     setUploadQueue(names);
     setUploading(true);
     setUploadProgress(0);
 
-    for (const file of files) {
+    for (const file of validFiles) {
       setUploadQueue((prev) => prev.filter((n) => n !== file.name));
       try {
         await uploadMedia(file);

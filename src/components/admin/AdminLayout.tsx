@@ -90,6 +90,12 @@ const CORE_NAV: NavItem[] = [
     path: "/admin/blog",
   },
   {
+    id: "knowledge-hub-import",
+    label: "Knowledge Hub Import",
+    icon: <FileSpreadsheet size={18} />,
+    path: "/admin/knowledge-hub-import",
+  },
+  {
     id: "banners",
     label: "Banners & Popups",
     icon: <Image size={18} />,

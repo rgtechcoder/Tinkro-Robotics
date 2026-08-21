@@ -140,6 +140,10 @@ export interface CartItem {
   image: string;
   price: number;
   quantity: number;
+  // Optional variant metadata for pack-of purchases
+  variantId?: string;
+  variantLabel?: string;
+  packQty?: number; // units per pack (e.g., 10 for "Pack of 10")
 }
 
 export interface WishlistItem {
@@ -203,7 +207,16 @@ export interface Coupon {
 export interface CartStore {
   items: CartItem[];
   addItem: (
-    product: Pick<CartItem, "productId" | "name" | "image" | "price">,
+    product: Pick<
+      CartItem,
+      | "productId"
+      | "name"
+      | "image"
+      | "price"
+      | "variantId"
+      | "variantLabel"
+      | "packQty"
+    >,
     qty: number,
   ) => void;
   removeItem: (productId: string) => void;

@@ -141,6 +141,7 @@ export const CategoriesSection = memo(function CategoriesSection({
                       decoding="async"
                       width={120}
                       height={120}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 20vw"
                       className="w-full h-full transition-smooth"
                       style={{
                         objectFit: "cover",

@@ -124,7 +124,11 @@ import {
   upsertLinkTag,
   upsertMetaTag,
 } from "../lib/seo";
-import { useCategories, useProducts } from "../lib/publicDataService";
+import {
+  searchProductsInList,
+  useCategories,
+  useProducts,
+} from "../lib/publicDataService";
 import { useCartStore } from "../store/cartStore";
 import { useWishlistStore } from "../store/wishlistStore";
 import type { AdminProduct } from "../types/admin";
@@ -256,7 +260,8 @@ export function ProductCard({
 
       {/* Product images carousel */}
       <Link to="/product/$slug" params={{ slug: productParam }} className="block">
-        <div className="product-image-container h-52 mx-4 mt-4 rounded-xl relative">
+        <div className="product-image-container h-64 mx-4 mt-4 rounded-xl relative flex items-center justify-center p-3"
+          style={{ background: "#ffffff" }}>
           {heroImages.length > 1 ? (
             <ProductImageCarousel
               images={heroImages}
@@ -264,18 +269,21 @@ export function ProductCard({
               priority={isPriority}
             />
           ) : (
-            <img
-              src={heroImages[0]}
-              alt={`${product.name} from Tinkro`}
-              loading={isPriority ? "eager" : "lazy"}
-              decoding="async"
-              width={320}
-              height={320}
-              className="h-full w-full object-contain"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "/placeholder.jpg";
-              }}
-            />
+              <img
+                src={heroImages[0]}
+                alt={`${product.name} from Tinkro`}
+                loading={isPriority ? "eager" : "lazy"}
+                decoding="async"
+                fetchPriority={isPriority ? "high" : "low"}
+                width={320}
+                height={320}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                className="max-h-full max-w-full object-contain"
+                style={{ boxShadow: "0 8px 24px rgba(15,23,42,0.06)", borderRadius: 12, background: "#ffffff" }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/placeholder.jpg";
+                }}
+              />
           )}
           {heroImages.length > 1 && (
             <span className="absolute bottom-2 right-2 z-10 text-[10px] font-semibold px-2 py-1 rounded-full bg-black/60 text-white">
@@ -660,6 +668,7 @@ export function ProductsPage() {
   }, []);
   const search = useSearch({ from: "/products" });
   const categorySlugFromUrl = search.category ?? null;
+  const searchTerm = (search.q ?? "").trim();
 
   const [selectedCategoryId, setSelectedCategoryId] = useState("all");
   const [minPrice, setMinPrice] = useState("");
@@ -763,7 +772,9 @@ export function ProductsPage() {
 
   // Client-side filtering with categoryIds array-contains + string fallback
   const filteredProducts = useMemo(() => {
-    let result: AdminProduct[] = [...products];
+    let result: AdminProduct[] = searchTerm
+      ? searchProductsInList(products, searchTerm)
+      : [...products];
 
     if (selectedCategoryId !== "all") {
       result = result.filter((p) => {
@@ -789,7 +800,7 @@ export function ProductsPage() {
       result.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
 
     return result;
-  }, [selectedCategoryId, minPrice, maxPrice, sortBy, products]);
+  }, [selectedCategoryId, minPrice, maxPrice, sortBy, products, searchTerm]);
 
   // Derive display name for the active category chip
   const selectedCategoryOption = useMemo(() => {
@@ -1052,6 +1063,42 @@ export function ProductsPage() {
 
           {/* ── Right column ── */}
           <div className="flex-1 min-w-0">
+            {/* Search results banner */}
+            {searchTerm && (
+              <div
+                className="flex flex-wrap items-center justify-between gap-3 mb-5 px-4 py-3 rounded-xl border border-primary/20 bg-primary/5"
+                data-ocid="search-results-banner"
+              >
+                <p className="text-sm text-foreground">
+                  Showing results for{" "}
+                  <span className="font-semibold">"{searchTerm}"</span>
+                  {!productsLoading && (
+                    <span className="text-muted-foreground">
+                      {" "}
+                      — {filteredProducts.length}{" "}
+                      {filteredProducts.length === 1 ? "product" : "products"}{" "}
+                      found
+                    </span>
+                  )}
+                </p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate({
+                      to: "/products",
+                      search: selectedCategoryId !== "all"
+                        ? { category: categorySlugFromUrl ?? undefined }
+                        : {},
+                    })
+                  }
+                  className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                  data-ocid="clear-search"
+                >
+                  Clear search ✕
+                </button>
+              </div>
+            )}
+
             {/* Toolbar row */}
             <div className="flex flex-wrap items-center gap-3 mb-5">
               {/* Mobile filter toggle */}

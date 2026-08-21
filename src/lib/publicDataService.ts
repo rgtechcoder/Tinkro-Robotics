@@ -1,3 +1,4 @@
+
 // // Firebase disabled temporarily — all hooks return static mock data
 // // Will be re-integrated with real Firebase once the app is stable.
 
@@ -766,16 +767,27 @@ function createCollectionStore<T>(collectionName: string) {
 
 async function fetchFeaturedProducts(limitCount = 12): Promise<AdminProduct[]> {
   try {
-    const featuredQuery = query(
-      collection(db, "products"),
-      orderBy("createdAt", "desc"),
-      limit(limitCount),
-    );
-    const snapshot = await getDocs(featuredQuery);
-    return normalizeProducts(snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as AdminProduct[]).filter(isProductActive);
+    // Prefer products explicitly marked by admin as featured/best-seller.
+    // Fetch all products and pick those with isBestSeller flag. Fallback to recent products if none marked.
+    const all = await fetchAllProducts();
+    const featured = all.filter((p) => !!p.isBestSeller);
+    if (featured.length > 0) return featured.slice(0, limitCount);
+    // fallback: recent products by createdAt
+    function createdAtToString(v: unknown) {
+      if (typeof v === "string") return v;
+      if (v && typeof (v as any).toDate === "function") {
+        try {
+          return (v as any).toDate().toISOString();
+        } catch {
+          return String(v);
+        }
+      }
+      return String(v ?? "");
+    }
+
+    return all
+      .sort((a, b) => createdAtToString(b.createdAt).localeCompare(createdAtToString(a.createdAt)))
+      .slice(0, limitCount);
   } catch {
     return [];
   }
@@ -785,20 +797,19 @@ async function fetchFeaturedProducts(limitCount = 12): Promise<AdminProduct[]> {
 const _featuredCache = new Map<number, AdminProduct[]>();
 
 export async function fetchFeaturedProductsCached(limitCount = 12): Promise<AdminProduct[]> {
-  const cached = _featuredCache.get(limitCount);
-  if (cached) return cached;
-  const data = await fetchFeaturedProducts(limitCount);
-  _featuredCache.set(limitCount, data);
-  return data;
+  // Do not cache featured selection so admin toggles are reflected quickly during development.
+  return fetchFeaturedProducts(limitCount);
 }
 
 export async function fetchAllProducts(): Promise<AdminProduct[]> {
   try {
     const snapshot = await getDocs(collection(db, "products"));
-    return normalizeProducts(snapshot.docs.map((doc) => ({
+    const raw = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    })) as AdminProduct[]).filter(isProductActive);
+    })) as AdminProduct[];
+    const normalized = normalizeProducts(raw);
+    return normalized.filter(isProductActive);
   } catch {
     return [];
   }
@@ -859,6 +870,14 @@ export async function searchProducts(
     limit(limitCount),
   );
 
+  const skuQuery = query(
+    collection(db, "products"),
+    orderBy("sku"),
+    startAt(term),
+    endAt(prefixEnd),
+    limit(limitCount),
+  );
+
   const categoryQuery = query(
     collection(db, "products"),
     where("category", "==", normalizedCategory),
@@ -866,8 +885,9 @@ export async function searchProducts(
   );
 
   try {
-    const [nameSnap, categorySnap] = await Promise.all([
+    const [nameSnap, skuSnap, categorySnap] = await Promise.all([
       getDocs(nameQuery),
+      getDocs(skuQuery),
       getDocs(categoryQuery),
     ]);
 
@@ -887,13 +907,107 @@ export async function searchProducts(
 
     pushFromSnapshot(nameSnap);
     if (results.length < limitCount) {
+      pushFromSnapshot(skuSnap);
+    }
+    if (results.length < limitCount) {
       pushFromSnapshot(categorySnap);
+    }
+
+    // Fallback: do a limited client-side scan for case-insensitive
+    // substring matches on `name` or `sku` when prefix queries don't
+    // return enough results. This makes searches like "nrf", "NRF",
+    // or numeric fragments like "084" match products such as "nRF24L01" or "TKR-084".
+    if (results.length < limitCount && term.length >= 2) {
+      try {
+        const scanLimit = 500; // safe cap for client-side scan
+        const scanSnap = await getDocs(query(collection(db, "products"), limit(scanLimit)));
+        const termLower = term.toLowerCase();
+        for (const doc of scanSnap.docs) {
+          if (results.length >= limitCount) break;
+          if (seen.has(doc.id)) continue;
+          const data = doc.data();
+          const name = (data.name || "").toString().toLowerCase();
+          const sku = (data.sku || "").toString().toLowerCase();
+          if (name.includes(termLower) || sku.includes(termLower)) {
+            seen.add(doc.id);
+            const product = withProductSeoDefaults({ id: doc.id, ...data } as AdminProduct);
+            if (!isProductActive(product)) continue;
+            results.push(product);
+          }
+        }
+      } catch (err) {
+        // swallow and continue; do not fail search on fallback
+      }
     }
 
     return results;
   } catch {
     return [];
   }
+}
+
+// Client-side, substring (contains), case-insensitive search across the
+// already-loaded product list. Used for both the navbar's live preview
+// dropdown and the full-page "/products?q=..." search results view so
+// both surfaces stay perfectly consistent. Matches name, sku, category,
+// subCategory, brand, and tags — not just a name/sku prefix — so a query
+// like "ir" finds every relevant product (IR sensor, IR module, etc.)
+// wherever the term appears, similar to Amazon/Flipkart search.
+export function searchProductsInList(
+  products: AdminProduct[],
+  term: string,
+): AdminProduct[] {
+  const q = term
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ");
+  const tokens = q.split(" ").filter(Boolean);
+  if (tokens.length === 0) return [];
+
+  const scored: Array<{ product: AdminProduct; rank: number }> = [];
+  for (const product of products) {
+    const haystacks = [
+      product.name,
+      product.sku,
+      product.category,
+      product.subCategory,
+      product.brand,
+      ...(Array.isArray(product.tags) ? product.tags : []),
+    ]
+      .filter(Boolean)
+      .map((value) =>
+        String(value)
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, " ")
+          .replace(/\s+/g, " "),
+      );
+    const searchableText = haystacks.join(" ");
+    const nameLower = String(product.name || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ");
+
+    // Every typed word must be present somewhere in the product's searchable
+    // data. This supports multi-word searches in any order and ignores case,
+    // punctuation, and repeated spaces (e.g. "Arduino UNO board").
+    if (!tokens.every((token) => searchableText.includes(token))) continue;
+
+    const allTokensInName = tokens.every((token) => nameLower.includes(token));
+    const rank = nameLower.includes(q)
+      ? 0
+      : allTokensInName
+        ? 1
+        : nameLower.startsWith(tokens[0])
+          ? 2
+          : 3;
+    scored.push({ product, rank });
+  }
+
+  scored.sort(
+    (a, b) => a.rank - b.rank || a.product.name.localeCompare(b.product.name),
+  );
+  return scored.map((entry) => entry.product);
 }
 
 const productsStore = createCollectionStore<AdminProduct>("products");
@@ -920,7 +1034,15 @@ export function useProducts(): {
   error: string | null;
 } {
   const { data, loading, error } = productsStore.useCollection();
-  const products = data.filter((product) => isProductActive(product));
+  // Sort products by 'order' (ascending) then by name. If order absent, treat as 99999 so explicit orders float to top.
+  const products = [...data]
+    .filter((product) => isProductActive(product))
+    .sort((a, b) => {
+      const aOrder = Number(a.order ?? 99999);
+      const bOrder = Number(b.order ?? 99999);
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      return a.name.localeCompare(b.name);
+    });
   return { products, loading, error };
 }
 
@@ -997,21 +1119,35 @@ export function useCoupons(): {
 // SINGLE PRODUCT
 export function useProductById(id: string) {
   const { products, loading: collectionLoading, error: collectionError } = useProducts();
-  const { id: parsedId, slug } = parseProductRouteParam(id);
+  const { id: parsedId, slug, hasIdPrefix } = parseProductRouteParam(id);
 
   const [product, setProduct] = useState<AdminProduct | null>(null);
-  const [loading, setLoading] = useState<boolean>(collectionLoading);
+  // A detail route always starts in a loading state. Without this guard, a
+  // fresh navigation can render ProductNotFound once while the first
+  // Firestore snapshot/route lookup is still in flight.
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(collectionError);
 
   useEffect(() => {
     let active = true;
 
+    setLoading(true);
     setError(collectionError);
+    // Debug: trace resolution attempts for intermittent product-not-found cases
+    try {
+      console.debug?.('[useProductById] start', { id, parsedId, slug, productsCount: products.length, collectionLoading });
+    } catch (err) {
+      /* ignore logging errors */
+    }
 
     // 1) Try to resolve from the in-memory collection first (fast-path)
     const byId = products.find((p) => p.id === parsedId || p.id === id) ?? null;
     if (byId) {
-      setProduct(byId);
+      // Avoid forcing state updates when the same product id is already set
+      try {
+        console.debug?.('[useProductById] resolved in-memory byId', { parsedId: parsedId || id, foundId: byId.id });
+      } catch (err) {}
+      setProduct((prev) => (prev && prev.id === byId.id ? prev : byId));
       setLoading(false);
       return () => {
         active = false;
@@ -1025,7 +1161,10 @@ export function useProductById(id: string) {
       null;
 
     if (bySlug) {
-      setProduct(bySlug);
+      try {
+        console.debug?.('[useProductById] resolved in-memory bySlug', { slug: targetSlug, foundId: bySlug.id });
+      } catch (err) {}
+      setProduct((prev) => (prev && prev.id === bySlug.id ? prev : bySlug));
       setLoading(false);
       return () => {
         active = false;
@@ -1037,28 +1176,37 @@ export function useProductById(id: string) {
 
     async function resolveFromFirestore() {
       try {
-        // Try direct document id lookup first (most reliable)
-        if (parsedId) {
+        // Try direct document id lookup first (most reliable) — only when the
+        // route parameter explicitly included an id prefix ("{id}--{slug}").
+        if (hasIdPrefix && parsedId) {
           const dref = doc(db, "products", parsedId);
           const snap = await getDoc(dref);
           if (snap.exists()) {
             const p = withProductSeoDefaults({ id: snap.id, ...snap.data() } as AdminProduct);
             if (!active) return;
             if (isProductActive(p)) {
-              setProduct(p);
+              try {
+                console.debug?.('[useProductById] resolved firestore byId', { docId: snap.id });
+              } catch (err) {}
+              setProduct((prev) => (prev && prev.id === p.id ? prev : p));
               setLoading(false);
               return;
             }
           }
         }
 
-        // Next try searching by SEO slug, then by stored slug, then by name equality
+        // Next try searching by SEO slug, stored slug, and name equality.
         if (slug) {
-          const slugQueries = [
-            query(collection(db, "products"), where("seoSlug", "==", slug), limit(1)),
-            query(collection(db, "products"), where("slug", "==", slug), limit(1)),
-            query(collection(db, "products"), where("name", "==", slug), limit(1)),
-          ];
+          const normalizedSlug = slugify(slug);
+          // Build a set of candidate slug values to try (original + normalized)
+          const candidates = Array.from(new Set([slug, normalizedSlug].filter(Boolean)));
+
+          const slugQueries: Query<DocumentData>[] = [];
+          for (const s of candidates) {
+            slugQueries.push(query(collection(db, "products"), where("seoSlug", "==", s), limit(1)));
+            slugQueries.push(query(collection(db, "products"), where("slug", "==", s), limit(1)));
+            slugQueries.push(query(collection(db, "products"), where("name", "==", s), limit(1)));
+          }
 
           for (const q of slugQueries) {
             const snaps = await getDocs(q);
@@ -1067,7 +1215,10 @@ export function useProductById(id: string) {
               const p = withProductSeoDefaults({ id: d.id, ...d.data() } as AdminProduct);
               if (!active) return;
               if (isProductActive(p)) {
-                setProduct(p);
+                try {
+                  console.debug?.('[useProductById] resolved firestore bySlugQuery', { queryDocId: d.id });
+                } catch (err) {}
+                setProduct((prev) => (prev && prev.id === p.id ? prev : p));
                 setLoading(false);
                 return;
               }
@@ -1087,17 +1238,52 @@ export function useProductById(id: string) {
             limit(1),
           );
           const snaps = await getDocs(nameQuery);
-          if (snaps.docs.length > 0) {
+            if (snaps.docs.length > 0) {
             const d = snaps.docs[0];
             const p = withProductSeoDefaults({ id: d.id, ...d.data() } as AdminProduct);
             if (!active) return;
-            setProduct(p);
+            setProduct((prev) => (prev && prev.id === p.id ? prev : p));
             setLoading(false);
             return;
           }
         }
 
-        // Nothing found
+        // Nothing found so far. As a final defensive attempt, if the
+        // parsedId looks like a document id (heuristic: length >= 12), try
+        // a direct document lookup once even when the route omitted the
+        // explicit id prefix. This handles some older links or encoded ids.
+        try {
+          if (!active) return;
+          const maybeId = parsedId?.trim();
+          if (maybeId && !hasIdPrefix && maybeId.length >= 12) {
+            const dref2 = doc(db, "products", maybeId);
+            const snap2 = await getDoc(dref2);
+            if (snap2.exists()) {
+              const p = withProductSeoDefaults({ id: snap2.id, ...snap2.data() } as AdminProduct);
+              if (!active) return;
+              if (isProductActive(p)) {
+                try {
+                  console.debug?.('[useProductById] final fallback resolved by direct id', { docId: snap2.id });
+                } catch (err) {}
+                setProduct((prev) => (prev && prev.id === p.id ? prev : p));
+                setLoading(false);
+                return;
+              }
+            }
+          }
+        } catch (err) {
+          // ignore and fall through to null
+        }
+
+        // The collection may still be receiving its first live snapshot. Do
+        // not turn that temporary empty state into a false Not Found page;
+        // the collection change will re-run this effect and resolve locally.
+        if (collectionLoading) {
+          if (active) setLoading(true);
+          return;
+        }
+
+        // Nothing found after both the collection and direct lookups settled.
         if (!active) return;
         setProduct(null);
         setLoading(false);
@@ -1113,7 +1299,7 @@ export function useProductById(id: string) {
     return () => {
       active = false;
     };
-  }, [id, parsedId, slug, products, collectionError]);
+  }, [id, parsedId, slug, products, collectionError, collectionLoading]);
 
   return { product, loading, error };
 }

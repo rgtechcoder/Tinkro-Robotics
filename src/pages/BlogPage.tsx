@@ -180,6 +180,7 @@ function FeaturedArticle({
               decoding="async"
               width={800}
               height={600}
+              sizes="(max-width: 768px) 100vw, 50vw"
               className="absolute inset-0 w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
             />
           ) : (
@@ -240,10 +241,10 @@ function FeaturedArticle({
               <User className="w-3.5 h-3.5 text-[#3BBFBF]" />
               {post.author}
             </span>
-            {post.publishedAt && (
+            {(post.publishedAt ?? post.publishedDate) && (
               <span className="flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-[#3BBFBF]" />
-                {formatDate(post.publishedAt)}
+                {formatDate(post.publishedAt ?? post.publishedDate)}
               </span>
             )}
           </div>
@@ -351,6 +352,7 @@ function ArticleCard({
             decoding="async"
             width={640}
             height={360}
+            sizes="(max-width: 768px) 100vw, 33vw"
             className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
@@ -378,7 +380,7 @@ function ArticleCard({
 
       {/* Content */}
       <div className="flex flex-col flex-1 p-6">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex flex-wrap items-center gap-2 mb-3">
           <span
             className="text-xs font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1"
             style={{
@@ -390,6 +392,16 @@ function ArticleCard({
             <Tag className="w-2.5 h-2.5" />
             {post.category}
           </span>
+          {post.featured && (
+            <span className="text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-[0.3em] bg-[#f5a62318] text-[#F5A623] border border-[#F5A62333]">
+              Featured
+            </span>
+          )}
+          {post.trending && (
+            <span className="text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-[0.3em] bg-[#3bbfbf18] text-[#3BBFBF] border border-[#3BBFBF33]">
+              Trending
+            </span>
+          )}
         </div>
 
         <h3 className="text-base font-display font-bold text-white leading-snug mb-3 group-hover:text-[#F5A623] transition-colors duration-300 line-clamp-2">
@@ -425,10 +437,10 @@ function ArticleCard({
               <User className="w-3 h-3 text-[#3BBFBF]" />
               {post.author}
             </span>
-            {post.publishedAt && (
+            {(post.publishedAt ?? post.publishedDate) && (
               <span className="flex items-center gap-1">
                 <Calendar className="w-3 h-3 text-[#3BBFBF]" />
-                {formatDate(post.publishedAt)}
+                {formatDate(post.publishedAt ?? post.publishedDate)}
               </span>
             )}
           </div>
@@ -475,6 +487,8 @@ export function BlogPage() {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTag, setSelectedTag] = useState<string>("");
+  const [sortOption, setSortOption] = useState<"latest" | "popular" | "featured">("latest");
 
   const handleSharePost = async (post: AdminBlogPost) => {
     const slug = post.slug || slugify(post.title);
@@ -505,7 +519,30 @@ export function BlogPage() {
     return ["All", ...Array.from(cats).sort()];
   }, [posts]);
 
-  const featuredPost = useMemo(() => posts[0] ?? null, [posts]);
+  const topTags = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of posts) {
+      p.tags?.forEach((tag) => counts.set(tag, (counts.get(tag) ?? 0) + 1));
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([tag]) => tag);
+  }, [posts]);
+
+  const featuredPost = useMemo(
+    () => posts.find((post) => post.featured) ?? posts[0] ?? null,
+    [posts],
+  );
+
+  const trendingPosts = useMemo(
+    () =>
+      posts
+        .filter((post) => post.trending || post.views > 5000)
+        .sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
+        .slice(0, 4),
+    [posts],
+  );
 
   const filteredPosts = useMemo(() => {
     return posts.filter((post) => {
@@ -515,13 +552,36 @@ export function BlogPage() {
       const matchesSearch =
         q === "" ||
         post.title.toLowerCase().includes(q) ||
-        post.excerpt.toLowerCase().includes(q);
-      return matchesCategory && matchesSearch;
+        post.excerpt.toLowerCase().includes(q) ||
+        post.tags.some((tag) => tag.toLowerCase().includes(q));
+      const matchesTag =
+        !selectedTag || post.tags.some((tag) => tag === selectedTag);
+      return matchesCategory && matchesSearch && matchesTag;
     });
-  }, [posts, activeCategory, searchQuery]);
+  }, [posts, activeCategory, searchQuery, selectedTag]);
 
-  const isDefaultView = activeCategory === "All" && searchQuery.trim() === "";
-  const gridPosts = isDefaultView ? filteredPosts.slice(1) : filteredPosts;
+  const sortedPosts = useMemo(() => {
+    return [...filteredPosts].sort((a, b) => {
+      if (sortOption === "popular") {
+        return (b.views ?? 0) - (a.views ?? 0);
+      }
+      if (sortOption === "featured") {
+        return Number(!!b.featured) - Number(!!a.featured) ||
+          (b.views ?? 0) - (a.views ?? 0);
+      }
+      return (
+        new Date(b.publishedAt ?? b.publishedDate ?? "").getTime() -
+        new Date(a.publishedAt ?? a.publishedDate ?? "").getTime()
+      );
+    });
+  }, [filteredPosts, sortOption]);
+
+  const isDefaultView =
+    activeCategory === "All" &&
+    searchQuery.trim() === "" &&
+    selectedTag === "" &&
+    sortOption === "latest";
+  const gridPosts = isDefaultView ? sortedPosts.slice(featuredPost ? 1 : 0) : sortedPosts;
 
   useEffect(() => {
     const title = "Blog | Tinkro Learning Hub";
@@ -537,6 +597,7 @@ export function BlogPage() {
     upsertMetaTag("property", "og:description", description);
     upsertMetaTag("property", "og:type", "website");
     upsertMetaTag("property", "og:url", canonicalUrl);
+    upsertMetaTag("name", "twitter:url", canonicalUrl);
     upsertMetaTag("property", "og:image", "https://tinkro.in/assets/brand/logo.png");
     upsertMetaTag("property", "og:site_name", "Tinkro");
     upsertMetaTag("name", "twitter:card", "summary_large_image");
@@ -758,6 +819,90 @@ export function BlogPage() {
               </button>
             );
           })}
+        </motion.div>
+
+        {/* Summary and sort bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.45 }}
+          className="grid gap-6 md:grid-cols-[1.4fr_1fr] items-center mb-10"
+        >
+          <div className="rounded-3xl border border-white/10 p-6 bg-[#08111d] shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
+            <p className="text-sm text-white/50 mb-3">Knowledge Hub at a glance</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-2xl bg-white/5 p-4">
+                <p className="text-3xl font-bold text-white">{posts.length}</p>
+                <p className="text-xs uppercase tracking-[0.25em] text-white/40 mt-1">Articles</p>
+              </div>
+              <div className="rounded-2xl bg-white/5 p-4">
+                <p className="text-3xl font-bold text-white">{categories.length - 1}</p>
+                <p className="text-xs uppercase tracking-[0.25em] text-white/40 mt-1">Categories</p>
+              </div>
+              <div className="rounded-2xl bg-white/5 p-4">
+                <p className="text-3xl font-bold text-white">{trendingPosts.length}</p>
+                <p className="text-xs uppercase tracking-[0.25em] text-white/40 mt-1">Popular</p>
+              </div>
+              <div className="rounded-2xl bg-white/5 p-4">
+                <p className="text-3xl font-bold text-white">{posts.filter((post) => post.featured).length || 1}</p>
+                <p className="text-xs uppercase tracking-[0.25em] text-white/40 mt-1">Featured</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 p-6 bg-[#08111d] shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <p className="text-sm text-white/50 mb-2">Sort & filter</p>
+                <div className="flex flex-wrap gap-2">
+                  {(["latest", "popular", "featured"] as const).map((option) => (
+                    <button
+                      type="button"
+                      key={option}
+                      onClick={() => setSortOption(option)}
+                      className="rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200"
+                      style={{
+                        background:
+                          sortOption === option
+                            ? "linear-gradient(135deg, #F47B20 0%, #F5A623 100%)"
+                            : "rgba(255,255,255,0.06)",
+                        color: sortOption === option ? "#07111f" : "rgba(255,255,255,0.72)",
+                        border: sortOption === option ? "none" : "1px solid rgba(255,255,255,0.12)",
+                      }}
+                    >
+                      {option === "latest" ? "Latest" : option === "popular" ? "Most Popular" : "Featured"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-3xl bg-[#0a1628] px-4 py-3 border border-white/10 text-sm text-white/70">
+                <span className="font-semibold text-white">Tag:</span>{" "}
+                {selectedTag || "All"}
+              </div>
+            </div>
+            {topTags.length > 0 && (
+              <div className="mt-5 flex flex-wrap gap-2">
+                {topTags.map((tag) => {
+                  const isActive = selectedTag === tag;
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setSelectedTag(selectedTag === tag ? "" : tag)}
+                      className="rounded-full px-3 py-2 text-xs font-semibold transition-all duration-200"
+                      style={{
+                        background: isActive ? "rgba(244,123,32,0.18)" : "rgba(255,255,255,0.06)",
+                        color: isActive ? "#F5A623" : "rgba(255,255,255,0.68)",
+                        border: isActive ? "1px solid rgba(244,123,32,0.35)" : "1px solid rgba(255,255,255,0.12)",
+                      }}
+                    >
+                      #{tag}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </motion.div>
 
         {/* Loading state */}

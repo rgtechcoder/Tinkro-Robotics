@@ -1,0 +1,11 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "pnpm": true,
+        "npx vite": true,
+        "Get-Item": true,
+        "/^node -e \"const XLSX=require\\('xlsx'\\); const f='C:/Users/rgrav/Downloads/7 Tinkro_Master_Inventory  \\(1\\)\\.xlsx'; const wb=XLSX\\.readFile\\(f\\); const ws=wb\\.Sheets\\['CATALOG'\\]; const rows=XLSX\\.utils\\.sheet_to_json\\(ws,\\{header:1,defval:''\\}\\); const headerRow=rows\\.findIndex\\(r=>String\\(r\\[0\\]\\)\\.trim\\(\\)\\.toUpperCase\\(\\)==='SKU' && String\\(r\\[1\\]\\)\\.trim\\(\\)\\.toUpperCase\\(\\)\\.includes\\('ITEM NAME'\\)\\); const data=rows\\.slice\\(headerRow\\+1\\)\\.map\\(\\(r,i\\)=>\\(\\{row:headerRow\\+i\\+2,sku:String\\(r\\[0\\]\\?\\?''\\)\\.trim\\(\\),name:String\\(r\\[1\\]\\?\\?''\\)\\.replace\\(/\\\\\\\\s\\+/g,' '\\)\\.trim\\(\\)\\}\\)\\)\\.filter\\(x=>x\\.sku\\|\\|x\\.name\\); console\\.log\\(JSON\\.stringify\\(\\{headerRow:headerRow\\+1,count:data\\.length,first:data\\.slice\\(0,8\\),last:data\\.slice\\(-5\\)\\},null,2\\)\\);\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

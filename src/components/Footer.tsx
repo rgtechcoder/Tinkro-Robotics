@@ -42,7 +42,6 @@ const socialLinks = [
   { icon: SiFacebook, href: "https://www.facebook.com/profile.php?id=61581192200900", label: "Facebook" },
 ];
 
-const caffeineUrl = "https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=tinkro.in";
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -64,6 +63,10 @@ export function Footer() {
                 alt="Tinkro"
                 width={160}
                 height={48}
+                loading="lazy"
+                decoding="async"
+                fetchPriority="low"
+                sizes="(max-width: 640px) 140px, 160px"
                 className="h-12 w-auto object-contain"
                 style={{ maxWidth: "160px" }}
               />
@@ -96,7 +99,7 @@ export function Footer() {
                 </a>
               ))}
               <a
-                href="https://wa.me/9196445254299"
+                href="https://wa.me/919644525429"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="WhatsApp"

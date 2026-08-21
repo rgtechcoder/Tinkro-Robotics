@@ -7,10 +7,20 @@ interface CartState {
   total: number;
   itemCount: number;
   addItem: (
-    product: Pick<CartItem, "productId" | "name" | "image" | "price">,
+    product: Pick<
+      CartItem,
+      | "productId"
+      | "name"
+      | "image"
+      | "price"
+      | "variantId"
+      | "variantLabel"
+      | "packQty"
+    >,
     qty: number,
   ) => void;
   removeItem: (productId: string) => void;
+  decrementItem: (productId: string, variantId?: string) => void;
   updateQty: (productId: string, qty: number) => void;
   clearCart: () => void;
 }
@@ -30,19 +40,23 @@ export const useCartStore = create<CartState>()(
       itemCount: 0,
 
       addItem: (product, qty) => {
-        set((state) => {
-          const existing = state.items.find(
-            (i) => i.productId === product.productId,
-          );
-          const updatedItems = existing
-            ? state.items.map((i) =>
-                i.productId === product.productId
-                  ? { ...i, quantity: i.quantity + qty }
-                  : i,
-              )
-            : [...state.items, { ...product, quantity: qty }];
-          return { items: updatedItems, ...computeDerived(updatedItems) };
-        });
+            set((state) => {
+              // Match existing by productId + variantId (if provided) so different pack variants are separate cart lines
+              const existing = state.items.find((i) => {
+                if (product.variantId) {
+                  return i.productId === product.productId && i.variantId === product.variantId;
+                }
+                return i.productId === product.productId && !i.variantId;
+              });
+              const updatedItems = existing
+                ? state.items.map((i) =>
+                    (i.productId === product.productId && (product.variantId ? i.variantId === product.variantId : !i.variantId))
+                      ? { ...i, quantity: i.quantity + qty }
+                      : i,
+                  )
+                : [...state.items, { ...product, quantity: qty } as any];
+              return { items: updatedItems, ...computeDerived(updatedItems) };
+            });
       },
 
       removeItem: (productId) => {
@@ -50,6 +64,22 @@ export const useCartStore = create<CartState>()(
           const updatedItems = state.items.filter(
             (i) => i.productId !== productId,
           );
+          return { items: updatedItems, ...computeDerived(updatedItems) };
+        });
+      },
+
+      decrementItem: (productId, variantId) => {
+        set((state) => {
+          const matchesItem = (item: CartItem) =>
+            item.productId === productId &&
+            (variantId ? item.variantId === variantId : !item.variantId);
+          const updatedItems = state.items
+            .map((item) =>
+              matchesItem(item)
+                ? { ...item, quantity: item.quantity - 1 }
+                : item,
+            )
+            .filter((item) => item.quantity > 0);
           return { items: updatedItems, ...computeDerived(updatedItems) };
         });
       },

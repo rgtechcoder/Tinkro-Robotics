@@ -34,6 +34,7 @@ import {
   updateBanner,
   uploadBannerImage,
 } from "@/lib/adminService";
+import { validateAdminUploadFile } from "@/lib/adminUploadValidation";
 import type { AdminBanner } from "@/types/admin";
 import {
   AlertCircle,
@@ -237,6 +238,14 @@ export default function AdminBannersPage() {
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const validation = validateAdminUploadFile(file, "image");
+    if (!validation.ok) {
+      toast.error(validation.message);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   }

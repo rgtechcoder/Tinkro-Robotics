@@ -2,6 +2,11 @@
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase";import { AdminLayout } from "@/components/admin/AdminLayout";
 import {
+  assertValidAdminUploadFile,
+  normalizeUploadFilename,
+  validateAdminUploadFile,
+} from "@/lib/adminUploadValidation";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -99,6 +104,8 @@ interface ProductFormValues {
   useCases: string[];
   reviewsArray: { name: string; rating: number; content: string }[];
   demoVideoUrl: string;
+  order?: number;
+  isBestSeller?: boolean;
 }
 
 interface ImageUpload {
@@ -129,12 +136,9 @@ function ImageUploadZone({
     const remaining = 5 - images.length;
     const accepted: File[] = [];
     for (const file of Array.from(files).slice(0, remaining)) {
-      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-        toast.error(`${file.name}: only JPEG, PNG, or WebP allowed`);
-        continue;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error(`${file.name} exceeds 5 MB limit`);
+      const validation = validateAdminUploadFile(file, "image");
+      if (!validation.ok) {
+        toast.error(`${file.name}: ${validation.message}`);
         continue;
       }
       accepted.push(file);
@@ -180,13 +184,13 @@ function ImageUploadZone({
             : "Click or drag to upload images"}
         </span>
         <span style={{ color: "oklch(0.40 0.04 243)", fontSize: "11px" }}>
-          JPEG · PNG · WebP · max 5 MB each
+          JPEG · PNG · WebP · GIF · SVG · max 5 MB each
         </span>
         <input
           ref={inputRef}
           type="file"
           multiple
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
           className="hidden"
           onChange={(e) => handleFiles(e.target.files)}
         />
@@ -727,6 +731,8 @@ function ProductFormModal({
       useCases: [],
       reviewsArray: [],
       demoVideoUrl: "",
+      order: 0,
+      isBestSeller: false,
     },
   });
 
@@ -781,14 +787,19 @@ function ProductFormModal({
         useCases: editProduct.useCases ?? [],
         reviewsArray: editProduct.reviewsArray ?? [],
         demoVideoUrl: editProduct.demoVideoUrl ?? "",
+        order: editProduct.order ?? 0,
+        isBestSeller: editProduct.isBestSeller ?? false,
       });
-      const existingIds =
-        Array.isArray(editProduct.categoryIds) &&
-        editProduct.categoryIds.length > 0
-          ? editProduct.categoryIds
-          : editProduct.categoryId
-            ? [editProduct.categoryId]
-            : [];
+      const existingIds = Array.from(
+        new Set(
+          Array.isArray(editProduct.categoryIds) &&
+            editProduct.categoryIds.length > 0
+            ? editProduct.categoryIds
+            : editProduct.categoryId
+              ? [editProduct.categoryId]
+              : [],
+        ),
+      );
       setSelectedCategoryIds(existingIds);
       const existingImages: ImageUpload[] = (editProduct.images ?? []).map(
         (url) => ({
@@ -842,9 +853,12 @@ async function uploadPendingImages(
       continue;
     }
 
+    assertValidAdminUploadFile(img.file, "image");
+    const safeName = normalizeUploadFilename(img.file.name);
+
     const storageRef = ref(
       storage,
-      `products/${productId}/${Date.now()}_${img.file.name}`
+      `products/${productId}/${Date.now()}_${safeName}`
     );
 
     await uploadBytes(storageRef, img.file);
@@ -868,10 +882,11 @@ async function uploadPendingImages(
       const keywords = values.keywordsRaw
         ? parseCommaList(values.keywordsRaw)
         : [];
+      const uniqueSelectedCategoryIds = Array.from(new Set(selectedCategoryIds));
       const selectedCategories = categories.filter((c) =>
-        selectedCategoryIds.includes(c.id),
+        uniqueSelectedCategoryIds.includes(c.id),
       );
-      const primaryCategoryId = selectedCategoryIds[0] ?? "";
+      const primaryCategoryId = uniqueSelectedCategoryIds[0] ?? "";
       const primaryCategoryName = selectedCategories[0]?.name ?? "";
 
       const payload = {
@@ -897,7 +912,7 @@ async function uploadPendingImages(
         originalPrice: Number(values.originalPrice),
         categoryId: primaryCategoryId,
         category: primaryCategoryName,
-        categoryIds: selectedCategoryIds,
+        categoryIds: uniqueSelectedCategoryIds,
         stock: Number(values.stock),
         discount: Number(values.discount),
         tags,
@@ -919,6 +934,8 @@ async function uploadPendingImages(
         useCases: values.useCases,
         reviewsArray: values.reviewsArray,
         demoVideoUrl: values.demoVideoUrl,
+        order: Number(values.order) || 0,
+        isBestSeller: !!values.isBestSeller,
       };
       if (isEdit && editProduct) {
         await updateProduct(editProduct.id, payload);
@@ -1469,7 +1486,7 @@ function ProductSkeletonRows() {
         <tr key={id}>
           {["10w-10", "36", "24", "28", "16", "12", "16-full", "16"].map(
             (w, j) => (
-              <td key={w} className="px-4 py-3">
+              <td key={`${w}-${j}`} className="px-4 py-3">
                 <Skeleton
                   className={`h-${j === 0 ? "10 w-10" : `4 w-${w}`} rounded${w.includes("full") ? "-full" : ""}`}
                   style={{ background: "oklch(0.20 0.04 243 / 0.5)" }}
@@ -1501,6 +1518,8 @@ export default function AdminProductsPage() {
   const [bulkPercent, setBulkPercent] = useState<number | string>("");
   const [confirmBulkOpen, setConfirmBulkOpen] = useState(false);
   const [bulkApplying, setBulkApplying] = useState(false);
+  const [fixModalOpen, setFixModalOpen] = useState(false);
+  const [fixCandidates, setFixCandidates] = useState<AdminProduct[]>([]);
 
   useEffect(() => {
     const unsub = subscribeToProducts((data) => {
@@ -1702,6 +1721,23 @@ export default function AdminProductsPage() {
               <Plus size={16} />
               Add Product
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                // scan products for missing or fallback names / sku issues
+                const candidates = products.filter((p) => {
+                  const nameClean = (p.name || "").trim();
+                  const isFallbackName = !nameClean || nameClean === "Tinkro Product";
+                  const skuIsId = (p.sku || "").trim() === (p.id || "").trim() || !(p.sku || "").trim();
+                  return isFallbackName || skuIsId;
+                });
+                setFixCandidates(candidates);
+                setFixModalOpen(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm text-primary bg-background border"
+            >
+              Scan & Fix Missing Names
+            </button>
           </div>
         </div>
 
@@ -1832,6 +1868,8 @@ export default function AdminProductsPage() {
                     "Categories",
                     "Price",
                     "Stock",
+                    "Order",
+                    "Best Seller",
                     "Status",
                     "Actions",
                   ].map((h) => (
@@ -1851,13 +1889,16 @@ export default function AdminProductsPage() {
                 ) : (
                   <AnimatePresence>
                     {filtered.map((product, i) => {
-                      const productCatIds =
-                        Array.isArray(product.categoryIds) &&
-                        product.categoryIds.length > 0
-                          ? product.categoryIds
-                          : product.categoryId
-                            ? [product.categoryId]
-                            : [];
+                      const productCatIds = Array.from(
+                        new Set(
+                          Array.isArray(product.categoryIds) &&
+                            product.categoryIds.length > 0
+                            ? product.categoryIds
+                            : product.categoryId
+                              ? [product.categoryId]
+                              : [],
+                        ),
+                      );
                       const productCats = productCatIds
                         .map((id) => categories.find((c) => c.id === id))
                         .filter(Boolean) as AdminCategory[];
@@ -1990,6 +2031,42 @@ export default function AdminProductsPage() {
                             </span>
                           </td>
                           <td className="px-4 py-3">
+                            <input
+                              type="number"
+                              value={product.order ?? 0}
+                              onChange={async (e) => {
+                                const newVal = Number(e.target.value || 0);
+                                // optimistic update
+                                setProducts((prev) => prev.map(p => p.id === product.id ? { ...p, order: newVal } : p));
+                                try {
+                                  await updateProduct(product.id, { order: newVal });
+                                  toast.success("Order updated");
+                                } catch (err) {
+                                  console.error(err);
+                                  toast.error("Failed to update order");
+                                }
+                              }}
+                              className="w-20 h-8 rounded-lg text-sm px-2"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <Switch
+                              id={`best-${product.id}`}
+                              checked={!!product.isBestSeller}
+                              onCheckedChange={async (v) => {
+                                const newVal = !!v;
+                                setProducts((prev) => prev.map(p => p.id === product.id ? { ...p, isBestSeller: newVal } : p));
+                                try {
+                                  await updateProduct(product.id, { isBestSeller: newVal });
+                                  toast.success("Best seller updated");
+                                } catch (err) {
+                                  console.error(err);
+                                  toast.error("Failed to update best seller flag");
+                                }
+                              }}
+                            />
+                          </td>
+                          <td className="px-4 py-3">
                             {product.isActive ? (
                               <Badge
                                 data-ocid={`product-status-active-${product.id}`}
@@ -2103,6 +2180,128 @@ export default function AdminProductsPage() {
           )}
         </div>
       </motion.div>
+
+      <Dialog open={fixModalOpen} onOpenChange={(v) => !v && setFixModalOpen(false)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Fix products with missing names / SKU</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3 p-4">
+            {fixCandidates.length > 0 && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const failed: string[] = [];
+                    for (const p of fixCandidates) {
+                      const suggested = (p.metaTitle || p.seoSlug || p.name || "").trim() || undefined;
+                      const suggestedSku = p.sku && p.sku !== p.id ? p.sku : (p.seoSlug || p.id || "");
+                      const newName = suggested || p.name || p.seoSlug || p.id;
+                      const newSku = suggestedSku || p.sku || p.id;
+                      // optimistic local update
+                      setProducts((prev) => prev.map(x => x.id === p.id ? { ...x, name: newName, sku: newSku } : x));
+                      try {
+                        await updateProduct(p.id, { name: newName, sku: newSku });
+                      } catch (err) {
+                        console.error(`Failed to update ${p.id}`, err);
+                        failed.push(p.id);
+                      }
+                    }
+                    if (failed.length === 0) toast.success("All suggestions applied");
+                    else toast.error(`${failed.length} updates failed`);
+                    // refresh candidate list
+                    setFixCandidates((cur) => cur.filter(p => failed.includes(p.id)));
+                  }}
+                  className="px-3 py-2 rounded bg-green-600 text-white text-sm"
+                >
+                  Apply all suggestions
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // export candidates as CSV for manual update
+                    const rows = fixCandidates.map((p) => ({
+                      id: p.id,
+                      name: p.name || "",
+                      sku: p.sku || "",
+                      metaTitle: p.metaTitle || "",
+                      seoSlug: p.seoSlug || "",
+                    }));
+                    const csv = [
+                      ["id", "name", "sku", "metaTitle", "seoSlug"].join(","),
+                      ...rows.map(r => [r.id, `"${(r.name||"").replace(/"/g, '""') }"`, `"${(r.sku||"").replace(/"/g, '""') }"`, `"${(r.metaTitle||"").replace(/"/g, '""') }"`, `"${(r.seoSlug||"").replace(/"/g, '""') }"`].join(",")),
+                    ].join("\n");
+                    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `tinkro-fix-candidates-${Date.now()}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                    toast.success("CSV exported");
+                  }}
+                  className="ml-2 px-3 py-2 rounded border text-sm"
+                >
+                  Export CSV
+                </button>
+              </div>
+            )}
+            {fixCandidates.length === 0 && (
+              <div className="text-sm text-muted-foreground">No candidates found.</div>
+            )}
+
+            {fixCandidates.map((p) => {
+              const suggested = (p.metaTitle || p.seoSlug || p.name || "").trim() || undefined;
+              const suggestedSku = p.sku && p.sku !== p.id ? p.sku : (p.seoSlug || p.id || "");
+              return (
+                <div key={p.id} className="p-3 border rounded-lg flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-semibold">{p.name || "(empty name)"}</div>
+                    <div className="text-xs text-muted-foreground">ID: {p.id}</div>
+                    <div className="text-xs text-muted-foreground">SKU: {p.sku ?? "(empty)"}</div>
+                    <div className="text-xs mt-1">Suggested: <span className="font-medium">{suggested ?? "—"}</span></div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <button
+                      type="button"
+                      className="px-3 py-2 rounded bg-primary text-white text-sm"
+                      onClick={async () => {
+                        const newName = suggested || p.name || p.seoSlug || p.id;
+                        const newSku = suggestedSku || p.sku || p.id;
+                        // optimistic
+                        setProducts((prev) => prev.map(x => x.id === p.id ? { ...x, name: newName, sku: newSku } : x));
+                        try {
+                          await updateProduct(p.id, { name: newName, sku: newSku });
+                          toast.success("Product updated");
+                        } catch (err) {
+                          console.error(err);
+                          toast.error("Failed to update product (backend disabled in dev)");
+                        }
+                      }}
+                    >
+                      Apply suggestion
+                    </button>
+                    <button
+                      type="button"
+                      className="px-3 py-2 rounded border text-sm"
+                      onClick={() => {
+                        // remove from candidates list
+                        setFixCandidates((cur) => cur.filter(x => x.id !== p.id));
+                      }}
+                    >
+                      Ignore
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+        </DialogContent>
+      </Dialog>
 
       <ProductFormModal
         open={modalOpen}

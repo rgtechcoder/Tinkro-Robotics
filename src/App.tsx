@@ -84,6 +84,9 @@ const AdminProductsPage = lazy(() => import("./pages/admin/AdminProductsPage"));
 const AdminBulkImportPage = lazy(
   () => import("./pages/admin/AdminBulkImportPage"),
 );
+const AdminBulkKnowledgeHubImportPage = lazy(
+  () => import("./pages/admin/AdminBulkKnowledgeHubImportPage"),
+);
 const AdminCategoriesPage = lazy(
   () => import("./pages/admin/AdminCategoriesPage"),
 );
@@ -311,6 +314,7 @@ const productDetailRoute = createRoute({
 
 interface ProductsSearch {
   category?: string;
+  q?: string;
 }
 
 const productsRoute = createRoute({
@@ -319,6 +323,7 @@ const productsRoute = createRoute({
   component: ProductsPage,
   validateSearch: (search: Record<string, unknown>): ProductsSearch => ({
     category: typeof search.category === "string" ? search.category : undefined,
+    q: typeof search.q === "string" ? search.q : undefined,
   }),
 });
 
@@ -529,6 +534,20 @@ const adminBulkImportRoute = createRoute({
       <Suspense fallback={<AdminPageSkeleton />}>
         <AdminProtectedRoute>
           <AdminBulkImportPage />
+        </AdminProtectedRoute>
+      </Suspense>
+    </ErrorBoundary>
+  ),
+});
+
+const adminBulkKnowledgeHubImportRoute = createRoute({
+  getParentRoute: () => adminRootRoute,
+  path: "/admin/knowledge-hub-import",
+  component: () => (
+    <ErrorBoundary>
+      <Suspense fallback={<AdminPageSkeleton />}>
+        <AdminProtectedRoute>
+          <AdminBulkKnowledgeHubImportPage />
         </AdminProtectedRoute>
       </Suspense>
     </ErrorBoundary>
@@ -759,6 +778,7 @@ const adminRouteTree = adminRootRoute.addChildren([
   adminDashboardRoute,
   adminProductsRoute,
   adminBulkImportRoute,
+  adminBulkKnowledgeHubImportRoute,
   adminCategoriesRoute,
   adminOrdersRoute,
   adminLabSetupRoute,

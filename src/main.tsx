@@ -26,17 +26,27 @@ const queryClient = new QueryClient({
   },
 });
 
+// Register the service worker only in production. During local development
+// the SW can interfere with hot reload and cause stale responses / clone
+// errors — skip registration in dev and automatically unregister any
+// existing workers to keep the dev experience deterministic.
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(console.error);
-  });
+  if (import.meta.env.PROD) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js").catch((err) => console.error('SW register failed', err));
+    });
 
-  navigator.serviceWorker.addEventListener("message", (event) => {
-    if (event.data?.type !== "SW_UPDATED") return;
-    if (sessionStorage.getItem("sw-reloaded")) return;
-    sessionStorage.setItem("sw-reloaded", "1");
-    window.location.reload();
-  });
+    navigator.serviceWorker.addEventListener("message", (event) => {
+      if (event.data?.type !== "SW_UPDATED") return;
+      if (sessionStorage.getItem("sw-reloaded")) return;
+      sessionStorage.setItem("sw-reloaded", "1");
+      window.location.reload();
+    });
+  } else {
+    // In dev: remove any installed SWs to avoid caching surprises.
+    navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => r.unregister())).catch(() => {});
+    console.info('Service worker disabled in development mode');
+  }
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

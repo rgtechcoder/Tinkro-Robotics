@@ -524,8 +524,15 @@ export async function addProduct(product: any) {
 }
 
 export async function updateProduct(id: string, data: any) {
-  const { id: _generatedId, ...payload } = withProductSeoDefaults({ id, ...data });
-  await updateDoc(doc(db, "products", id), payload);
+  // Merge incoming partial data with existing document to avoid accidental
+  // overwrites of fields (calling withProductSeoDefaults on a partial payload
+  // would fill missing fields with fallbacks like "Tinkro Product").
+  const docRef = doc(db, "products", id);
+  const snap = await getDoc(docRef);
+  const existing = snap.exists() ? (snap.data() as any) : {};
+  const merged = { ...(existing || {}), ...(data || {}), id };
+  const { id: _generatedId, ...payload } = withProductSeoDefaults(merged as any);
+  await updateDoc(docRef, payload);
 }
 
 export async function bulkAdjustProductPrices(percentage: number): Promise<void> {
@@ -714,6 +721,7 @@ export function subscribeToBlogPosts(callback: (posts: AdminBlogPost[]) => void)
       return normalizeDates(raw, [
         "createdAt",
         "publishedAt",
+        "publishedDate",
         "scheduledAt",
         "updatedAt",
       ]);
@@ -729,6 +737,7 @@ export async function addBlogPost(
     ...stripUndefined(data),
     views: 0,
     createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   });
   return docRef.id;
 }
@@ -737,7 +746,10 @@ export async function updateBlogPost(
   id: string,
   data: Partial<AdminBlogPost>,
 ): Promise<void> {
-  await updateDoc(doc(db, "blogs", id), stripUndefined(data));
+  await updateDoc(doc(db, "blogs", id), {
+    ...stripUndefined(data),
+    updatedAt: serverTimestamp(),
+  });
 }
 
 export async function deleteBlogPost(id: string): Promise<void> {
@@ -822,6 +834,10 @@ import {
   uploadBytes,
   getDownloadURL,
 } from "firebase/storage";
+import {
+  assertValidAdminUploadFile,
+  normalizeUploadFilename,
+} from "@/lib/adminUploadValidation";
 
 const toIsoString = (value: unknown) =>
   value && typeof value === "object" && "toDate" in value
@@ -852,7 +868,9 @@ const stripUndefined = <T extends Record<string, unknown>>(data: T): T => {
 const storage = getStorage();
 
 export async function uploadCategoryImage(file: File) {
-  const storageRef = ref(storage, `categories/${Date.now()}_${file.name}`);
+  assertValidAdminUploadFile(file, "image");
+  const safeName = normalizeUploadFilename(file.name);
+  const storageRef = ref(storage, `categories/${Date.now()}_${safeName}`);
   
   await uploadBytes(storageRef, file);
   
@@ -864,9 +882,11 @@ export async function uploadBlogImage(
   file: File,
   postId: string,
 ): Promise<string> {
+  assertValidAdminUploadFile(file, "image");
+  const safeName = normalizeUploadFilename(file.name);
   const storageRef = ref(
     storage,
-    `blogs/${postId}/${Date.now()}_${file.name}`,
+    `blogs/${postId}/${Date.now()}_${safeName}`,
   );
 
   await uploadBytes(storageRef, file);
@@ -948,9 +968,11 @@ export async function uploadBannerImage(
   file: File,
   bannerId: string,
 ): Promise<string> {
+  assertValidAdminUploadFile(file, "image");
+  const safeName = normalizeUploadFilename(file.name);
   const storageRef = ref(
     storage,
-    `banners/${bannerId}/${Date.now()}_${file.name}`,
+    `banners/${bannerId}/${Date.now()}_${safeName}`,
   );
   await uploadBytes(storageRef, file);
   return getDownloadURL(storageRef);
@@ -971,17 +993,17 @@ export function subscribeToMedia(
 }
 
 export async function uploadMedia(file: File): Promise<AdminMedia> {
-  const storageRef = ref(storage, `media/${Date.now()}_${file.name}`);
+  assertValidAdminUploadFile(file, "image-or-pdf");
+  const safeName = normalizeUploadFilename(file.name);
+  const storageRef = ref(storage, `media/${Date.now()}_${safeName}`);
   await uploadBytes(storageRef, file);
   const url = await getDownloadURL(storageRef);
   const type: AdminMedia["type"] = file.type.startsWith("image/")
     ? "image"
-    : file.type.startsWith("video/")
-      ? "video"
-      : "document";
+    : "document";
 
   const docRef = await addDoc(collection(db, "media"), {
-    filename: file.name,
+    filename: safeName,
     url,
     storagePath: storageRef.fullPath,
     size: file.size,
@@ -994,7 +1016,7 @@ export async function uploadMedia(file: File): Promise<AdminMedia> {
 
   return {
     id: docRef.id,
-    filename: file.name,
+    filename: safeName,
     url,
     storagePath: storageRef.fullPath,
     size: file.size,

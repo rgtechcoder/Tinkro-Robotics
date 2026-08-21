@@ -5,12 +5,22 @@ import {
 } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { Heart } from "lucide-react";
+import {
+  Check,
+  FileText,
+  GraduationCap,
+  Heart,
+  Info,
+  Lightbulb,
+  ShoppingCart,
+  ShieldCheck,
+  Truck,
+} from "lucide-react";
 import { AnimatePresence, motion, useScroll, useTransform } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useToastContext } from "../components/Layout";
 import { SEO } from "../components/SEO";
-import { useCategories, useProductById } from "../lib/publicDataService";
+import { useCategories, useProductById, useProducts } from "../lib/publicDataService";
 import { absoluteUrl, normalizeSeoText, truncateSeoText } from "../lib/seo";
 import { getProductRouteParam } from "../lib/slug";
 import { useCartStore } from "../store/cartStore";
@@ -249,9 +259,22 @@ function HeroSection({
   product,
   heroImage,
   categories,
-}: { product: AdminProduct; heroImage: string; categories: AdminCategory[] }) {
+  selectedVariantId,
+  onSelectVariant,
+}: {
+  product: AdminProduct;
+  heroImage: string;
+  categories: AdminCategory[];
+  selectedVariantId: string | null;
+  onSelectVariant: (id: string | null) => void;
+}) {
   const toggleItem = useWishlistStore((s) => s.toggleItem);
   const wishlisted = useWishlistStore(s => s.isInWishlist(product.id));
+  const addItem = useCartStore((s) => s.addItem);
+  const decrementItem = useCartStore((s) => s.decrementItem);
+  const cartItems = useCartStore((s) => s.items);
+  const { addToast } = useToastContext();
+  const [isAdding, setIsAdding] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { scrollYProgress } = useScroll({
@@ -261,11 +284,42 @@ function HeroSection({
   const y = useTransform(scrollYProgress, [0, 1], [0, 120]);
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
-  const displayPrice =
-    product.discount > 0 && product.originalPrice > product.price
-      ? product.price
-      : product.price;
-  const showOriginal = product.originalPrice > product.price;
+  // If a pack variant is selected use its pack price otherwise fallback to product price
+  const selectedVariant = (product.variants ?? []).find((v) => v.id === selectedVariantId);
+  const displayPrice = selectedVariant ? selectedVariant.price : product.price;
+  const showOriginal = selectedVariant ? false : product.originalPrice > product.price;
+  const cartItem = cartItems.find(
+    (item) =>
+      item.productId === product.id &&
+      (selectedVariant ? item.variantId === selectedVariant.id : !item.variantId),
+  );
+  const cartQuantity = cartItem?.quantity ?? 0;
+
+  function handleAddToCart() {
+    setIsAdding(true);
+    const itemPayload: Parameters<typeof addItem>[0] = {
+      productId: product.id,
+      name: product.name,
+      image: heroImage,
+      price: displayPrice,
+      ...(selectedVariant
+        ? {
+            variantId: selectedVariant.id,
+            variantLabel: selectedVariant.label,
+            packQty: selectedVariant.qty,
+          }
+        : {}),
+    };
+
+    addItem(itemPayload, 1);
+    window.setTimeout(() => {
+      setIsAdding(false);
+      addToast(
+        `${product.name}${selectedVariant ? ` (${selectedVariant.label})` : ""} added to cart`,
+        "success",
+      );
+    }, 400);
+  }
 
   // Resolve category names from categoryIds or fall back to category string
   const categoryTags: { id: string; name: string; slug: string }[] = (() => {
@@ -583,6 +637,25 @@ function HeroSection({
                 </span>
               )}
             </div>
+            {/* Variant selector (pack options) */}
+            {(product.variants ?? []).length > 0 && (
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-white/70 mr-2">Pack:</label>
+                <select
+                  value={selectedVariantId ?? ""}
+                  onChange={(e) => onSelectVariant(e.target.value || null)}
+                  className="rounded-lg px-3 py-2 bg-white/6 text-white"
+                  aria-label="Select pack variant"
+                  data-ocid="product-pack-selector"
+                >
+                  {(product.variants ?? []).map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.label} — ₹{v.price.toLocaleString()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <button
               type="button"
               aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
@@ -605,6 +678,63 @@ function HeroSection({
                 stroke={wishlisted ? "#ef4444" : "currentColor"}
               />
             </button>
+            {cartQuantity > 0 ? (
+              <div
+                className="inline-flex h-10 items-center overflow-hidden rounded-xl border border-orange-400/50 bg-orange-500/15 shadow-glow-orange"
+                data-ocid="hero-cart-quantity-control"
+              >
+                <button
+                  type="button"
+                  onClick={() => decrementItem(product.id, selectedVariant?.id)}
+                  className="flex h-full w-10 items-center justify-center text-lg font-bold text-white transition-colors hover:bg-orange-400/20"
+                  aria-label="Decrease cart quantity"
+                  data-ocid="hero-cart-quantity-decrease"
+                >
+                  −
+                </button>
+                <span
+                  className="min-w-10 text-center text-sm font-bold text-white"
+                  aria-label={`${cartQuantity} item${cartQuantity === 1 ? "" : "s"} in cart`}
+                  data-ocid="hero-cart-quantity"
+                >
+                  {cartQuantity}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={isAdding || product.stock <= 0}
+                  className="flex h-full w-10 items-center justify-center text-lg font-bold text-white transition-colors hover:bg-orange-400/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  aria-label="Increase cart quantity"
+                  data-ocid="hero-cart-quantity-increase"
+                >
+                  {isAdding ? (
+                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  ) : (
+                    "+"
+                  )}
+                </button>
+              </div>
+            ) : (
+              <motion.button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={isAdding || product.stock <= 0}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold text-white shadow-glow-orange transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60"
+                style={{
+                  background: "linear-gradient(135deg, #F47B20 0%, #F5A623 100%)",
+                }}
+                data-ocid="hero-add-to-cart-btn"
+              >
+                {isAdding ? (
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                ) : (
+                  <ShoppingCart className="h-4 w-4" />
+                )}
+                <span>{isAdding ? "Adding…" : "Add to Cart"}</span>
+              </motion.button>
+            )}
           </motion.div>
 
           {/* Trust badges */}
@@ -617,8 +747,7 @@ function HeroSection({
             {[
               { icon: "🏆", label: "STEM Certified" },
               { icon: "🏫", label: "School Ready" },
-              { icon: "📦", label: "Free Shipping" },
-              { icon: "↩️", label: "30-Day Returns" },
+              { icon: "📦", label: "Free Shipping*" },
             ].map((b) => (
               <span
                 key={b.label}
@@ -713,8 +842,12 @@ function HeroSection({
                           <img
                             src={img}
                             alt={getProductImageAlt(getProductDisplayName(product), idx)}
+                            loading={idx === 0 ? "eager" : "lazy"}
+                            decoding="async"
+                            fetchPriority={idx === 0 ? "high" : "low"}
                             width={800}
                             height={800}
+                            sizes="(max-width: 768px) 100vw, 50vw"
                             className="w-full h-full object-contain"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = "/placeholder.jpg";
@@ -741,8 +874,12 @@ function HeroSection({
                 <img
                   src={heroImages[0]}
                   alt={getProductImageAlt(getProductDisplayName(product))}
+                  loading="eager"
+                  decoding="async"
+                  fetchPriority="high"
                   width={800}
                   height={800}
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   className="w-full h-full object-contain"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = "/placeholder.jpg";
@@ -823,28 +960,168 @@ function AnchorNav({
 // ─── Storytelling Sections ────────────────────────────────────────────────────
 function StorySection({ overview }: { overview: string }) {
   return (
-    <section id="overview" className="py-24 lg:py-32 overflow-hidden">
-      <div
-        className="max-w-6xl mx-auto px-6 lg:px-12"
-        style={{
-          background: "linear-gradient(180deg, oklch(0.1 0.04 250) 0%, oklch(0.12 0.03 248) 100%)",
-        }}
-      >
-        <div className="rounded-[2.5rem] border border-border bg-background/90 p-8 lg:p-14 shadow-glow-primary">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-10">
-              <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+    <section
+      id="overview"
+      className="py-24 lg:py-32 overflow-hidden"
+      style={{
+        background:
+          "linear-gradient(180deg, oklch(0.1 0.04 250) 0%, oklch(0.14 0.05 240) 40%, oklch(0.12 0.03 260) 100%)",
+      }}
+    >
+      <div className="relative max-w-6xl mx-auto px-6 lg:px-12">
+        {/* decorative orbs / particles to match Robot hero background */}
+        <div aria-hidden className="absolute inset-0 pointer-events-none">
+          <div
+            style={{
+              position: "absolute",
+              top: "-6%",
+              left: "-4%",
+              width: 600,
+              height: 600,
+              borderRadius: "50%",
+              background: "radial-gradient(circle at 30% 30%, rgba(46,109,164,0.9), transparent 40%)",
+              opacity: 0.22,
+              filter: "blur(40px)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              bottom: "-6%",
+              right: "-6%",
+              width: 520,
+              height: 520,
+              borderRadius: "50%",
+              background: "radial-gradient(circle at 60% 60%, rgba(244,123,32,0.85), transparent 40%)",
+              opacity: 0.18,
+              filter: "blur(48px)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: "30%",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: 820,
+              height: 420,
+              borderRadius: 200,
+              background: "radial-gradient(circle, rgba(59,191,191,0.06), transparent 45%)",
+              opacity: 0.18,
+              filter: "blur(30px)",
+            }}
+          />
+          {/* small floating tech dots */}
+          {[
+            { x: "8%", y: "20%", c: "#3BBFBF", s: 6, o: 0.9 },
+            { x: "22%", y: "12%", c: "#F47B20", s: 5, o: 0.7 },
+            { x: "40%", y: "8%", c: "#3BBFBF", s: 4, o: 0.6 },
+            { x: "70%", y: "30%", c: "#F47B20", s: 6, o: 0.6 },
+            { x: "82%", y: "18%", c: "#3BBFBF", s: 5, o: 0.7 },
+          ].map((d, i) => (
+            <div
+              key={i}
+              style={{
+                position: "absolute",
+                left: d.x,
+                top: d.y,
+                width: d.s,
+                height: d.s,
+                borderRadius: "50%",
+                background: d.c,
+                opacity: d.o,
+                filter: "blur(6px)",
+                transform: "translate(-50%, -50%)",
+              }}
+            />
+          ))}
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="relative rounded-3xl p-6 lg:p-12"
+          style={{
+            background: "rgba(255,255,255,0.04)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            boxShadow: "0 30px 60px rgba(2,6,23,0.55), 0 6px 20px rgba(46,109,164,0.06)",
+            overflow: "visible",
+          }}
+        >
+          {/* Subtle robotics / circuitry decorative SVG behind the card */}
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-start",
+              pointerEvents: "none",
+            }}
+          >
+            <svg
+              width="820"
+              height="220"
+              viewBox="0 0 820 220"
+              fill="none"
+              style={{ transform: "translateY(-44px)", filter: "blur(18px)", opacity: 0.28 }}
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <defs>
+                <linearGradient id="g1" x1="0" x2="1">
+                  <stop offset="0%" stopColor="#2E6DA4" stopOpacity="1" />
+                  <stop offset="100%" stopColor="#3BBFBF" stopOpacity="1" />
+                </linearGradient>
+              </defs>
+              {/* curved arc */}
+              <path d="M40 140 C200 20, 620 20, 780 140" stroke="url(#g1)" strokeWidth="2" strokeOpacity="0.85" />
+              {/* small nodes */}
+              <circle cx="60" cy="140" r="4" fill="#3BBFBF" />
+              <circle cx="200" cy="80" r="3" fill="#2E6DA4" />
+              <circle cx="380" cy="60" r="3.5" fill="#3BBFBF" />
+              <circle cx="560" cy="90" r="3" fill="#2E6DA4" />
+              <circle cx="740" cy="140" r="4" fill="#3BBFBF" />
+              {/* subtle grid lines */}
+              <path d="M120 28 L120 180" stroke="#3BBFBF" strokeOpacity="0.06" strokeWidth="1" />
+              <path d="M360 28 L360 180" stroke="#2E6DA4" strokeOpacity="0.06" strokeWidth="1" />
+            </svg>
+          </div>
+          {/* Decorative top accent */}
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              top: -18,
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: 200,
+              height: 36,
+              borderRadius: 28,
+              background: "linear-gradient(90deg, #2E6DA4, #3BBFBF)",
+              boxShadow: "0 10px 30px rgba(46,109,164,0.14)",
+              border: "1px solid rgba(255,255,255,0.12)",
+            }}
+          />
+
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="mb-6">
+              <span className="text-sm font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.75)" }}>
                 Product Overview
               </span>
-              <h2 className="font-display font-bold text-4xl lg:text-5xl mt-4 text-foreground">
+              <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl mt-4" style={{ color: "#ffffff" }}>
                 What makes this product unique
               </h2>
             </div>
-            <p className="text-muted-foreground text-lg leading-relaxed font-body">
+            <p className="mx-auto max-w-3xl text-base font-body" style={{ color: "rgba(255,255,255,0.8)", lineHeight: 1.9, fontSize: 18 }}>
               {overview}
             </p>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -1152,7 +1429,10 @@ function getProductInfoItems(product: AdminProduct) {
 
     if (typeof value === "string") {
       const normalized = value.trim();
-      if (normalized) {
+      if (
+        normalized &&
+        !["not specified", "n/a", "na", "none"].includes(normalized.toLowerCase())
+      ) {
         items.push({ label, value: normalized });
       }
       return;
@@ -1390,6 +1670,142 @@ function UseCasesSection({ useCases }: { useCases: string[] }) {
   );
 }
 
+// ─── Buyer-focused product details ───────────────────────────────────────────
+function ProductDetailsHub({ product }: { product: AdminProduct }) {
+  const navigate = useNavigate();
+  const { products } = useProducts();
+  const infoItems = getProductInfoItems(product);
+  const features = (product.features ?? []).filter(Boolean);
+  const compatibility = (product.compatibility ?? []).filter(Boolean);
+  const applications = (product.applications ?? []).filter(Boolean);
+  const relatedProducts = products
+    .filter((candidate) => candidate.id !== product.id)
+    .filter((candidate) => {
+      if (product.categoryId && candidate.categoryId === product.categoryId) return true;
+      return candidate.category === product.category;
+    })
+    .slice(0, 4);
+
+  const quickFacts = [
+    product.category ? { label: "Category", value: product.category } : null,
+    product.brand ? { label: "Brand", value: product.brand } : null,
+    product.skillLevel ? { label: "Skill level", value: product.skillLevel } : null,
+    product.difficulty ? { label: "Difficulty", value: product.difficulty } : null,
+    product.warranty ? { label: "Warranty", value: product.warranty } : null,
+    product.sku ? { label: "SKU", value: product.sku } : null,
+  ].filter(Boolean) as Array<{ label: string; value: string }>;
+
+  return (
+    <>
+      <section className="py-16 lg:py-24 bg-background" aria-labelledby="product-at-a-glance">
+        <div className="max-w-7xl mx-auto px-6 lg:px-12">
+          <div className="mb-10">
+            <span className="text-sm font-bold uppercase tracking-widest text-primary">Make the right choice</span>
+            <h2 id="product-at-a-glance" className="font-display font-bold text-3xl lg:text-5xl mt-3 text-foreground">
+              Everything you need to know
+            </h2>
+            <p className="mt-4 text-muted-foreground text-lg max-w-2xl">
+              Clear product information, practical use cases, and support details before you buy.
+            </p>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="rounded-2xl border border-border bg-card p-6 lg:p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <Info className="h-5 w-5 text-primary" />
+                <h3 className="font-display font-bold text-xl text-foreground">At a glance</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                {quickFacts.map((fact) => (
+                  <div key={fact.label} className="rounded-xl bg-muted/50 p-4">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{fact.label}</p>
+                    <p className="mt-1 text-sm font-semibold text-foreground break-words">{fact.value}</p>
+                  </div>
+                ))}
+                <div className="rounded-xl bg-muted/50 p-4">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Availability</p>
+                  <p className="mt-1 text-sm font-semibold text-foreground">{product.stock > 0 ? "Ready to ship" : "Currently unavailable"}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-card p-6 lg:p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <GraduationCap className="h-5 w-5 text-primary" />
+                <h3 className="font-display font-bold text-xl text-foreground">Is this right for you?</h3>
+              </div>
+              <ul className="space-y-4 text-sm text-muted-foreground">
+                <li className="flex gap-3"><Check className="h-5 w-5 shrink-0 text-emerald-500" />Useful for hands-on learning, prototyping, and practical STEM projects.</li>
+                <li className="flex gap-3"><Check className="h-5 w-5 shrink-0 text-emerald-500" />Choose the product based on the listed skill level, compatibility, and applications.</li>
+                <li className="flex gap-3"><Check className="h-5 w-5 shrink-0 text-emerald-500" />Need help choosing? Contact Tinkro before ordering for project guidance.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {(features.length > 0 || compatibility.length > 0 || applications.length > 0 || infoItems.length > 0) && (
+        <section className="py-16 lg:py-24 bg-muted/30" aria-labelledby="product-details-heading">
+          <div className="max-w-7xl mx-auto px-6 lg:px-12">
+            <div className="grid gap-8 lg:grid-cols-2">
+              <div>
+                <span className="text-sm font-bold uppercase tracking-widest text-primary">Product details</span>
+                <h2 id="product-details-heading" className="font-display font-bold text-3xl lg:text-4xl mt-3 text-foreground">Built to be understood</h2>
+                <p className="mt-4 text-muted-foreground leading-relaxed">Explore the capabilities, compatibility, and technical information that help you plan your next build with confidence.</p>
+
+                {features.length > 0 && (
+                  <div className="mt-8 space-y-3">
+                    <h3 className="font-display font-bold text-xl text-foreground">Key features</h3>
+                    {features.map((feature) => <div key={feature} className="flex gap-3 rounded-xl border border-border bg-card p-4 text-sm text-foreground"><Check className="h-5 w-5 shrink-0 text-primary" />{feature}</div>)}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-6">
+                {infoItems.length > 0 && (
+                  <div className="rounded-2xl border border-border bg-card overflow-hidden">
+                    <div className="flex items-center gap-3 border-b border-border px-6 py-5"><FileText className="h-5 w-5 text-primary" /><h3 className="font-display font-bold text-xl text-foreground">Technical specifications</h3></div>
+                    <dl className="divide-y divide-border">
+                      {infoItems.map((item) => <div key={item.label} className="grid grid-cols-[ minmax(0,0.8fr)_minmax(0,1.2fr)] gap-4 px-6 py-4 text-sm"><dt className="text-muted-foreground">{item.label}</dt><dd className="font-semibold text-foreground break-words">{item.value}</dd></div>)}
+                    </dl>
+                  </div>
+                )}
+                {compatibility.length > 0 && <div className="rounded-2xl border border-border bg-card p-6"><h3 className="font-display font-bold text-xl text-foreground mb-4">Works with</h3><div className="flex flex-wrap gap-2">{compatibility.map((item) => <span key={item} className="rounded-full bg-primary/10 px-3 py-1.5 text-sm text-primary">{item}</span>)}</div></div>}
+              </div>
+            </div>
+
+            {applications.length > 0 && (
+              <div className="mt-10 rounded-2xl border border-border bg-card p-6 lg:p-8">
+                <div className="flex items-center gap-3 mb-5"><Lightbulb className="h-5 w-5 text-primary" /><h3 className="font-display font-bold text-xl text-foreground">What can you build with it?</h3></div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{applications.map((item) => <div key={item} className="flex gap-3 rounded-xl bg-muted/50 p-4 text-sm text-foreground"><Check className="h-5 w-5 shrink-0 text-primary" />{item}</div>)}</div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      <section className="py-16 lg:py-20 bg-background" aria-label="Tinkro support and delivery">
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 grid gap-4 sm:grid-cols-3">
+          {[
+            { icon: Truck, title: "Reliable delivery", text: "Shipping support across India with order updates." },
+            { icon: ShieldCheck, title: "Purchase support", text: "Get help with product selection and setup." },
+            { icon: FileText, title: "GST invoice", text: "Request an invoice for school, lab, or business orders." },
+          ].map(({ icon: Icon, title, text }) => <div key={title} className="rounded-2xl border border-border bg-card p-6"><Icon className="h-6 w-6 text-primary" /><h3 className="mt-4 font-display font-bold text-lg text-foreground">{title}</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{text}</p></div>)}
+        </div>
+      </section>
+
+      {relatedProducts.length > 0 && (
+        <section className="py-16 lg:py-24 bg-muted/30" aria-labelledby="related-products-heading">
+          <div className="max-w-7xl mx-auto px-6 lg:px-12">
+            <div className="flex items-end justify-between gap-4 mb-8"><div><span className="text-sm font-bold uppercase tracking-widest text-primary">Keep exploring</span><h2 id="related-products-heading" className="font-display font-bold text-3xl lg:text-4xl mt-3 text-foreground">You may also need</h2></div><button type="button" onClick={() => navigate({ to: "/products", search: { category: product.category } })} className="text-sm font-semibold text-primary hover:underline">View category →</button></div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{relatedProducts.map((item) => <button type="button" key={item.id} onClick={() => window.location.assign(`/product/${getProductRouteParam(item)}`)} className="text-left rounded-2xl border border-border bg-card p-4 transition hover:-translate-y-1 hover:shadow-lg"><img src={item.images?.[0] ?? item.image ?? "/placeholder.jpg"} alt={getProductImageAlt(item.name)} className="aspect-square w-full rounded-xl object-contain bg-muted/30" loading="lazy" /><p className="mt-4 line-clamp-2 text-sm font-semibold text-foreground">{item.name}</p><p className="mt-2 font-bold text-primary">₹{item.price.toLocaleString("en-IN")}</p></button>)}</div>
+          </div>
+        </section>
+      )}
+    </>
+  );
+}
+
 // ─── Reviews Section ──────────────────────────────────────────────────────────
 function ReviewsSection({ reviews }: { reviews: ProductReview[] }) {
   if (reviews.length === 0) return null;
@@ -1524,7 +1940,8 @@ function ReviewsSection({ reviews }: { reviews: ProductReview[] }) {
 function StickyBuyPanel({
   product,
   heroImage,
-}: { product: AdminProduct; heroImage: string }) {
+  selectedVariant,
+}: { product: AdminProduct; heroImage: string; selectedVariant?: { id: string; label: string; qty: number; price: number } }) {
   const [visible, setVisible] = useState(false);
   const [qty, setQty] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
@@ -1542,31 +1959,40 @@ function StickyBuyPanel({
 
   function handleAdd() {
     setIsAdding(true);
-    addItem(
-      {
-        productId: product.id,
-        name: product.name,
-        image: heroImage,
-        price: product.price,
-      },
-      qty,
-    );
+    const itemPayload: any = {
+      productId: product.id,
+      name: product.name,
+      image: heroImage,
+      price: selectedVariant ? selectedVariant.price : product.price,
+    };
+    if (selectedVariant) {
+      itemPayload.variantId = selectedVariant.id;
+      itemPayload.variantLabel = selectedVariant.label;
+      itemPayload.packQty = selectedVariant.qty;
+    }
+    addItem(itemPayload, qty);
     setTimeout(() => {
       setIsAdding(false);
-      addToast(`${product.name} added to cart`, "success");
+      addToast(
+        `${product.name}${selectedVariant ? ` (${selectedVariant.label})` : ""} added to cart`,
+        "success",
+      );
     }, 400);
   }
 
   function handleBuyNow() {
-    addItem(
-      {
-        productId: product.id,
-        name: product.name,
-        image: heroImage,
-        price: product.price,
-      },
-      qty,
-    );
+    const itemPayload: any = {
+      productId: product.id,
+      name: product.name,
+      image: heroImage,
+      price: selectedVariant ? selectedVariant.price : product.price,
+    };
+    if (selectedVariant) {
+      itemPayload.variantId = selectedVariant.id;
+      itemPayload.variantLabel = selectedVariant.label;
+      itemPayload.packQty = selectedVariant.qty;
+    }
+    addItem(itemPayload, qty);
     navigate({ to: "/checkout" });
   }
 
@@ -1708,6 +2134,11 @@ export function ProductDetailPage() {
   const { slug } = useParams({ from: "/product/$slug" });
   const { product, loading } = useProductById(slug);
   const { categories } = useCategories();
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedVariantId(product?.variants?.[0]?.id ?? null);
+  }, [product]);
   const [anchorVisible, setAnchorVisible] = useState(false);
   const navigate = useNavigate();
   const heroImage = product?.images?.[0] ?? product?.image ?? "/placeholder.jpg";
@@ -1764,8 +2195,16 @@ export function ProductDetailPage() {
   }, []);
 
   const canonicalParam = product ? getProductRouteParam(product) : null;
+  // Only replace the URL to the canonical id--slug once per product load to
+  // avoid repeated navigations which can trigger re-mounts and state loops.
+  const didReplaceToCanonicalRef = useRef(false);
   useEffect(() => {
-    if (product && canonicalParam && slug !== canonicalParam) {
+    if (!product) {
+      didReplaceToCanonicalRef.current = false;
+      return;
+    }
+    if (canonicalParam && slug !== canonicalParam && !didReplaceToCanonicalRef.current) {
+      didReplaceToCanonicalRef.current = true;
       navigate({
         to: "/product/$slug",
         params: { slug: canonicalParam },
@@ -1962,6 +2401,10 @@ export function ProductDetailPage() {
   if (loading) return <ProductDetailSkeleton />;
   if (!product) return <ProductNotFound />;
 
+  const selectedVariant = (product?.variants ?? []).find(
+    (v) => v.id === selectedVariantId,
+  );
+
   return (
     <div className="relative" data-ocid="product-detail-page">
       {productSeo && (
@@ -1985,8 +2428,11 @@ export function ProductDetailPage() {
         product={product}
         heroImage={heroImage}
         categories={categories}
+        selectedVariantId={selectedVariantId}
+        onSelectVariant={setSelectedVariantId}
       />
       {overviewText && <StorySection overview={overviewText} />}
+      <ProductDetailsHub product={product} />
       {videoEmbedUrl && <VideoSection videoUrl={videoEmbedUrl} />}
       <KitContentsSection product={product} />
       <UseCasesSection useCases={useCases} />
@@ -2020,12 +2466,15 @@ export function ProductDetailPage() {
               Get the Kit — ₹{product.price.toLocaleString()} →
             </motion.button>
             <p className="text-white/30 text-sm mt-4">
-              Free shipping · 30-day returns · STEM Certified
+              Free shipping* · STEM Certified
+            </p>
+            <p className="text-white/40 text-xs mt-2">
+              *Free shipping on orders above ₹499
             </p>
           </Reveal>
         </div>
       </section>
-      <StickyBuyPanel product={product} heroImage={heroImage} />
+      <StickyBuyPanel product={product} heroImage={heroImage} selectedVariant={selectedVariant} />
     </div>
   );
 }

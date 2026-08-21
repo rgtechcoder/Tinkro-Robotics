@@ -544,26 +544,26 @@ export function HomePage() {
         <WhyChooseTinkro />
       </Suspense>
 
-      {/* Lab Tiers — show skeleton while loading */}
+      {/* Featured Products — show skeleton while loading */}
       <AnimatePresence mode="wait">
-        {labSetupsLoading ? (
+        {productsLoading ? (
           <motion.div
-            key="lab-skeleton"
+            key="products-skeleton"
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <LabsTiersSkeleton />
+            <ProductsSkeleton />
           </motion.div>
         ) : (
           <motion.div
-            key="lab-content"
+            key="products-content"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
           >
-            <Suspense fallback={<LabsTiersSkeleton />}>
-              <LabTiersSection labSetups={labSetups} loading={false} />
+            <Suspense fallback={<ProductsSkeleton />}>
+              <FeaturedProducts products={products} loading={false} />
             </Suspense>
           </motion.div>
         )}
@@ -594,26 +594,26 @@ export function HomePage() {
         )}
       </AnimatePresence>
 
-      {/* Featured Products — show skeleton while loading */}
+      {/* Lab Tiers — show skeleton while loading */}
       <AnimatePresence mode="wait">
-        {productsLoading ? (
+        {labSetupsLoading ? (
           <motion.div
-            key="products-skeleton"
+            key="lab-skeleton"
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <ProductsSkeleton />
+            <LabsTiersSkeleton />
           </motion.div>
         ) : (
           <motion.div
-            key="products-content"
+            key="lab-content"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
           >
-            <Suspense fallback={<ProductsSkeleton />}>
-              <FeaturedProducts products={products} loading={false} />
+            <Suspense fallback={<LabsTiersSkeleton />}>
+              <LabTiersSection labSetups={labSetups} loading={false} />
             </Suspense>
           </motion.div>
         )}

@@ -15,8 +15,7 @@ if (fs.existsSync(envPath)) {
 }
 
 // Firebase client SDK (will work in Node.js)
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { discoverRoutes } from "./route-discovery.mjs";
 
 // Exact slugify logic from frontend
 function slugify(value) {
@@ -56,16 +55,7 @@ console.log(`   API Key: ${firebaseConfig.apiKey.substring(0, 10)}...`);
 console.log(`   Project ID: ${firebaseConfig.projectId}`);
 console.log(`   Auth Domain: ${firebaseConfig.authDomain}`);
 
-try {
-  const app = initializeApp(firebaseConfig);
-  console.log("✅ Firebase app initialized successfully");
-} catch (error) {
-  console.error("❌ Firebase initialization failed:", error.message);
-  process.exit(1);
-}
-
-const db = getFirestore();
-console.log("✅ Firestore instance created");
+// route-discovery handles Firebase initialization and queries
 
 const HOSTNAME = "https://tinkro.in";
 
@@ -101,99 +91,28 @@ async function generateSitemap() {
     console.log("\n🔄 Starting sitemap generation...");
     console.log(`📍 Target hostname: ${HOSTNAME}`);
 
-    // Step 1: Create collection reference
-    console.log("\n📦 Fetching products from Firestore...");
-    let productsRef;
-    try {
-      productsRef = collection(db, "products");
-      console.log("✅ Collection reference created for 'products'");
-    } catch (error) {
-      console.error("❌ Failed to create collection reference:", error.message);
-      throw error;
-    }
+    // Use centralized route discovery (queries Firestore once)
+    console.log("\n📦 Discovering routes (products + blogs + static)...");
+    const discovery = await discoverRoutes();
+    console.log(`✅ Discovered ${discovery.routes.length} total routes`);
 
-    // Step 2: Execute query
-    let querySnapshot;
-    try {
-      console.log("🔍 Executing getDocs query...");
-      querySnapshot = await getDocs(productsRef);
-      console.log(`✅ Query executed successfully`);
-      console.log(`   Snapshot size: ${querySnapshot.size} documents`);
-      console.log(`   Empty: ${querySnapshot.empty}`);
-    } catch (error) {
-      console.error("❌ Firestore query failed:", error.message);
-      console.error("   Error code:", error.code);
-      console.error("   Full error:", error);
-      throw error;
-    }
+    // Build absolute URLs
+    const urls = discovery.routes.map((p) => `${HOSTNAME}${p}`);
 
-    // Step 3: Parse documents
-    const products = [];
-    console.log("\n📄 Parsing documents...");
-    let docCount = 0;
-    querySnapshot.forEach((doc) => {
-      docCount++;
-      const data = doc.data();
-      console.log(`   Doc ${docCount}: ID=${doc.id}, Keys=${Object.keys(data).join(", ")}`);
-      
-      if (docCount === 1) {
-        // Log first document structure for debugging
-        console.log(`   📍 First document structure:`);
-        console.log(`      ${JSON.stringify(data, null, 2)}`);
-      }
-
-      // FIX: Only check for 'name' field (id comes from doc.id, not from document data)
-      if (data.name) {
-        products.push({
-          id: doc.id,
-          name: data.name,
-        });
-        console.log(`      ✅ ADDED: "${data.name}" (id: ${doc.id})`);
-      } else {
-        console.log(`      ⚠️  Skipped (missing name field)`);
-      }
-    });
-
-    console.log(`\n📊 Results:`);
-    console.log(`   Total documents in collection: ${docCount}`);
-    console.log(`   Products with name+id: ${products.length}`);
-    
-    if (querySnapshot.size > 0 && products.length === 0) {
-      console.warn("⚠️  WARNING: Documents found but no valid products!");
-      console.warn("   Check that documents have 'name' and 'id' fields");
-    }
-
-    if (products.length === 0) {
-      console.warn("\n⚠️  No products found in Firestore collection 'products'");
-      console.warn("   This is normal if the database is empty.");
-      console.warn("   Continuing with static pages only...");
-    }
-
-    // Build URL list
-    const urls = [
-      `${HOSTNAME}/`,
-      `${HOSTNAME}/products`,
-      `${HOSTNAME}/labs`,
-      `${HOSTNAME}/blog`,
-      `${HOSTNAME}/about`,
-      `${HOSTNAME}/contact`,
-      `${HOSTNAME}/faq`,
-      `${HOSTNAME}/shipping-policy`,
-      `${HOSTNAME}/returns`,
-      `${HOSTNAME}/warranty`,
-      `${HOSTNAME}/track-order`,
-      `${HOSTNAME}/wishlist`,
-    ];
-
-    // Add product URLs using exact same logic as frontend
-    products.forEach((product) => {
-      const slug = getProductRouteParam(product);
-      urls.push(`${HOSTNAME}/product/${slug}`);
-    });
+    const productCount = discovery.productPaths ? discovery.productPaths.length : 0;
+    const blogCount = discovery.blogPaths ? discovery.blogPaths.length : 0;
 
     console.log(`\n🔗 Generated ${urls.length} total URLs:`);
-    console.log(`   Static pages: 12`);
-    console.log(`   Product pages: ${products.length}`);
+    console.log(`   Static pages: ${discovery.staticPaths.length}`);
+    console.log(`   Product pages: ${productCount}`);
+    console.log(`   Blog pages: ${blogCount}`);
+
+    // Also write discovery JSON for downstream consumers (prerender)
+    const outDir = path.join(__dirname, "..", "public");
+    if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+    const discoveryOut = path.join(outDir, "route-discovery.json");
+    fs.writeFileSync(discoveryOut, JSON.stringify(discovery, null, 2), "utf8");
+    console.log(`✅ Route discovery written to ${discoveryOut}`);
 
     // Generate XML
     const sitemapXml = generateSitemapXml(urls);

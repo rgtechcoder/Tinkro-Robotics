@@ -40,7 +40,9 @@ export function Layout({ children }: LayoutProps) {
     <ToastContext.Provider value={{ addToast }}>
       <div className="min-h-screen flex flex-col bg-background">
         {showPublicChrome && <BannerTicker />}
-        {showPublicChrome && <Navbar />}
+        {showPublicChrome && (
+          <Navbar key={`${location.pathname}${location.search}`} />
+        )}
         <main
           className={`flex-1 bg-background ${
             isDashboardRoute || isAdminRoute

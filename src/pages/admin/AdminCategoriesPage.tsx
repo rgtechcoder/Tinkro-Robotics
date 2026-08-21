@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Textarea } from "@/components/ui/textarea";
+import { validateAdminUploadFile } from "@/lib/adminUploadValidation";
 import {
   addCategory,
   deleteCategory,
@@ -68,6 +68,24 @@ function slugify(value: string): string {
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function toMillis(value: unknown): number {
+  if (!value) return 0;
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "toDate" in value &&
+    typeof (value as { toDate?: unknown }).toDate === "function"
+  ) {
+    const date = (value as { toDate: () => Date }).toDate();
+    return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+  }
+  if (typeof value === "string") {
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -268,12 +286,9 @@ function CategoryImageZone({
   function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     const file = files[0];
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      toast.error("Only JPEG, PNG, or WebP allowed");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image exceeds 5 MB limit");
+    const validation = validateAdminUploadFile(file, "image");
+    if (!validation.ok) {
+      toast.error(validation.message);
       return;
     }
     onSelect(file);
@@ -325,7 +340,7 @@ function CategoryImageZone({
         <input
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
           className="hidden"
           onChange={(e) => handleFiles(e.target.files)}
         />
@@ -365,12 +380,12 @@ function CategoryImageZone({
         Click or drag to upload image
       </span>
       <span style={{ color: "oklch(0.40 0.04 243)", fontSize: "11px" }}>
-        JPEG · PNG · WebP · max 5 MB
+        JPEG · PNG · WebP · GIF · SVG · max 5 MB
       </span>
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}
       />
@@ -465,33 +480,6 @@ function CategoryModal({ open, onClose, editTarget }: CategoryModalProps) {
     setValue("imageUrl", "");
   }
 
-
-const storage = getStorage();
-
-async function uploadImageToStorage(
-  file: File,
-  categoryId: string,
-): Promise<string> {
-  try {
-    const storageRef = ref(
-      storage,
-      `categories/${categoryId}_${Date.now()}_${file.name}`
-    );
-
-    await uploadBytes(storageRef, file);
-
-    const downloadURL = await getDownloadURL(storageRef);
-
-    setUploadProgress(100);
-
-    return downloadURL; // ✅ REAL URL
-  } catch (error) {
-    console.error(error);
-    toast.error("Image upload failed");
-    throw error;
-  }
-}
-
   async function onSubmit(data: CategoryFormData) {
     setSaving(true);
     try {
@@ -500,8 +488,8 @@ async function uploadImageToStorage(
       if (pendingImage) {
         setUploading(true);
         setUploadProgress(0);
-        const tempId = editTarget?.id ?? `cat-${Date.now()}`;
-        finalImageUrl = await uploadImageToStorage(pendingImage.file, tempId);
+        finalImageUrl = await uploadCategoryImage(pendingImage.file);
+        setUploadProgress(100);
         setUploading(false);
       }
 
@@ -835,14 +823,22 @@ export default function AdminCategoriesPage() {
     return unsub;
   }, []);
 
-  const enrichedCategories = useMemo(
-    () =>
-      categories.map((cat) => ({
-        ...cat,
-        productCount: productsByCategoryId[cat.id] ?? cat.productCount ?? 0,
-      })),
-    [categories, productsByCategoryId],
-  );
+  const enrichedCategories = useMemo(() => {
+    const merged = categories.map((cat) => ({
+      ...cat,
+      productCount: productsByCategoryId[cat.id] ?? cat.productCount ?? 0,
+    }));
+
+    // Keep deterministic ordering so newly created categories stay discoverable
+    // across refresh/state updates instead of appearing in shifting Firestore order.
+    return merged.sort((a, b) => {
+      const createdDiff = toMillis(b.createdAt) - toMillis(a.createdAt);
+      if (createdDiff !== 0) return createdDiff;
+      const nameDiff = (a.name ?? "").localeCompare(b.name ?? "");
+      if (nameDiff !== 0) return nameDiff;
+      return a.id.localeCompare(b.id);
+    });
+  }, [categories, productsByCategoryId]);
 
   function handleAddClick() {
     setEditTarget(null);

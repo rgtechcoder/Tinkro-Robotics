@@ -1,4 +1,9 @@
-import { Link, useNavigate, useRouter } from "@tanstack/react-router";
+import {
+  Link,
+  useNavigate,
+  useRouter,
+  useRouterState,
+} from "@tanstack/react-router";
 import {
   ChevronDown,
   Heart,
@@ -13,10 +18,14 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { getProductRouteParam } from "../lib/slug";
-import { fetchAllProducts, searchProducts } from "../lib/publicDataService";
+import {
+  searchProducts,
+  searchProductsInList,
+  useProducts,
+} from "../lib/publicDataService";
 import { useCartStore } from "../store/cartStore";
 import { useWishlistStore } from "../store/wishlistStore";
 import type { AdminProduct } from "../types/admin";
@@ -34,32 +43,21 @@ const ADMIN_EMAILS = [
   "support@tinkro.com",
 ];
 
-function useDebounce<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-  return debounced;
-}
-
 function SearchDropdown({
   query,
   results,
-  onSelect,
+  totalCount,
+  onSelectProduct,
+  onViewAll,
 }: {
   query: string;
   results: AdminProduct[];
-  onSelect: () => void;
+  totalCount: number;
+  onSelectProduct: (product: AdminProduct) => void;
+  onViewAll: () => void;
 }) {
-  const navigate = useNavigate();
-
   function handleSelect(product: AdminProduct) {
-    navigate({
-      to: "/product/$slug",
-      params: { slug: getProductRouteParam(product) },
-    });
-    onSelect();
+    onSelectProduct(product);
   }
 
   return (
@@ -70,24 +68,22 @@ function SearchDropdown({
       transition={{ duration: 0.18, ease: "easeOut" }}
       className="absolute top-full mt-2 left-0 right-0 rounded-xl border border-border/40 overflow-hidden z-50"
       style={{
-        background:
-          "linear-gradient(135deg, oklch(0.14 0.04 250 / 0.96) 0%, oklch(0.18 0.05 243 / 0.96) 100%)",
-        backdropFilter: "blur(24px)",
-        WebkitBackdropFilter: "blur(24px)",
-        boxShadow:
-          "0 8px 32px oklch(0.1 0.08 243 / 0.4), inset 0 1px 0 oklch(1 0 0 / 0.06)",
+        background: "#ffffff",
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
+        boxShadow: "0 8px 32px rgba(15, 23, 42, 0.06)",
       }}
       aria-label="Search results"
     >
       {results.length === 0 ? (
         <div className="px-4 py-6 text-center" data-ocid="search-empty">
           <div className="text-2xl mb-2">🔍</div>
-          <p className="text-sm text-muted-foreground">
-            No results for{" "}
+          <p className="text-sm text-muted-foreground" style={{ color: "#0f172a" }}>
+            No products found for{" "}
             <span className="text-foreground font-medium">"{query}"</span>
           </p>
-          <p className="text-xs text-muted-foreground/60 mt-1">
-            Try a different keyword or browse all products
+          <p className="text-xs text-muted-foreground/60 mt-1" style={{ color: "#475569" }}>
+            Try a different keyword or browse all products.
           </p>
         </div>
       ) : (
@@ -103,36 +99,28 @@ function SearchDropdown({
               <button
                 type="button"
                 onClick={() => handleSelect(product)}
-                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-primary/10 group transition-colors duration-150"
+                className="w-full flex items-center gap-4 px-4 py-3 hover:bg-primary/10 group transition-colors duration-150"
                 data-ocid={`search-result-${product.id}`}
               >
-                <div className="relative flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-border/20">
-                      <img
+                <div className="relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-border/20">
+                  <img
                     src={product.image}
                     alt={`${product.name} from Tinkro`}
-                        className="w-full h-full object-cover"
-                        width={40}
-                        height={40}
+                    className="w-full h-full object-cover"
+                    width={48}
+                    height={48}
                   />
                 </div>
                 <div className="flex-1 min-w-0 text-left">
-                  <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5 truncate">
+                    {product.category}
+                  </p>
+                  <p className="text-base font-semibold text-foreground leading-snug group-hover:text-primary transition-colors">
                     {product.name}
                   </p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span
-                      className="text-xs px-1.5 py-0.5 rounded-md font-medium text-primary-foreground"
-                      style={{ background: "oklch(0.45 0.12 243 / 0.7)" }}
-                    >
-                      {product.category}
-                    </span>
-                  </div>
                 </div>
-                <div className="flex-shrink-0 text-right">
-                  <p
-                    className="text-sm font-semibold"
-                    style={{ color: "oklch(0.71 0.17 48)" }}
-                  >
+                <div className="flex-shrink-0 text-right ml-2">
+                  <p className="text-sm font-bold" style={{ color: "#F47B20" }}>
                     ₹{product.price.toLocaleString("en-IN")}
                   </p>
                 </div>
@@ -142,13 +130,23 @@ function SearchDropdown({
         </ul>
       )}
       <div className="px-4 py-2 border-t border-border/20">
-        <Link
-          to="/products"
-          onClick={onSelect}
-          className="text-xs text-muted-foreground hover:text-primary transition-colors"
-        >
-          View all products →
-        </Link>
+        {results.length > 0 && totalCount > results.length ? (
+          <button
+            type="button"
+            onClick={onViewAll}
+            className="inline-flex items-center text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+            data-ocid="search-view-all"
+          >
+            View all {totalCount} results for "{query}" →
+          </button>
+        ) : (
+          <Link
+            to="/products"
+            className="inline-flex items-center text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+          >
+            View All Products →
+          </Link>
+        )}
       </div>
     </motion.div>
   );
@@ -358,54 +356,109 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const desktopSearchContainerRef = useRef<HTMLDivElement>(null);
+  const mobileSearchContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const location = useRouterState({ select: (s) => s.location });
+  const pathname = location?.pathname ?? "";
   const itemCount = useCartStore((s) => s.itemCount);
   const wishlistCount = useWishlistStore((s) => s.itemCount);
   const { user } = useUserAuth();
   const isAdminUser = Boolean(
     user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase()),
   );
-  const [searchResults, setSearchResults] = useState<AdminProduct[]>([]);
+  const navigate = useNavigate();
+  const { products: allProducts } = useProducts();
 
-  const debouncedQuery = useDebounce(searchQuery, 200);
+  const [liveSearchResults, setLiveSearchResults] = useState<AdminProduct[]>([]);
 
+  // Search should never depend on a single in-memory list being ready. If the
+  // collection is still loading or stale on a product page, fall back to a
+  // direct Firestore lookup so the first search still works immediately.
   useEffect(() => {
-    let active = true;
-
-    const trimmed = debouncedQuery.trim();
-    if (trimmed.length === 0) {
-      setSearchResults([]);
+    const trimmed = searchQuery.trim();
+    if (trimmed.length < 2) {
+      setLiveSearchResults((previous) =>
+        previous.length === 0 ? previous : [],
+      );
       return;
     }
 
-    void (async () => {
-      const results = await searchProducts(trimmed, 8);
-      if (!active) return;
-      if (results.length > 0) {
-        setSearchResults(results);
-        return;
-      }
+    const listResults = searchProductsInList(allProducts, trimmed);
+    if (listResults.length > 0) {
+      setLiveSearchResults((previous) => {
+        const unchanged =
+          previous.length === listResults.length &&
+          previous.every((product, index) => product.id === listResults[index]?.id);
+        return unchanged ? previous : listResults;
+      });
+      return;
+    }
 
-      const allProducts = await fetchAllProducts();
-      if (!active) return;
-      const fallbackResults = allProducts
-        .filter((p) =>
-          [p.name, p.category, ...(Array.isArray(p.tags) ? p.tags : [])]
-            .join(" ")
-            .toLowerCase()
-            .includes(trimmed.toLowerCase()),
-        )
-        .slice(0, 8);
-      setSearchResults(fallbackResults);
-    })();
+    let active = true;
+    setLiveSearchResults((previous) =>
+      previous.length === 0 ? previous : [],
+    );
+    void searchProducts(trimmed, 8)
+      .then((results) => {
+        if (active) {
+          setLiveSearchResults((previous) => {
+            const unchanged =
+              previous.length === results.length &&
+              previous.every((product, index) => product.id === results[index]?.id);
+            return unchanged ? previous : results;
+          });
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setLiveSearchResults((previous) =>
+            previous.length === 0 ? previous : [],
+          );
+        }
+      });
 
     return () => {
       active = false;
     };
-  }, [debouncedQuery]);
+  }, [allProducts, searchQuery]);
+
+  const allSearchResults = liveSearchResults;
+
+  const searchResults = useMemo(
+    () => allSearchResults.slice(0, 6),
+    [allSearchResults],
+  );
+
+  const goToFullSearchResults = useCallback(() => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return;
+    navigate({ to: "/products", search: { q: trimmed } });
+    setSearchOpen(false);
+    setSearchQuery("");
+    setShowDropdown(false);
+  }, [navigate, searchQuery]);
+
+  const handleSelectProduct = useCallback(
+    (product: AdminProduct) => {
+      // Clear the old query before navigating so the next product page never
+      // retains a stale dropdown from the previous product.
+      setSearchOpen(false);
+      setSearchQuery("");
+      setShowDropdown(false);
+      setLiveSearchResults([]);
+      setMenuOpen(false);
+      setUserMenuOpen(false);
+      // Use a real URL navigation for product-to-product searches. TanStack
+      // Router can retain the current detail route during a rapid param-only
+      // transition; a document navigation guarantees the selected product is
+      // loaded on the first click.
+      window.location.assign(`/product/${getProductRouteParam(product)}`);
+    },
+    [],
+  );
 
   const closeSearch = useCallback(() => {
     setSearchOpen(false);
@@ -415,8 +468,8 @@ export function Navbar() {
 
   // Show dropdown as soon as we have a typed query
   useEffect(() => {
-    setShowDropdown(debouncedQuery.trim().length >= 1);
-  }, [debouncedQuery]);
+    setShowDropdown(searchQuery.trim().length >= 2);
+  }, [searchQuery]);
 
   // Auto-focus input when search opens
   useEffect(() => {
@@ -428,17 +481,17 @@ export function Navbar() {
   // Close search on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(e.target as Node)
-      ) {
+      const target = e.target as Node;
+      const insideDesktopSearch = desktopSearchContainerRef.current?.contains(target);
+      const insideMobileSearch = mobileSearchContainerRef.current?.contains(target);
+      if (!insideDesktopSearch && !insideMobileSearch) {
         closeSearch();
       }
     }
     if (searchOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("click", handleClickOutside);
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, [searchOpen, closeSearch]);
 
   // Close user menu on outside click
@@ -468,6 +521,25 @@ export function Navbar() {
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [closeSearch]);
+
+  // Reset all UI-only search state whenever the route changes, including the
+  // first product-page search after a previous product selection.
+  useEffect(() => {
+    closeSearch();
+    setLiveSearchResults([]);
+    setMenuOpen(false);
+    setUserMenuOpen(false);
+  }, [pathname, closeSearch]);
+
+  // Extra safety: when we land on a product page, clear the navbar search state
+  // before the user attempts a new search, even if the previous route was also a
+  // product page and the state had not yet fully settled.
+  useEffect(() => {
+    if (pathname.startsWith("/product/")) {
+      closeSearch();
+      setLiveSearchResults([]);
+    }
+  }, [pathname, closeSearch]);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -538,7 +610,7 @@ export function Navbar() {
           <div className="flex items-center gap-2">
             {/* Search — Desktop inline */}
             <div
-              ref={searchContainerRef}
+              ref={desktopSearchContainerRef}
               className="relative hidden sm:flex items-center"
               data-ocid="nav-search"
             >
@@ -557,18 +629,32 @@ export function Navbar() {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          goToFullSearchResults();
+                        }
+                      }}
                       placeholder="Search products…"
-                      className="w-full h-9 pl-9 pr-8 text-sm rounded-lg border border-border/60 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-smooth"
+                      className="w-full h-9 pl-3 pr-16 text-sm rounded-lg border border-border/60 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-smooth"
                       style={{
-                        background: "oklch(0.14 0.03 250 / 0.8)",
-                        color: "oklch(0.95 0 0)",
+                        background: "#ffffff",
+                        color: "#0f172a",
                       }}
                       aria-label="Search products"
                       aria-expanded={showDropdown}
                       aria-haspopup="listbox"
                       data-ocid="search-input"
                     />
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                    <button
+                      type="button"
+                      onClick={goToFullSearchResults}
+                      className="absolute right-8 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-primary transition-colors"
+                      aria-label="Search all products"
+                      data-ocid="search-submit"
+                    >
+                      <Search className="w-4 h-4" />
+                    </button>
                     <button
                       type="button"
                       onClick={closeSearch}
@@ -581,9 +667,11 @@ export function Navbar() {
                     <AnimatePresence>
                       {showDropdown && (
                         <SearchDropdown
-                          query={debouncedQuery}
+                          query={searchQuery}
                           results={searchResults}
-                          onSelect={closeSearch}
+                          totalCount={allSearchResults.length}
+                          onSelectProduct={handleSelectProduct}
+                          onViewAll={goToFullSearchResults}
                         />
                       )}
                     </AnimatePresence>
@@ -735,7 +823,7 @@ export function Navbar() {
               className="sm:hidden overflow-visible pb-3"
             >
               <div
-                ref={searchContainerRef}
+                ref={mobileSearchContainerRef}
                 className="relative"
                 data-ocid="nav-search-mobile"
               >
@@ -743,16 +831,30 @@ export function Navbar() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      goToFullSearchResults();
+                    }
+                  }}
                   placeholder="Search products…"
-                  className="w-full h-10 pl-10 pr-10 text-sm rounded-lg border border-border/60 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-smooth"
+                  className="w-full h-10 pl-3 pr-20 text-sm rounded-lg border border-border/60 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-smooth"
                   style={{
-                    background: "oklch(0.14 0.03 250 / 0.85)",
-                    color: "oklch(0.95 0 0)",
+                    background: "#ffffff",
+                    color: "#0f172a",
                   }}
                   aria-label="Search products"
                   data-ocid="search-input-mobile"
                 />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <button
+                  type="button"
+                  onClick={goToFullSearchResults}
+                  className="absolute right-10 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-primary transition-colors"
+                  aria-label="Search all products"
+                  data-ocid="search-submit-mobile"
+                >
+                  <Search className="w-4 h-4" />
+                </button>
                 <button
                   type="button"
                   onClick={closeSearch}
@@ -764,9 +866,11 @@ export function Navbar() {
                 <AnimatePresence>
                   {showDropdown && (
                     <SearchDropdown
-                      query={debouncedQuery}
+                      query={searchQuery}
                       results={searchResults}
-                      onSelect={closeSearch}
+                      totalCount={allSearchResults.length}
+                      onSelectProduct={handleSelectProduct}
+                      onViewAll={goToFullSearchResults}
                     />
                   )}
                 </AnimatePresence>

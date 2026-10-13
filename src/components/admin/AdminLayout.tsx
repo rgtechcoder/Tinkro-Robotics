@@ -1,12 +1,20 @@
 import { useAdminAuth } from "@/context/AdminAuthContext";
+import {
+  disableAdminPushNotifications,
+  enableAdminPushNotifications,
+} from "@/lib/adminPushNotifications";
+import { subscribeToAllOrders } from "@/lib/adminService";
 import { useAdminStore } from "@/store/adminStore";
+import type { AdminOrder } from "@/types/admin";
 import { Link, useRouter } from "@tanstack/react-router";
 import {
+  Bell,
+  BellRing,
   Download,
   ExternalLink,
+  FileSpreadsheet,
   FileText,
   FlaskConical,
-  FileSpreadsheet,
   HardDrive,
   Image,
   LayoutDashboard,
@@ -24,7 +32,33 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+
+const ORDER_ALERTS_STORAGE_KEY = "tinkro-admin-order-alerts-enabled";
+let orderAlertAudioContext: AudioContext | null = null;
+
+function playOrderAlertSound() {
+  const context = orderAlertAudioContext;
+  if (!context || context.state === "closed") return;
+  if (context.state === "suspended") void context.resume();
+
+  const startAt = context.currentTime;
+  [880, 1175, 1568].forEach((frequency, index) => {
+    const start = startAt + index * 0.14;
+    const oscillator = context.createOscillator();
+    const volume = context.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.value = frequency;
+    volume.gain.setValueAtTime(0.0001, start);
+    volume.gain.exponentialRampToValueAtTime(0.18, start + 0.025);
+    volume.gain.exponentialRampToValueAtTime(0.0001, start + 0.22);
+    oscillator.connect(volume);
+    volume.connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(start + 0.23);
+  });
+}
 
 interface NavItem {
   id: string;
@@ -147,11 +181,148 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [orderAlertsEnabled, setOrderAlertsEnabled] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.localStorage.getItem(ORDER_ALERTS_STORAGE_KEY) === "true",
+  );
+  const [newOrderAlert, setNewOrderAlert] = useState<AdminOrder | null>(null);
+  const orderAlertTimer = useRef<number | null>(null);
   const { adminUser, logout } = useAdminAuth();
   const { currentSection } = useAdminStore();
   const router = useRouter();
 
   const currentPath = router.state.location.pathname;
+
+  useEffect(() => {
+    if (!adminUser) return;
+
+    let knownOrderIds: Set<string> | null = null;
+    return subscribeToAllOrders((orders) => {
+      const currentOrderIds = new Set(orders.map((order) => order.id));
+      if (knownOrderIds === null) {
+        knownOrderIds = currentOrderIds;
+        return;
+      }
+
+      const addedOrders = orders.filter(
+        (order) => !knownOrderIds?.has(order.id) && order.status === "placed",
+      );
+      knownOrderIds = currentOrderIds;
+      if (addedOrders.length === 0) return;
+
+      const order = addedOrders[0];
+      setNewOrderAlert(order);
+      if (!orderAlertsEnabled) return;
+
+      playOrderAlertSound();
+      if (
+        document.hidden &&
+        "Notification" in window &&
+        Notification.permission === "granted"
+      ) {
+        const title = "New Tinkro order!";
+        const body = `Order #${order.id.slice(-8).toUpperCase()} · ₹${order.total.toLocaleString("en-IN")}`;
+        if ("serviceWorker" in navigator) {
+          void navigator.serviceWorker.ready
+            .then((registration) =>
+              registration.showNotification(title, {
+                body,
+                icon: "/tinkro-favicon.png",
+                badge: "/tinkro-favicon.png",
+                tag: `tinkro-order-${order.id}`,
+                data: { url: "/admin/orders" },
+              }),
+            )
+            .catch(() => {});
+        } else {
+          const notification = new Notification(title, { body });
+          notification.onclick = () => {
+            window.focus();
+            router.navigate({ to: "/admin/orders" });
+            notification.close();
+          };
+        }
+      }
+    });
+  }, [adminUser, orderAlertsEnabled, router]);
+
+  useEffect(() => {
+    if (
+      !adminUser?.uid ||
+      !orderAlertsEnabled ||
+      !("Notification" in window) ||
+      Notification.permission !== "granted"
+    ) {
+      return;
+    }
+
+    void enableAdminPushNotifications(adminUser.uid).catch((error) => {
+      console.warn("Could not refresh admin push registration", error);
+    });
+  }, [adminUser?.uid, orderAlertsEnabled]);
+
+  useEffect(() => {
+    if (!newOrderAlert) return;
+    if (orderAlertTimer.current !== null) {
+      window.clearTimeout(orderAlertTimer.current);
+    }
+    orderAlertTimer.current = window.setTimeout(() => {
+      setNewOrderAlert(null);
+      orderAlertTimer.current = null;
+    }, 8000);
+    return () => {
+      if (orderAlertTimer.current !== null) {
+        window.clearTimeout(orderAlertTimer.current);
+        orderAlertTimer.current = null;
+      }
+    };
+  }, [newOrderAlert]);
+
+  async function handleToggleOrderAlerts() {
+    if (!adminUser?.uid) return;
+
+    if (orderAlertsEnabled) {
+      try {
+        await disableAdminPushNotifications(adminUser.uid);
+        setOrderAlertsEnabled(false);
+        window.localStorage.setItem(ORDER_ALERTS_STORAGE_KEY, "false");
+        toast.success("Order push notifications turned off on this device.");
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Could not turn off notifications. Please try again.",
+        );
+      }
+      return;
+    }
+
+    // Create/resume audio directly from the button gesture so browsers allow
+    // future order sounds to play without another tap.
+    try {
+      orderAlertAudioContext ??= new window.AudioContext();
+      void orderAlertAudioContext.resume();
+      playOrderAlertSound();
+    } catch {
+      // The visual and system notifications remain available without audio.
+    }
+
+    try {
+      await enableAdminPushNotifications(adminUser.uid);
+      setOrderAlertsEnabled(true);
+      window.localStorage.setItem(ORDER_ALERTS_STORAGE_KEY, "true");
+      toast.success("New-order push notifications enabled on this device.");
+    } catch (error) {
+      setOrderAlertsEnabled(false);
+      window.localStorage.setItem(ORDER_ALERTS_STORAGE_KEY, "false");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not enable notifications. Please try again.",
+      );
+    }
+  }
 
   function getActiveId() {
     const allNav = [...CORE_NAV, ...FUTURE_NAV];
@@ -420,6 +591,34 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
           {/* Admin name badge + View Website */}
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void handleToggleOrderAlerts()}
+              aria-pressed={orderAlertsEnabled}
+              title={
+                orderAlertsEnabled
+                  ? "Order alerts are on. Click to turn them off."
+                  : "Turn on order sound and mobile/browser notifications"
+              }
+              data-ocid="admin-order-alerts-toggle"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors border"
+              style={{
+                background: orderAlertsEnabled
+                  ? "oklch(0.45 0.10 145 / 0.18)"
+                  : "oklch(0.16 0.04 243 / 0.6)",
+                borderColor: orderAlertsEnabled
+                  ? "oklch(0.55 0.12 145 / 0.45)"
+                  : "oklch(0.30 0.06 243 / 0.5)",
+                color: orderAlertsEnabled
+                  ? "oklch(0.82 0.13 145)"
+                  : "oklch(0.70 0.05 243)",
+              }}
+            >
+              {orderAlertsEnabled ? <BellRing size={14} /> : <Bell size={14} />}
+              <span className="hidden sm:inline">
+                {orderAlertsEnabled ? "Alerts on" : "Enable alerts"}
+              </span>
+            </button>
             <a
               href="/"
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border"
@@ -461,6 +660,40 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           {children}
         </main>
       </div>
+
+      <AnimatePresence>
+        {newOrderAlert && (
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, y: -12, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => {
+              setNewOrderAlert(null);
+              router.navigate({ to: "/admin/orders" });
+            }}
+            className="fixed right-4 top-[4.5rem] z-[100] flex w-[min(24rem,calc(100vw-2rem))] items-start gap-3 rounded-xl border border-orange-400/40 bg-slate-900/95 p-4 text-left shadow-2xl backdrop-blur-xl"
+            data-ocid="admin-new-order-alert"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-500/15 text-orange-300">
+              <BellRing size={18} />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-bold text-white">
+                New order received!
+              </span>
+              <span className="mt-1 block text-xs text-slate-300">
+                #{newOrderAlert.id.slice(-8).toUpperCase()} · ₹
+                {newOrderAlert.total.toLocaleString("en-IN")}
+              </span>
+              <span className="mt-1 block text-[11px] text-orange-300">
+                Tap to view order
+              </span>
+            </span>
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

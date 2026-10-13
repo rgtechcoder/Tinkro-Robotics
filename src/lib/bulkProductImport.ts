@@ -109,6 +109,10 @@ const TARGET_FIELDS = [
   "compatibility",
   "applications",
   "packageContents",
+  "kitContents",
+  "useCases",
+  "reviewsArray",
+  "demoVideoUrl",
   "faq",
   "tags",
   "skillLevel",
@@ -168,6 +172,10 @@ const FIELD_ALIASES: Record<string, string[]> = {
   compatibility: ["compatibility", "compatiblewith"],
   applications: ["applications", "usecases", "uses"],
   packageContents: ["packagecontents", "contents", "whatsincluded"],
+  kitContents: ["kitcontents", "kit_contents", "kit items"],
+  useCases: ["usecases", "use_cases", "use cases"],
+  reviewsArray: ["reviewsarray", "reviews_array", "product reviews"],
+  demoVideoUrl: ["demovideourl", "demo_video_url", "demo video", "video url"],
   faq: ["faq", "faqs", "frequentlyaskedquestions"],
   tags: ["tags", "customtags"],
   skillLevel: ["skilllevel", "skill_level"],
@@ -562,6 +570,47 @@ function toFaqs(value: unknown): Array<{ question: string; answer: string }> {
         };
       })
       .filter((entry): entry is { question: string; answer: string } => Boolean(entry?.question && entry.answer));
+  }
+
+  return [];
+}
+
+function toReviews(value: unknown): Array<{ name: string; rating: number; content: string }> {
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => {
+        if (typeof entry === "object" && entry && "name" in entry && "rating" in entry && "content" in entry) {
+          const rating = toNumber((entry as Record<string, unknown>).rating);
+          return {
+            name: cleanText((entry as Record<string, unknown>).name),
+            rating: Math.min(5, Math.max(1, rating ?? 5)),
+            content: cleanText((entry as Record<string, unknown>).content),
+          };
+        }
+        return null;
+      })
+      .filter((entry): entry is { name: string; rating: number; content: string } => Boolean(entry?.name && entry.content));
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    try {
+      return toReviews(JSON.parse(trimmed));
+    } catch {
+      return trimmed
+        .split(/[\n;]+/)
+        .map((entry) => {
+          const [name, rating, ...content] = entry.split("|");
+          const parsedRating = toNumber(rating);
+          return {
+            name: cleanText(name),
+            rating: Math.min(5, Math.max(1, parsedRating ?? 5)),
+            content: cleanText(content.join("|")),
+          };
+        })
+        .filter((entry) => entry.name && entry.content);
+    }
   }
 
   return [];
@@ -1344,6 +1393,15 @@ export function validateBulkImportRows({
         case "packageContents":
           normalizedValues.packageContents = toArray(rawValue);
           break;
+        case "kitContents":
+          normalizedValues.kitContents = toArray(rawValue);
+          break;
+        case "useCases":
+          normalizedValues.useCases = toArray(rawValue);
+          break;
+        case "reviewsArray":
+          normalizedValues.reviewsArray = toReviews(rawValue);
+          break;
         case "keywords":
           normalizedValues.keywords = toArray(rawValue);
           break;
@@ -1527,17 +1585,6 @@ export function validateBulkImportRows({
       }
     }
 
-    if (
-      (mapping.images && hasValue(normalizedValues.images)) ||
-      (mapping.gallery && hasValue(normalizedValues.gallery))
-    ) {
-      issues.push({
-        row: index + 2,
-        type: "warning",
-        message: "Image/gallery values were provided, but bulk product import does not write images. Verify media separately before importing.",
-      });
-    }
-
     if (!existingProduct && nameMatches.length > 1 && skuMatches.length === 0) {
       issues.push({
         row: index + 2,
@@ -1662,6 +1709,10 @@ function buildImportPayload({
             "compatibility",
             "applications",
             "packageContents",
+            "kitContents",
+            "useCases",
+            "reviewsArray",
+            "demoVideoUrl",
             "faqs",
             "tags",
             "skillLevel",
@@ -1679,6 +1730,7 @@ function buildImportPayload({
             "inStock",
             "currency",
             "imageAltText",
+            "images",
             "sku",
           ];
 
@@ -1689,6 +1741,9 @@ function buildImportPayload({
     "applications",
     "compatibility",
     "packageContents",
+    "kitContents",
+    "useCases",
+    "images",
     "keywords",
     ...EXTENDED_ARRAY_FIELDS,
   ]);
@@ -1736,6 +1791,10 @@ function buildImportPayload({
     ...filteredPayload,
     id: existingProduct?.id,
   } as Partial<AdminProduct> & Record<string, unknown>;
+
+  if (Array.isArray(payloadWithExisting.images) && payloadWithExisting.images.length > 0) {
+    payloadWithExisting.image = payloadWithExisting.images[0];
+  }
 
   if (!existingProduct) {
     payloadWithExisting.price = hasValue(payloadWithExisting.price)

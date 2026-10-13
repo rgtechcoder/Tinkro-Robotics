@@ -22,7 +22,7 @@ import { useToastContext } from "../components/Layout";
 import { SEO } from "../components/SEO";
 import { useCategories, useProductById, useProducts } from "../lib/publicDataService";
 import { absoluteUrl, normalizeSeoText, truncateSeoText } from "../lib/seo";
-import { getProductRouteParam } from "../lib/slug";
+import { getProductRouteParam, slugify } from "../lib/slug";
 import { useCartStore } from "../store/cartStore";
 import { useWishlistStore } from "../store/wishlistStore";
 import type { ProductReview } from "../types";
@@ -46,6 +46,26 @@ function getProductSeoDescription(product: AdminProduct, productName: string) {
 function getProductImageAlt(productName: string, index?: number) {
   const suffix = typeof index === "number" ? ` - view ${index + 1}` : "";
   return `${productName}${suffix} from Tinkro`;
+}
+
+function getProductExperienceCopy(product: AdminProduct) {
+  const text = `${product.name} ${product.category} ${product.subCategory ?? ""}`.toLowerCase();
+  if (text.includes("sensor")) {
+    return { title: "Sense the world.", accent: "Build something smarter.", cta: "Explore sensor projects" };
+  }
+  if (text.includes("display") || text.includes("oled") || text.includes("lcd")) {
+    return { title: "Make your project visible.", accent: "Bring data to life.", cta: "Explore display modules" };
+  }
+  if (text.includes("board") || text.includes("arduino") || text.includes("esp32") || text.includes("microcontroller")) {
+    return { title: "Power your next idea.", accent: "Build with confidence.", cta: "Explore development boards" };
+  }
+  if (text.includes("motor") || text.includes("servo") || text.includes("actuator")) {
+    return { title: "Give your idea motion.", accent: "Make it move.", cta: "Explore motion components" };
+  }
+  if (text.includes("kit") || text.includes("robot")) {
+    return { title: "Start building something real.", accent: "Learn by doing.", cta: "Explore robotics kits" };
+  }
+  return { title: "Small part.", accent: "Big possibilities.", cta: "Explore related products" };
 }
 
 function getProductFaqs(product: AdminProduct) {
@@ -958,7 +978,7 @@ function AnchorNav({
 }
 
 // ─── Storytelling Sections ────────────────────────────────────────────────────
-function StorySection({ overview }: { overview: string }) {
+function StorySection({ overview, title, accent }: { overview: string; title: string; accent: string }) {
   return (
     <section
       id="overview"
@@ -1091,35 +1111,91 @@ function StorySection({ overview }: { overview: string }) {
               <path d="M360 28 L360 180" stroke="#2E6DA4" strokeOpacity="0.06" strokeWidth="1" />
             </svg>
           </div>
-          {/* Decorative top accent */}
+          {/* Minimal animated circuit marker */}
           <div
             aria-hidden
-            style={{
-              position: "absolute",
-              top: -18,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 200,
-              height: 36,
-              borderRadius: 28,
-              background: "linear-gradient(90deg, #2E6DA4, #3BBFBF)",
-              boxShadow: "0 10px 30px rgba(46,109,164,0.14)",
-              border: "1px solid rgba(255,255,255,0.12)",
-            }}
-          />
+            className="absolute left-1/2 top-[-18px] flex h-9 -translate-x-1/2 items-center gap-3 rounded-full border border-cyan-200/20 bg-[#10233a] px-4 shadow-[0_10px_30px_rgba(20,184,166,0.16)]"
+          >
+            {[0, 1, 2].map((node) => (
+              <motion.span
+                key={node}
+                className={`h-2.5 w-2.5 rounded-full ${node === 1 ? "bg-orange-300" : "bg-cyan-300"}`}
+                animate={{ opacity: [0.35, 1, 0.35], scale: [0.8, 1.15, 0.8] }}
+                transition={{ duration: 2, delay: node * 0.25, repeat: Number.POSITIVE_INFINITY }}
+              />
+            ))}
+            <span className="h-px w-8 bg-cyan-200/40" />
+          </div>
 
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="mb-6">
-              <span className="text-sm font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.75)" }}>
-                Product Overview
-              </span>
-              <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl mt-4" style={{ color: "#ffffff" }}>
-                What makes this product unique
-              </h2>
+          <div className="relative grid items-center gap-10 lg:grid-cols-[1.25fr_0.75fr]">
+            <div>
+              <div className="mb-8">
+                <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-cyan-200">
+                  <motion.span
+                    className="h-2 w-2 rounded-full bg-cyan-300"
+                    animate={{ opacity: [0.35, 1, 0.35], scale: [0.8, 1.15, 0.8] }}
+                    transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+                  />
+                  Product overview
+                </span>
+                <h2 className="font-display font-bold text-3xl leading-tight text-white sm:text-4xl lg:text-5xl mt-5">
+                  {title} <span className="gradient-text">{accent}</span>
+                </h2>
+                <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/60 sm:text-lg">
+                  A clear look at what this product does, where it fits, and why it belongs in your next project.
+                </p>
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] p-6 sm:p-8"
+              >
+                <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-cyan-300/10 blur-2xl" aria-hidden />
+                <div className="relative flex gap-4">
+                  <span className="mt-1 text-2xl text-orange-300" aria-hidden>“</span>
+                  <p className="text-base leading-8 text-white/85 sm:text-lg">{overview}</p>
+                </div>
+              </motion.div>
             </div>
-            <p className="mx-auto max-w-3xl text-base font-body" style={{ color: "rgba(255,255,255,0.8)", lineHeight: 1.9, fontSize: 18 }}>
-              {overview}
-            </p>
+
+            <div className="relative min-h-[280px] overflow-hidden rounded-3xl border border-white/10 bg-[#0b1729]/80 p-6 sm:p-8">
+              <motion.div
+                aria-hidden
+                className="absolute -right-16 -top-16 h-48 w-48 rounded-full border border-cyan-300/20"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 18, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+              />
+              <motion.div
+                aria-hidden
+                className="absolute -right-7 -top-7 h-28 w-28 rounded-full border border-orange-300/20"
+                animate={{ rotate: -360 }}
+                transition={{ duration: 11, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+              />
+              <p className="relative text-xs font-bold uppercase tracking-[0.22em] text-white/40">Your build journey</p>
+              <div className="relative mt-7 space-y-5">
+                {[
+                  { icon: GraduationCap, title: "Learn", text: "Understand the basics faster." },
+                  { icon: Lightbulb, title: "Build", text: "Turn ideas into working projects." },
+                  { icon: Check, title: "Experiment", text: "Test, improve, and keep creating." },
+                ].map(({ icon: Icon, title, text }, index) => (
+                  <motion.div
+                    key={title}
+                    initial={{ opacity: 0, x: 16 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.45, delay: index * 0.12 }}
+                    className="flex items-center gap-3"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-300/10 text-cyan-200"><Icon className="h-5 w-5" /></span>
+                    <span><strong className="block text-sm text-white">{title}</strong><span className="text-xs text-white/50">{text}</span></span>
+                  </motion.div>
+                ))}
+              </div>
+              <div className="absolute bottom-5 right-6 text-4xl font-black tracking-tighter text-white/[0.04]">TINKRO</div>
+            </div>
           </div>
         </motion.div>
       </div>
@@ -1697,7 +1773,14 @@ function ProductDetailsHub({ product }: { product: AdminProduct }) {
 
   return (
     <>
-      <section className="py-16 lg:py-24 bg-background" aria-labelledby="product-at-a-glance">
+      <section
+        className="relative overflow-hidden py-16 lg:py-24"
+        style={{
+          background: "#f4f8fc",
+          backgroundImage: "radial-gradient(circle at 12% 0%, rgba(46,109,164,0.10), transparent 32%), radial-gradient(circle at 92% 18%, rgba(59,191,191,0.08), transparent 28%)",
+        }}
+        aria-labelledby="product-at-a-glance"
+      >
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           <div className="mb-10">
             <span className="text-sm font-bold uppercase tracking-widest text-primary">Make the right choice</span>
@@ -1710,26 +1793,26 @@ function ProductDetailsHub({ product }: { product: AdminProduct }) {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-            <div className="rounded-2xl border border-border bg-card p-6 lg:p-8">
+            <div className="rounded-2xl border border-[#d9e5ef] bg-white/85 p-6 shadow-[0_18px_45px_rgba(30,64,90,0.08)] backdrop-blur-sm lg:p-8">
               <div className="flex items-center gap-3 mb-6">
                 <Info className="h-5 w-5 text-primary" />
                 <h3 className="font-display font-bold text-xl text-foreground">At a glance</h3>
               </div>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {quickFacts.map((fact) => (
-                  <div key={fact.label} className="rounded-xl bg-muted/50 p-4">
+                  <div key={fact.label} className="rounded-xl border border-[#e2ebf2] bg-[#f7fafc] p-4">
                     <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{fact.label}</p>
                     <p className="mt-1 text-sm font-semibold text-foreground break-words">{fact.value}</p>
                   </div>
                 ))}
-                <div className="rounded-xl bg-muted/50 p-4">
+                <div className="rounded-xl border border-[#e2ebf2] bg-[#f7fafc] p-4">
                   <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Availability</p>
                   <p className="mt-1 text-sm font-semibold text-foreground">{product.stock > 0 ? "Ready to ship" : "Currently unavailable"}</p>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border bg-card p-6 lg:p-8">
+            <div className="rounded-2xl border border-[#d9e5ef] bg-white/85 p-6 shadow-[0_18px_45px_rgba(30,64,90,0.08)] backdrop-blur-sm lg:p-8">
               <div className="flex items-center gap-3 mb-6">
                 <GraduationCap className="h-5 w-5 text-primary" />
                 <h3 className="font-display font-bold text-xl text-foreground">Is this right for you?</h3>
@@ -2142,6 +2225,7 @@ export function ProductDetailPage() {
   const [anchorVisible, setAnchorVisible] = useState(false);
   const navigate = useNavigate();
   const heroImage = product?.images?.[0] ?? product?.image ?? "/placeholder.jpg";
+  const experienceCopy = product ? getProductExperienceCopy(product) : null;
 
   const overviewText = useMemo(
     () => (product?.overview?.trim() || product?.description?.trim() || ""),
@@ -2431,7 +2515,13 @@ export function ProductDetailPage() {
         selectedVariantId={selectedVariantId}
         onSelectVariant={setSelectedVariantId}
       />
-      {overviewText && <StorySection overview={overviewText} />}
+      {overviewText && experienceCopy && (
+        <StorySection
+          overview={overviewText}
+          title={experienceCopy.title}
+          accent={experienceCopy.accent}
+        />
+      )}
       <ProductDetailsHub product={product} />
       {videoEmbedUrl && <VideoSection videoUrl={videoEmbedUrl} />}
       <KitContentsSection product={product} />
@@ -2448,12 +2538,11 @@ export function ProductDetailPage() {
         <div className="max-w-3xl mx-auto px-6">
           <Reveal>
             <h2 className="font-display font-bold text-4xl lg:text-5xl text-white mb-4">
-              Start your robotics journey{" "}
-              <span className="gradient-text-orange">today.</span>
+              Keep building{" "}
+              <span className="gradient-text-orange">what you imagine.</span>
             </h2>
             <p className="text-white/60 text-lg mb-8 font-body">
-              Join 10,000+ students, teachers, and makers who've already built
-              with Tinkro.
+              Find more products that fit your project and keep your next build moving.
             </p>
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -2461,9 +2550,14 @@ export function ProductDetailPage() {
               type="button"
               className="inline-flex items-center gap-2 px-10 py-4 rounded-2xl font-display font-bold text-white text-lg shadow-glow-orange bg-[#F47B20]"
               data-ocid="final-cta-btn"
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              onClick={() =>
+                navigate({
+                  to: "/products",
+                  search: { category: slugify(product.category || "") },
+                })
+              }
             >
-              Get the Kit — ₹{product.price.toLocaleString()} →
+              {experienceCopy?.cta ?? "Explore related products"} →
             </motion.button>
             <p className="text-white/30 text-sm mt-4">
               Free shipping* · STEM Certified

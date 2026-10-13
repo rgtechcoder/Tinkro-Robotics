@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Carousel,
   CarouselContent,
@@ -88,9 +87,9 @@ function ProductImageCarousel({
       </Carousel>
       {/* Dots indicator */}
       <div className="flex justify-center gap-1 mt-2">
-        {images.map((_, idx) => (
+        {images.map((img, idx) => (
           <button
-            key={idx}
+            key={img}
             type="button"
             aria-label={`View image ${idx + 1}`}
             onClick={() => api?.scrollTo?.(idx)}
@@ -104,17 +103,35 @@ function ProductImageCarousel({
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import {
+  Activity,
+  ArrowUpRight,
+  BookOpen,
+  Bot,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  CircuitBoard,
+  Cpu,
+  Gauge,
   Heart,
+  IndianRupee,
+  ShieldCheck,
   ShoppingCart,
   SlidersHorizontal,
+  Sparkles,
   Star,
+  Truck,
   X,
+  Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useToastContext } from "../components/Layout";
-import { getProductRouteParam } from "../lib/slug";
+import {
+  searchProductsInList,
+  useCategories,
+  useProducts,
+} from "../lib/publicDataService";
 import {
   SITE_NAME,
   SITE_URL,
@@ -124,11 +141,7 @@ import {
   upsertLinkTag,
   upsertMetaTag,
 } from "../lib/seo";
-import {
-  searchProductsInList,
-  useCategories,
-  useProducts,
-} from "../lib/publicDataService";
+import { getProductRouteParam } from "../lib/slug";
 import { useCartStore } from "../store/cartStore";
 import { useWishlistStore } from "../store/wishlistStore";
 import type { AdminProduct } from "../types/admin";
@@ -142,20 +155,37 @@ const SORT_OPTIONS = [
   { value: "rating", label: "Top Rated" },
 ];
 
-const SKELETON_KEYS = [
-  "sk-a",
-  "sk-b",
-  "sk-c",
-  "sk-d",
-  "sk-e",
-  "sk-f",
-  "sk-g",
-  "sk-h",
-  "sk-i",
-  "sk-j",
-  "sk-k",
-  "sk-l",
+const SHOP_BENEFITS = [
+  {
+    title: "Best Price",
+    eyebrow: "SMART VALUE",
+    description: "Fair prices for every project and budget.",
+    icon: IndianRupee,
+    accent: "text-orange-600 bg-gradient-to-br from-orange-100 to-amber-50",
+    gradient: "from-orange-50 via-white to-amber-50",
+    glow: "bg-orange-400/20",
+  },
+  {
+    title: "Quality Checked",
+    eyebrow: "BUILT TO TRUST",
+    description: "Reliable products selected for makers.",
+    icon: ShieldCheck,
+    accent: "text-primary bg-gradient-to-br from-blue-100 to-cyan-50",
+    gradient: "from-blue-50 via-white to-cyan-50",
+    glow: "bg-blue-400/20",
+  },
+  {
+    title: "Fast Dispatch",
+    eyebrow: "READY TO SHIP",
+    description: "Packed carefully and shipped quickly.",
+    icon: Truck,
+    accent: "text-teal-600 bg-gradient-to-br from-teal-100 to-emerald-50",
+    gradient: "from-teal-50 via-white to-emerald-50",
+    glow: "bg-teal-400/20",
+  },
 ];
+
+const SKELETON_KEYS = Array.from({ length: 24 }, (_, index) => `sk-${index}`);
 
 // ─── StarRating ───────────────────────────────────────────────────────────────
 
@@ -373,8 +403,8 @@ export function ProductCard({
 
 function SkeletonGrid() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-      {SKELETON_KEYS.map((key) => (
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+      {SKELETON_KEYS.slice(0, 18).map((key) => (
         <div
           key={key}
           className="glass-card rounded-2xl overflow-hidden flex flex-col"
@@ -558,7 +588,7 @@ export function FilterPanelContent({
     <div className="flex flex-col gap-6">
       {/* Category */}
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Category
         </h3>
         <div className="flex flex-col gap-1">
@@ -569,7 +599,7 @@ export function FilterPanelContent({
             className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-smooth ${
               selectedCategoryId === "all"
                 ? "gradient-primary text-white shadow-glow-primary"
-                : "text-foreground hover:bg-muted"
+                  : "text-foreground hover:bg-muted"
             }`}
           >
             All
@@ -594,7 +624,7 @@ export function FilterPanelContent({
 
       {/* Price range */}
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Price Range (₹)
         </h3>
         <div className="flex gap-2">
@@ -655,17 +685,6 @@ export function ProductsPage() {
       }, 200);
     }
   }, []);
-  // Scroll to anchor if hash is present
-  useEffect(() => {
-    if (window.location.hash === "#all-products") {
-      const el = document.getElementById("all-products");
-      if (el) {
-        setTimeout(() => {
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
-        }, 100);
-      }
-    }
-  }, []);
   const search = useSearch({ from: "/products" });
   const categorySlugFromUrl = search.category ?? null;
   const searchTerm = (search.q ?? "").trim();
@@ -675,6 +694,7 @@ export function ProductsPage() {
   const [maxPrice, setMaxPrice] = useState("");
   const [sortBy, setSortBy] = useState("relevance");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { addToast } = useToastContext();
   const addItem = useCartStore((s) => s.addItem);
@@ -801,6 +821,36 @@ export function ProductsPage() {
 
     return result;
   }, [selectedCategoryId, minPrice, maxPrice, sortBy, products, searchTerm]);
+
+  // Keep each desktop page to six rows with the fixed 3-column sidebar layout.
+  const pageSize = 18;
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const paginationResetKey = `${selectedCategoryId}|${minPrice}|${maxPrice}|${sortBy}|${searchTerm}`;
+
+  useEffect(() => {
+    void paginationResetKey;
+    setCurrentPage(1);
+  }, [paginationResetKey]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [currentPage, filteredProducts, pageSize]);
+
+  const goToPage = useCallback((page: number) => {
+    const nextPage = Math.min(Math.max(page, 1), totalPages);
+    setCurrentPage(nextPage);
+    requestAnimationFrame(() => {
+      document.getElementById("all-products")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, [totalPages]);
 
   // Derive display name for the active category chip
   const selectedCategoryOption = useMemo(() => {
@@ -986,15 +1036,37 @@ export function ProductsPage() {
   };
 
   return (
-    <>
+    <div className="relative isolate min-h-screen overflow-clip bg-slate-50/70">
+      {/* Soft robotics-inspired canvas behind the shopping content */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 opacity-70"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(46,109,164,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(46,109,164,0.045) 1px, transparent 1px), radial-gradient(circle at 15% 18%, rgba(59,191,191,0.13), transparent 24%), radial-gradient(circle at 84% 58%, rgba(244,123,32,0.09), transparent 25%)",
+          backgroundSize: "44px 44px, 44px 44px, 100% 100%, 100% 100%",
+        }}
+      />
+      <div aria-hidden="true" className="robotics-scan-line pointer-events-none absolute left-0 right-0 top-0 z-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
+      <div aria-hidden="true" className="pointer-events-none absolute left-[7%] top-[32rem] -z-10 h-44 w-44 rounded-full border border-primary/10 opacity-70 motion-safe:animate-[spin_28s_linear_infinite]">
+        <span className="absolute -right-1 top-1/2 h-2 w-2 rounded-full bg-primary shadow-[0_0_14px_4px_rgba(46,109,164,0.35)]" />
+        <span className="absolute left-1/2 -top-1 h-2 w-2 rounded-full bg-accent shadow-[0_0_14px_4px_rgba(59,191,191,0.35)]" />
+      </div>
+      <div aria-hidden="true" className="pointer-events-none absolute right-[8%] top-[58rem] -z-10 h-56 w-56 rounded-full border border-orange-400/10 opacity-60 motion-safe:animate-[spin_34s_linear_infinite_reverse]">
+        <span className="absolute -left-1 top-1/2 h-2 w-2 rounded-full bg-orange-400 shadow-[0_0_14px_4px_rgba(244,123,32,0.3)]" />
+      </div>
+
+      <div aria-hidden="true" className="pointer-events-none absolute left-[12%] top-[43rem] -z-10 hidden h-px w-32 bg-gradient-to-r from-transparent via-primary/25 to-transparent lg:block" />
+      <div aria-hidden="true" className="pointer-events-none absolute right-[16%] top-[76rem] -z-10 hidden h-px w-40 bg-gradient-to-r from-transparent via-accent/25 to-transparent lg:block" />
+
       {/* ── Hero Banner ─────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden pt-28 pb-16">
+      <section className="relative overflow-hidden pt-24 pb-10 lg:pt-20 lg:pb-12">
         {/* Premium gradient background */}
         <div
           className="absolute inset-0 -z-10"
           style={{
             background:
-              "linear-gradient(120deg, #f8fafc 0%, #e0e7ef 40%, #f5f7fa 100%)",
+              "linear-gradient(120deg, #f8fafc 0%, #e8f3fa 45%, #fff7ed 100%)",
           }}
         />
         {/* Soft color overlays for depth */}
@@ -1021,24 +1093,137 @@ export function ProductsPage() {
           }}
         />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="text-center"
-          >
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider uppercase bg-primary/10 border border-primary/20 text-primary mb-5">
-              🛒 Shop All Products
-            </span>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-white leading-tight mb-5">
-              <span className="text-gray-900 drop-shadow-[0_2px_8px_rgba(0,0,0,0.12)]">Explore</span> <span className="gradient-text-orange drop-shadow-[0_2px_8px_rgba(0,0,0,0.12)]">All Products</span>
-            </h1>
-            <p className="text-lg text-white/70 max-w-2xl mx-auto leading-relaxed">
-              Premium robotics kits, sensors, development boards, and components
-              — curated for students, makers, and schools across India.
-            </p>
-          </motion.div>
+        {/* Animated circuit traces: a quiet robotics signal running behind the hero */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 hidden lg:block">
+          <svg viewBox="0 0 1200 430" className="h-full w-full" fill="none" preserveAspectRatio="none">
+            <title>Animated Tinkro robotics circuit network</title>
+            <defs>
+              <linearGradient id="circuit-blue" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stopColor="#2E6DA4" stopOpacity="0" />
+                <stop offset="0.45" stopColor="#2E6DA4" stopOpacity="0.45" />
+                <stop offset="1" stopColor="#3BBFBF" stopOpacity="0.05" />
+              </linearGradient>
+              <linearGradient id="circuit-orange" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stopColor="#F47B20" stopOpacity="0.05" />
+                <stop offset="0.55" stopColor="#F47B20" stopOpacity="0.4" />
+                <stop offset="1" stopColor="#F5A623" stopOpacity="0" />
+              </linearGradient>
+              <filter id="circuit-glow">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+            </defs>
+            <path d="M0 112H168L220 62H390L430 102H610" stroke="url(#circuit-blue)" strokeWidth="1.5" />
+            <path d="M1200 286H1030L980 336H820L776 292H640" stroke="url(#circuit-orange)" strokeWidth="1.5" />
+            <path d="M0 350H112L158 304H280" stroke="url(#circuit-orange)" strokeWidth="1" opacity="0.55" />
+            <path d="M1200 92H1105L1060 137H930" stroke="url(#circuit-blue)" strokeWidth="1" opacity="0.55" />
+            <motion.path
+              d="M0 112H168L220 62H390L430 102H610"
+              stroke="#3BBFBF"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray="2 180"
+              filter="url(#circuit-glow)"
+              animate={{ strokeDashoffset: [0, -360] }}
+              transition={{ duration: 5, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+            />
+            <motion.path
+              d="M1200 286H1030L980 336H820L776 292H640"
+              stroke="#F47B20"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray="2 160"
+              filter="url(#circuit-glow)"
+              animate={{ strokeDashoffset: [0, 320] }}
+              transition={{ duration: 6, repeat: Number.POSITIVE_INFINITY, ease: "linear", delay: 1 }}
+            />
+            {[
+              { cx: 220, cy: 62, color: "#3BBFBF" },
+              { cx: 430, cy: 102, color: "#2E6DA4" },
+              { cx: 980, cy: 336, color: "#F47B20" },
+              { cx: 776, cy: 292, color: "#F5A623" },
+            ].map((node) => (
+              <motion.circle
+                key={`${node.cx}-${node.cy}`}
+                cx={node.cx}
+                cy={node.cy}
+                r="4"
+                fill={node.color}
+                filter="url(#circuit-glow)"
+                animate={{ opacity: [0.35, 1, 0.35], r: [3, 5, 3] }}
+                transition={{ duration: 2.2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut", delay: node.cx / 500 }}
+              />
+            ))}
+          </svg>
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+              className="text-center lg:text-left"
+            >
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider uppercase bg-primary/10 border border-primary/20 text-primary mb-4">
+                🛒 Shop All Products
+              </span>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-foreground leading-[1.05] mb-4">
+                Explore <span className="gradient-text-orange">All Products</span>
+              </h1>
+              <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0 leading-relaxed">
+                Premium robotics kits, sensors, development boards, and components
+                — curated for students, makers, and schools across India.
+              </p>
+              <div className="mt-6 flex flex-wrap justify-center lg:justify-start gap-3 text-xs font-semibold text-muted-foreground">
+                <span className="rounded-full bg-white/80 px-3 py-2 shadow-sm">✓ Genuine products</span>
+                <span className="rounded-full bg-white/80 px-3 py-2 shadow-sm">⚡ Fast dispatch</span>
+                <span className="rounded-full bg-white/80 px-3 py-2 shadow-sm">₹ Best value</span>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+              className="relative hidden min-h-[210px] sm:block"
+              aria-label="Why shop with Tinkro"
+            >
+              <div className="absolute inset-x-8 top-6 h-40 rounded-[2rem] bg-primary/10 blur-2xl" />
+              <div className="relative grid gap-3 sm:grid-cols-3 lg:gap-4">
+                {SHOP_BENEFITS.map((benefit, index) => {
+                  const Icon = benefit.icon;
+                  return (
+                    <motion.div
+                      key={benefit.title}
+                      initial={{ opacity: 0, y: 18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 + index * 0.1, duration: 0.45 }}
+                      className={`group relative min-h-[190px] overflow-hidden rounded-[1.35rem] border border-white/90 bg-gradient-to-br ${benefit.gradient} p-5 shadow-[0_14px_30px_rgba(15,23,42,0.10)] backdrop-blur transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_38px_rgba(15,23,42,0.16)]`}
+                    >
+                      <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(46,109,164,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(46,109,164,0.06)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:linear-gradient(to_bottom,black,transparent_75%)]" />
+                      <div className={`absolute -right-8 -top-8 h-24 w-24 rounded-full blur-2xl transition-transform duration-500 group-hover:scale-150 ${benefit.glow}`} />
+                      <div className="absolute bottom-5 right-5 h-1.5 w-1.5 rounded-full bg-primary/35 shadow-[0_0_12px_3px_rgba(46,109,164,0.2)] motion-safe:animate-pulse" />
+                      <div className="relative flex items-start justify-between">
+                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl border border-white/80 shadow-sm ${benefit.accent}`}>
+                          <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-current/20">
+                            <Icon size={21} strokeWidth={2.2} />
+                          </div>
+                        </div>
+                        <span className="rounded-full border border-black/5 bg-white/60 px-2 py-1 text-[9px] font-bold tracking-[0.14em] text-muted-foreground">
+                          {benefit.eyebrow}
+                        </span>
+                      </div>
+                      <div className="relative mt-5 h-px w-10 bg-foreground/15 transition-all duration-300 group-hover:w-16" />
+                      <h3 className="relative mt-4 text-base font-bold tracking-tight text-foreground">{benefit.title}</h3>
+                      <p className="relative mt-2 text-xs leading-relaxed text-muted-foreground">{benefit.description}</p>
+                      <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-primary/0 via-primary/30 to-orange-400/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
@@ -1059,6 +1244,203 @@ export function ProductsPage() {
               </div>
               <FilterPanelContent {...filterPanelProps} />
             </div>
+
+              <div className="hidden relative mt-4 overflow-hidden rounded-2xl border border-slate-700/60 bg-[#081a2c] p-4 text-white shadow-[0_18px_45px_rgba(8,26,44,0.24)]">
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 opacity-25"
+                  style={{
+                    backgroundImage: "linear-gradient(rgba(59,191,191,0.28) 1px, transparent 1px), linear-gradient(90deg, rgba(59,191,191,0.28) 1px, transparent 1px)",
+                    backgroundSize: "24px 24px",
+                  }}
+                />
+                <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-accent/15 blur-3xl" />
+                <div className="relative z-10 flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 text-accent shadow-[0_0_18px_rgba(59,191,191,0.16)]">
+                      <BookOpen size={17} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white">Robotics Lab Notes</p>
+                      <p className="text-[10px] text-slate-400">Learn. Build. Explore.</p>
+                    </div>
+                  </div>
+                  <span className="rounded-full border border-accent/25 bg-accent/10 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-accent">Guides</span>
+                </div>
+                <div className="relative z-10 mt-5 space-y-3">
+                  {[
+                    "How to choose the right sensor",
+                    "Arduino vs ESP32: where to start?",
+                    "5 tips for a cleaner robot build",
+                  ].map((title, index) => (
+                    <Link
+                      key={title}
+                      to="/blog"
+                      className="group block rounded-xl border border-white/10 bg-white/5 p-3 transition-all hover:-translate-y-0.5 hover:border-accent/30 hover:bg-accent/10 hover:shadow-[0_8px_22px_rgba(59,191,191,0.12)]"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent text-[10px] font-bold text-white">0{index + 1}</span>
+                        <ArrowUpRight size={14} className="text-slate-500 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent" />
+                      </div>
+                      <p className="mt-3 text-xs font-bold leading-relaxed text-white">{title}</p>
+                      <p className="mt-1 text-[10px] text-slate-500">Practical tips for your next project</p>
+                    </Link>
+                  ))}
+                </div>
+                <div className="relative z-10 my-5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                  <span className="h-px flex-1 bg-accent/20" />
+                  <Cpu size={14} className="text-accent" />
+                  <span className="h-px flex-1 bg-accent/20" />
+                </div>
+                <Link
+                  to="/blog"
+                  className="relative z-10 flex items-center justify-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-3 py-2.5 text-[11px] font-bold text-accent transition-all hover:-translate-y-0.5 hover:bg-accent/20"
+                >
+                  Explore all robotics guides <ArrowUpRight size={14} />
+                </Link>
+              </div>
+
+              <div className="hidden relative mt-4 overflow-hidden rounded-2xl border border-slate-700/60 bg-[#081a2c] p-5 text-white shadow-[0_18px_45px_rgba(8,26,44,0.28)]">
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 opacity-25"
+                  style={{
+                    backgroundImage: "linear-gradient(rgba(59,191,191,0.28) 1px, transparent 1px), linear-gradient(90deg, rgba(59,191,191,0.28) 1px, transparent 1px)",
+                    backgroundSize: "24px 24px",
+                  }}
+                />
+                <div className="absolute -right-12 top-12 h-40 w-40 rounded-full bg-accent/20 blur-3xl" />
+                <div className="absolute -bottom-10 -left-10 h-36 w-36 rounded-full bg-orange-500/15 blur-3xl" />
+                <motion.div
+                  aria-hidden="true"
+                  className="absolute right-[-34px] top-20 h-44 w-44 rounded-full border border-accent/30"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 18, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                >
+                  <span className="absolute left-1/2 -top-1.5 h-3 w-3 rounded-full bg-accent shadow-[0_0_16px_5px_rgba(59,191,191,0.5)]" />
+                </motion.div>
+
+                <div className="relative z-10 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 text-accent">
+                      <Bot size={18} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Tinkro Build Lab</p>
+                      <p className="text-[10px] text-slate-400">Your next idea starts here</p>
+                    </div>
+                  </div>
+                  <span className="flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-emerald-300">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 motion-safe:animate-pulse" /> Online
+                  </span>
+                </div>
+
+                <div className="relative z-10 mt-10">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">BUILD PROTOCOL / 01</p>
+                  <h3 className="mt-3 text-2xl font-bold leading-tight tracking-tight">From component<br /><span className="bg-gradient-to-r from-accent to-orange-300 bg-clip-text text-transparent">to creation.</span></h3>
+                  <p className="mt-3 text-xs leading-relaxed text-slate-400">Pick the right parts, connect your ideas, and make something that moves.</p>
+                </div>
+
+                <div className="relative z-10 mt-9 space-y-5">
+                  <div className="absolute left-[15px] top-4 h-[calc(100%-32px)] w-px bg-gradient-to-b from-accent via-primary to-orange-400/20" />
+                  {[
+                    { icon: CircuitBoard, title: "Choose your brain", detail: "Boards & controllers" },
+                    { icon: Gauge, title: "Add perception", detail: "Sensors & modules" },
+                    { icon: Zap, title: "Power the idea", detail: "Motors & accessories" },
+                  ].map((stage, index) => {
+                    const StageIcon = stage.icon;
+                    return (
+                      <motion.div
+                        key={stage.title}
+                        className="relative flex items-center gap-3"
+                        initial={{ opacity: 0.55, x: -4 }}
+                        animate={{ opacity: [0.55, 1, 0.55], x: [-4, 0, -4] }}
+                        transition={{ duration: 3, delay: index * 0.7, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+                      >
+                        <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-xl border border-accent/40 bg-[#0b2940] text-accent shadow-[0_0_14px_rgba(59,191,191,0.16)]">
+                          <StageIcon size={15} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-white">{stage.title}</p>
+                          <p className="mt-0.5 text-[10px] text-slate-500">{stage.detail}</p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+
+                <div className="relative z-10 mt-10 rounded-xl border border-white/10 bg-white/5 p-3">
+                  <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                    <span>Build energy</span><span className="text-accent">72%</span>
+                  </div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-700">
+                    <motion.div
+                      className="h-full rounded-full bg-gradient-to-r from-primary via-accent to-orange-400"
+                      animate={{ width: ["58%", "72%", "64%", "72%"] }}
+                      transition={{ duration: 4, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+                    />
+                  </div>
+                </div>
+                <Link
+                  to="/blog"
+                  className="relative z-10 mt-5 flex items-center justify-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-3 py-2.5 text-[11px] font-bold text-accent transition-all hover:bg-accent/20"
+                >
+                  Open build logs <ArrowUpRight size={14} />
+                </Link>
+              </div>
+
+              <div className="hidden relative mt-4 overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-[#0d3150] via-[#0a2339] to-[#081a2c] p-5 text-white shadow-[0_18px_45px_rgba(8,26,44,0.24)]">
+                <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(rgba(59,191,191,0.7)_1px,transparent_1px)] [background-size:18px_18px]" />
+                <motion.div
+                  aria-hidden="true"
+                  className="absolute right-[-25px] top-20 h-44 w-44 rounded-full border border-accent/25"
+                  animate={{ scale: [0.82, 1, 0.82], opacity: [0.3, 0.7, 0.3] }}
+                  transition={{ duration: 4, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+                >
+                  <span className="absolute left-1/2 top-1/2 h-px w-1/2 origin-left bg-gradient-to-r from-accent to-transparent" />
+                  <span className="absolute right-1/2 top-1/2 h-2 w-2 rounded-full bg-accent shadow-[0_0_15px_5px_rgba(59,191,191,0.45)]" />
+                </motion.div>
+                <div className="relative z-10 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-orange-300/30 bg-orange-300/10 text-orange-300">
+                      <Sparkles size={17} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-orange-200">Project Signal</p>
+                      <p className="text-[10px] text-slate-400">Ideas detected nearby</p>
+                    </div>
+                  </div>
+                  <Activity size={17} className="text-accent motion-safe:animate-pulse" />
+                </div>
+                <div className="relative z-10 mt-10 max-w-[170px]">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">STARTER IDEAS / 03</p>
+                  <h3 className="mt-3 text-xl font-bold leading-tight">What will you<br /><span className="text-accent">build next?</span></h3>
+                  <p className="mt-3 text-xs leading-relaxed text-slate-400">A small idea today can become a working robot tomorrow.</p>
+                </div>
+                <div className="relative z-10 mt-8 space-y-2.5">
+                  {[
+                    ["01", "Smart home", "Sense & automate"],
+                    ["02", "Line follower", "Move & navigate"],
+                    ["03", "Weather station", "Measure & learn"],
+                  ].map(([number, title, detail]) => (
+                    <Link
+                      key={number}
+                      to="/blog"
+                      className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3 transition-all hover:-translate-y-0.5 hover:border-accent/30 hover:bg-accent/10"
+                    >
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-[9px] font-bold text-accent">{number}</span>
+                      <span className="min-w-0 flex-1"><span className="block text-xs font-bold text-white">{title}</span><span className="mt-0.5 block text-[10px] text-slate-500">{detail}</span></span>
+                      <ArrowUpRight size={14} className="text-slate-500 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent" />
+                    </Link>
+                  ))}
+                </div>
+                <Link
+                  to="/blog"
+                  className="relative z-10 mt-8 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-accent px-3 py-2.5 text-[11px] font-bold text-white shadow-glow-accent transition-all hover:-translate-y-0.5"
+                >
+                  Discover ideas <ArrowUpRight size={14} />
+                </Link>
+              </div>
           </aside>
 
           {/* ── Right column ── */}
@@ -1193,6 +1575,30 @@ export function ProductsPage() {
               )}
             </AnimatePresence>
 
+            {/* Mobile-first discovery card: keeps the robotics content available without the desktop sidebar. */}
+            <div className="mb-6 overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-[#0d3150] via-[#0a2339] to-[#081a2c] p-4 text-white shadow-[0_14px_32px_rgba(8,26,44,0.18)] lg:hidden">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 text-accent">
+                    <Bot size={18} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-white">Tinkro Build Lab</p>
+                    <p className="text-[10px] text-slate-400">Build something that moves.</p>
+                  </div>
+                </div>
+                <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 motion-safe:animate-pulse" /> Live
+                </span>
+              </div>
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <p className="max-w-[15rem] text-xs leading-relaxed text-slate-400">Explore boards, sensors and motors for your next robotics project.</p>
+                <Link to="/blog" className="shrink-0 rounded-xl bg-gradient-to-r from-primary to-accent px-3 py-2 text-[10px] font-bold text-white shadow-glow-accent">
+                  Explore <ArrowUpRight size={13} className="ml-1 inline" />
+                </Link>
+              </div>
+            </div>
+
             {/* Active filter chips */}
             {activeFilterCount > 0 && (
               <div className="flex flex-wrap gap-2 mb-5">
@@ -1248,10 +1654,10 @@ export function ProductsPage() {
                   <EmptyState key="empty" onReset={resetFilters} />
                 ) : (
                   <motion.div
-                    key={`grid-${selectedCategoryId}-${minPrice}-${maxPrice}-${sortBy}`}
-                    className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"
+                    key={`grid-${selectedCategoryId}-${minPrice}-${maxPrice}-${sortBy}-${currentPage}`}
+                    className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3"
                   >
-                    {filteredProducts.map((product, index) => (
+                    {paginatedProducts.map((product, index) => (
                       <ProductCard
                         key={product.id}
                         product={product}
@@ -1264,9 +1670,67 @@ export function ProductsPage() {
                 )}
               </AnimatePresence>
             )}
+
+            {!productsLoading && filteredProducts.length > 0 && totalPages > 1 && (
+              <div className="mt-10 overflow-hidden rounded-2xl border border-white/80 bg-white/70 p-4 shadow-[0_12px_30px_rgba(15,23,42,0.08)] backdrop-blur-md sm:p-5">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-foreground">Continue exploring</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Showing {((currentPage - 1) * pageSize) + 1}–{Math.min(currentPage * pageSize, filteredProducts.length)} of {filteredProducts.length} products
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-full bg-primary/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                    Page {currentPage} <span className="text-muted-foreground">/ {totalPages}</span>
+                  </div>
+                </div>
+                <div className="mb-5 h-1 overflow-hidden rounded-full bg-slate-200/80">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-primary via-accent to-orange-400"
+                    initial={false}
+                    animate={{ width: `${(currentPage / totalPages) * 100}%` }}
+                    transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                  />
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="flex h-10 items-center gap-1.5 rounded-xl border border-border bg-white px-3 text-xs font-semibold text-foreground transition-all hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label="Previous products page"
+                  >
+                    <ChevronLeft size={15} /> Previous
+                  </button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+                      <button
+                        key={page}
+                        type="button"
+                        onClick={() => goToPage(page)}
+                        aria-label={`Go to products page ${page}`}
+                        aria-current={currentPage === page ? "page" : undefined}
+                        className={`h-10 min-w-10 rounded-xl px-3 text-xs font-bold transition-all ${currentPage === page ? "gradient-primary text-white shadow-glow-primary" : "border border-transparent text-muted-foreground hover:border-primary/20 hover:bg-primary/5 hover:text-primary"}`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="flex h-10 items-center gap-1.5 rounded-xl gradient-primary px-3 text-xs font-semibold text-white shadow-glow-primary transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+                    aria-label="Next products page"
+                  >
+                    Next <ChevronRight size={15} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

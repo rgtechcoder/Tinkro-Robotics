@@ -564,7 +564,7 @@
 
 // Firebase ENABLED version — real data from Firestore
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   collection,
   getDocs,
@@ -752,10 +752,6 @@ function createCollectionStore<T>(collectionName: string) {
       }
       return () => {
         store.listeners.delete(setState);
-        if (store.listeners.size === 0 && store.subscription) {
-          store.subscription();
-          store.subscription = null;
-        }
       };
     }, []);
 
@@ -820,35 +816,13 @@ export function useFeaturedProducts(limitCount = 12): {
   loading: boolean;
   error: string | null;
 } {
-  const [products, setProducts] = useState<AdminProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadFeatured() {
-      setLoading(true);
-      setError(null);
-      try {
-        const featured = await fetchFeaturedProductsCached(limitCount);
-        if (!active) return;
-        setProducts(featured);
-      } catch (err) {
-        if (!active) return;
-        setError("Failed to load featured products");
-      } finally {
-        if (!active) return;
-        setLoading(false);
-      }
-    }
-
-    void loadFeatured();
-    return () => {
-      active = false;
-    };
-  }, [limitCount]);
-
+  const { data, loading, error } = productsStore.useCollection();
+  const activeProducts = data.filter(isProductActive);
+  const markedFeatured = activeProducts.filter((product) => product.isBestSeller);
+  const products = (markedFeatured.length > 0 ? markedFeatured : activeProducts).slice(
+    0,
+    limitCount,
+  );
   return { products, loading, error };
 }
 
@@ -1035,14 +1009,18 @@ export function useProducts(): {
 } {
   const { data, loading, error } = productsStore.useCollection();
   // Sort products by 'order' (ascending) then by name. If order absent, treat as 99999 so explicit orders float to top.
-  const products = [...data]
-    .filter((product) => isProductActive(product))
-    .sort((a, b) => {
-      const aOrder = Number(a.order ?? 99999);
-      const bOrder = Number(b.order ?? 99999);
-      if (aOrder !== bOrder) return aOrder - bOrder;
-      return a.name.localeCompare(b.name);
-    });
+  const products = useMemo(
+    () =>
+      [...data]
+        .filter((product) => isProductActive(product))
+        .sort((a, b) => {
+          const aOrder = Number(a.order ?? 99999);
+          const bOrder = Number(b.order ?? 99999);
+          if (aOrder !== bOrder) return aOrder - bOrder;
+          return a.name.localeCompare(b.name);
+        }),
+    [data],
+  );
   return { products, loading, error };
 }
 

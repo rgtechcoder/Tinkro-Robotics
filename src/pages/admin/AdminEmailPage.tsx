@@ -243,7 +243,7 @@ export default function AdminEmailPage() {
   // ─── Send test (disabled) ─────────────────────────────────────────────────────
   function handleSendTest() {
     toast.info(
-      "Email sending is not enabled. Templates will activate when email is turned on.",
+      "Template test emails are not connected. Order alerts are sent by Firebase Functions.",
     );
   }
 
@@ -251,16 +251,9 @@ export default function AdminEmailPage() {
   async function handleSaveApiConfig() {
     setApiConfig((prev) => ({ ...prev, saving: true }));
     try {
-      // Firebase disabled — save to localStorage as temporary stub
-      localStorage.setItem(
-        "tinkro_email_config",
-        JSON.stringify({
-          fromEmail: apiConfig.fromEmail,
-          fromName: apiConfig.fromName,
-          updatedAt: new Date().toISOString(),
-        }),
+      toast.info(
+        "Email credentials are server-managed. Configure RESEND_API_KEY, RESEND_FROM_EMAIL, and ORDER_NOTIFY_EMAIL as Firebase Functions secrets.",
       );
-      toast.success("Email configuration saved. Contact support to activate.");
     } catch {
       toast.error("Failed to save email configuration");
     } finally {
@@ -301,14 +294,14 @@ export default function AdminEmailPage() {
               className="text-sm font-semibold"
               style={{ color: "oklch(0.80 0.10 240)" }}
             >
-              Email automation is ready to activate
+              Order email delivery is managed by Firebase Functions
             </p>
             <p
               className="text-xs mt-0.5"
               style={{ color: "oklch(0.55 0.05 243)" }}
             >
-              Templates are stored and will be sent automatically when email is
-              enabled. Contact support to enable email sending.
+              New-order alerts use Resend on the server. Configure the Firebase
+              Functions secrets shown below; browser settings cannot activate email delivery.
             </p>
           </div>
         </motion.div>
@@ -716,8 +709,7 @@ export default function AdminEmailPage() {
 
           <div className="flex items-center justify-between">
             <p className="text-xs" style={{ color: "oklch(0.40 0.03 243)" }}>
-              Note: Actual activation requires platform-level email feature
-              flag. Contact support to enable.
+              Use Firebase Functions secrets for delivery credentials; never expose a Resend API key in the browser.
             </p>
             <button
               type="button"

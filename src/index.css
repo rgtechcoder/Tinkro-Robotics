@@ -362,6 +362,26 @@
   }
 }
 
+/* Slow full-page scan used by the products lab/circuit background. */
+@keyframes roboticsScan {
+  0% {
+    transform: translateY(-5vh);
+    opacity: 0;
+  }
+  12%,
+  72% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateY(185vh);
+    opacity: 0;
+  }
+}
+
+.robotics-scan-line {
+  animation: roboticsScan 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 /* ─── Shop Now ripple glow burst ──────────────────────────────────────────── */
 @keyframes rippleGlow {
   0% {
@@ -443,5 +463,9 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .robotics-scan-line {
+    animation: none !important;
+    opacity: 0 !important;
   }
 }

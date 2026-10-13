@@ -10,6 +10,7 @@ interface CartState {
     product: Pick<
       CartItem,
       | "productId"
+      | "sku"
       | "name"
       | "image"
       | "price"

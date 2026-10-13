@@ -19,9 +19,6 @@ interface LoginForm {
   password: string;
 }
 
-const ADMIN_EMAILS = ["tinkrokits@gmail.com", "admin@tinkro.in"];
-const RESET_EMAILS = ["tinkrokits@gmail.com"];
-
 const SETUP_STEPS = [
   "Go to Firebase Console (console.firebase.google.com)",
   "Open your project → Project Settings → General",
@@ -50,12 +47,6 @@ export default function AdminLoginPage() {
   async function onSubmit(data: LoginForm) {
     setServerError(null);
     setResetInfo(null);
-    if (!ADMIN_EMAILS.includes(data.email.trim().toLowerCase())) {
-      setServerError(
-        "This email is not allowed for admin access. Use the approved admin email.",
-      );
-      return;
-    }
     setIsSubmitting(true);
     try {
       await login(data.email, data.password);
@@ -90,14 +81,6 @@ export default function AdminLoginPage() {
 
     if (!email) {
       setServerError("Please enter your admin email to reset password.");
-      setResetInfo(null);
-      return;
-    }
-
-    if (!RESET_EMAILS.includes(email)) {
-      setServerError(
-        "Reset link can only be sent to the approved admin email.",
-      );
       setResetInfo(null);
       return;
     }

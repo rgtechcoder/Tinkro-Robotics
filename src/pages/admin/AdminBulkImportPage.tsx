@@ -45,6 +45,10 @@ const TARGET_FIELDS = [
   "compatibility",
   "applications",
   "packageContents",
+  "kitContents",
+  "useCases",
+  "reviewsArray",
+  "demoVideoUrl",
   "faq",
   "tags",
   "skillLevel",
@@ -63,6 +67,8 @@ const TARGET_FIELDS = [
   "countryOfOrigin",
   "manufacturer",
   "difficulty",
+  "images",
+  "gallery",
 ] as const;
 
 const initialOptions: ImportOptions = {

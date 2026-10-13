@@ -7,7 +7,7 @@ import {
   onAuthStateChanged,
   User as FirebaseUser,
 } from "firebase/auth";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
 interface AdminAuthContextValue {
   adminUser: AdminUser | null;
@@ -20,7 +20,11 @@ interface AdminAuthContextValue {
 
 const AdminAuthContext = createContext<AdminAuthContextValue | null>(null);
 
-const ADMIN_EMAILS = ["tinkrokits@gmail.com"];
+function normalizeAdminRole(role: unknown): AdminUser["role"] | null {
+  if (role === "superAdmin" || role === "super_admin") return "superAdmin";
+  if (role === "admin" || role === "editor") return role;
+  return null;
+}
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
@@ -36,30 +40,20 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
           const userDoc = await getDoc(doc(db, "adminusers", user.uid));
           if (userDoc.exists()) {
             const data = userDoc.data() as AdminUser;
-            setAdminUser(data);
-            setAdminRole(data.role);
-            setSeedError(null);
-          } else {
-            const email = user.email?.toLowerCase() ?? "";
-            if (ADMIN_EMAILS.includes(email)) {
-              const newAdmin: AdminUser = {
-                uid: user.uid,
-                email,
-                role: "superAdmin",
-                displayName: user.displayName || "Admin",
-                createdAt: serverTimestamp() as unknown as AdminUser["createdAt"],
-              };
-              await setDoc(doc(db, "adminusers", user.uid), newAdmin, {
-                merge: true,
-              });
-              setAdminUser(newAdmin);
-              setAdminRole(newAdmin.role);
+            const role = normalizeAdminRole(data.role);
+            if (role) {
+              setAdminUser({ ...data, role });
+              setAdminRole(role);
               setSeedError(null);
             } else {
               setAdminUser(null);
               setAdminRole(null);
               setSeedError("Not authorized as admin");
             }
+          } else {
+            setAdminUser(null);
+            setAdminRole(null);
+            setSeedError("Not authorized as admin");
           }
         } catch (err) {
           setAdminUser(null);
@@ -79,9 +73,29 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     setSeedError(null);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+      const user = credential.user;
+      const userDoc = await getDoc(doc(db, "adminusers", user.uid));
+
+      if (userDoc.exists()) {
+        const data = userDoc.data() as AdminUser;
+        const role = normalizeAdminRole(data.role);
+        if (!role) {
+          throw new Error("Not authorized as admin");
+        }
+        setAdminUser({ ...data, role });
+        setAdminRole(role);
+      } else {
+        throw new Error("Not authorized as admin");
+      }
+      setIsLoading(false);
     } catch (err: any) {
       setSeedError(err.message || "Login failed");
+      if (err.message === "Not authorized as admin") {
+        await signOut(auth);
+        setAdminUser(null);
+        setAdminRole(null);
+      }
       setIsLoading(false);
       throw err;
     }

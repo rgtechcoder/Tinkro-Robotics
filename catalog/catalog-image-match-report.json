@@ -1,16 +1,20 @@
 {
-  "generatedAt": "2026-08-16T17:06:46.610Z",
-  "catalogProductCount": 122,
-  "firebaseProductCount": 135,
-  "matchedBySku": 108,
+  "generatedAt": "2026-09-12T13:32:43.330Z",
+  "originalCatalogProductCount": 122,
+  "finalCatalogProductCount": 210,
+  "firebaseProductCount": 199,
+  "matchedBySku": 111,
   "matchedByName": 0,
   "matchedBySafeFuzzyName": 0,
-  "matchedWithImage": 107,
+  "existingImagesAdded": 110,
   "matchedWithoutImage": 1,
-  "unmatched": [
+  "newProductsAdded": 88,
+  "newProductsWithImage": 88,
+  "newProductsWithoutImage": 0,
+  "unmatchedExistingCatalogProducts": [
     {
       "sku": "TKR-084",
-      "name": "Stepper Motor + ULN2003"
+      "name": "Stepper Motor + ULN2003 Driver"
     },
     {
       "sku": "TKR-1031",
@@ -33,28 +37,16 @@
       "name": "Camera Module (OV7670)"
     },
     {
-      "sku": "TKR-1020",
-      "name": "GPS Module (NEO-6M)"
-    },
-    {
-      "sku": "TKR-1021",
-      "name": "GSM Module (SIM800L)"
-    },
-    {
       "sku": "TKR-090",
-      "name": "Capacitor Kit"
+      "name": "Electrolytic Capacitor Kit"
     },
     {
       "sku": "TKR-001",
-      "name": "4WD Robot Car Kit"
+      "name": "DIY 4-Wheel Robot Car Kit"
     },
     {
       "sku": "TKR-1006",
-      "name": "Propeller Blade"
-    },
-    {
-      "sku": "TKR-047",
-      "name": "4×4 Matrix Keypad"
+      "name": "DC Fan / Propeller Blade"
     },
     {
       "sku": "TKR-1035",
@@ -62,12 +54,807 @@
     },
     {
       "sku": "TKR-1037",
-      "name": "Mini Screwdriver"
+      "name": "Mini Precision Screwdriver"
     }
   ],
   "ambiguous": [],
+  "newlyAddedProducts": [
+    {
+      "sku": "TKR-1005",
+      "name": "Self-Adhesive Mini Breadboard Proto Shield",
+      "category": "Prototyping & Tools",
+      "icon": "📦",
+      "firebaseId": "1chy9XROrMiJovsmtCCM",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F1chy9XROrMiJovsmtCCM%2F1776056667248_self-adhesive-proto-shield%20(1).jpg?alt=media&token=4f3bdc15-8ae9-4c10-8142-e0fe646cbcb8",
+      "hasImage": true
+    },
+    {
+      "sku": "ARCHIVED-TKR-059",
+      "name": "Arduino Mega 2560",
+      "category": "Microcontrollers & Development Boards",
+      "icon": "📦",
+      "firebaseId": "2IDqjvKA8ddQpHH27nlJ",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F2IDqjvKA8ddQpHH27nlJ%2F1776056894687_Arduino-Mega-2560-front%20(1).jpg?alt=media&token=e658c3f6-1710-4c3a-a4ae-539a5931f54b",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1117",
+      "name": "MAX4466 Electret Microphone Amplifier with Adjustable Gain Module",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "2kqAfiwGbr7dnp3jw8XI",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F2kqAfiwGbr7dnp3jw8XI%2F1789061460266_max4466-electret-microphone-amplifier-with-adjustable-gain-module.png?alt=media&token=2defc7c5-9e62-4d5f-b1ba-8afb117fdf13",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-206",
+      "name": "SG90 Micro Servo Motor (Pack of 4)",
+      "category": "Motors, Drivers & Actuators",
+      "icon": "📦",
+      "firebaseId": "3gBiLmTipTMoqZLsZWJG",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F3gBiLmTipTMoqZLsZWJG%2F1785950088298_servo-4-tinkro.jpg?alt=media&token=c782bd63-d895-4bce-977e-7d55c8ffcdf9",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1124",
+      "name": "XH2.54mm 4P Bend Pin Header Connector Right Angle",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "4ZWTjjOqMxpLHRaWbxm3",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F4ZWTjjOqMxpLHRaWbxm3%2F1789063539072_4pin.jpg?alt=media&token=4e8c323c-2a54-4c1f-abec-13dc7ac9fcfb",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1073",
+      "name": "TCRT5000 Reflective IR Optical Sensor",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "4dW1MHk2RYGJjC72HJMz",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F4dW1MHk2RYGJjC72HJMz%2F1787593963968_tcrt5000-1.jpg?alt=media&token=5bd986c3-e7a0-4062-ba0a-2779a644ae4a",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1123",
+      "name": "Dual Battery Charger for 18650 Li-ion Batteries",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "6bfAVDkC7Wd0hpT5eg20",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F6bfAVDkC7Wd0hpT5eg20%2F1789063463564_dual-battery-charge.webp?alt=media&token=bb9fa73b-4cd8-4920-96df-7ebdedff8be2",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1064",
+      "name": "1.5-5V DC Vibration Motor - Mini Coin Type",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "77Fkj6f7cnUVbDBN7t1r",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F77Fkj6f7cnUVbDBN7t1r%2F1787455757255_vibration-module-tinkro.png?alt=media&token=dd6f9596-f061-4944-b279-b3fbe901d9a8",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1080",
+      "name": "L293D Motor Driver / Servo Shield for Arduino",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "7F96mVVnD2bQjlis3Idq",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F7F96mVVnD2bQjlis3Idq%2F1787462935958_chatgpt-image-aug-23-2026-10_32_42-am.png?alt=media&token=8781a03a-4fbe-4905-9fb9-ef301ca878e2",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1055",
+      "name": "IR Remote Control Module Kit - Transmitter + Receiver",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "8T7jZRqS1ero71z5xDLx",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F8T7jZRqS1ero71z5xDLx%2F1787462480229_ir-remotev-tinkro.png?alt=media&token=40544eb6-6d5e-467f-9785-2f9575c30b38",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1043",
+      "name": "LDR Photoresistor - Light Dependent Resistor",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "90hYWV51NecMW9lXFcjo",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F90hYWV51NecMW9lXFcjo%2F1787465544266_ldr-photo-resister.jpg?alt=media&token=804eb92a-30cd-4e98-9cb5-f3db3c02b7fa",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1076",
+      "name": "Eye Blink Sensor Module with Goggles",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "949GDusVrKst4d1Wqq6d",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F949GDusVrKst4d1Wqq6d%2F1787460391474_eye-blink-goggle-tinkro.png?alt=media&token=0b0004c9-6759-4f21-8615-36bbefcf20a1",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-032",
+      "name": "TP4056 Type-C Lithium Battery Charging Module",
+      "category": "Power Supply & Batteries (very useful additio",
+      "icon": "📦",
+      "firebaseId": "9Ftik8q653M4nuunqGLf",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F20572b50-1eb6-4d57-8be8-7ea400be71f6%2F1776277134808_TP4056-TYPE-CChargingModule%20(1).webp?alt=media&token=67e53121-9855-465f-823e-81733c490285",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1065",
+      "name": "5A Glass Fuse - 5x20mm",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "9k6nDcgFIuwPQpxS87dm",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F9k6nDcgFIuwPQpxS87dm%2F1787457327415_fuse-tinkro.png?alt=media&token=cddd0bce-a39e-4ac3-a865-9eca9a3ac060",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1068",
+      "name": "5W LED Chip - High Power Cool White Star COB 300mA",
+      "category": "Displays & Indicators",
+      "icon": "📦",
+      "firebaseId": "AilRke6RzLaNa0vco47b",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FAilRke6RzLaNa0vco47b%2F1787457625232_cob-light-tinkro.png?alt=media&token=979b84f3-ef42-46e6-b648-f4e3dfb3a8eb",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1099",
+      "name": "150mm Trapezoidal 4 Start Lead Screw 8mm Thread 2mm Pitch with Copper Nut",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "AnnOEU0qsOp0kamLhfgt",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FAnnOEU0qsOp0kamLhfgt%2F1789059687813_150mm-trapezoidal-4-start-lead-screw-8mm-thread-2mm-pitch-with-copper-nut.jpg?alt=media&token=5a3cb0fc-acfb-4cde-ac55-f371ea041b50",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-226",
+      "name": "Basic Electronics DIY Starter Kit",
+      "category": "DIY Kits & Educational Kits",
+      "icon": "📦",
+      "firebaseId": "AuoJ3y6BV09WkR9kKBWx",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F7a57351a-c854-4455-b9f2-5baeef0230d7%2F1776362964377_kit1.png?alt=media&token=5ab54b99-5492-4147-bdd1-094aace6e8c1",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1057",
+      "name": "TDS Sensor Module - Analog Water Quality Meter",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "BFXTMuyDRQRR54ZoCHEc",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FBFXTMuyDRQRR54ZoCHEc%2F1787505721617_tds.png?alt=media&token=814eaf39-8251-42ec-8b54-46a02b14e449",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1061",
+      "name": "DC 5V 4010 Cooling Fan - 40x40x10mm",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "BOlYEn9mB52DVUNnQnF0",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FBOlYEn9mB52DVUNnQnF0%2F1787459715795_dc-cooling-fan.jpg?alt=media&token=7f861f2b-a200-4a74-92d4-914ffa076693",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1062",
+      "name": "2.54mm Pitch 2-Pin JST Cable with Connector",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "BjBZDiYY2j37ppcSaEFP",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FBjBZDiYY2j37ppcSaEFP%2F1787456886969_2-54mm-jst-cable-tinkro.png?alt=media&token=53796248-82b3-4023-8900-0a3766834fe5",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1052",
+      "name": "DC Motor - Single Shaft Flat 280 Type",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "BpSv142rZxtTBlOIb1jB",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FBpSv142rZxtTBlOIb1jB%2F1787459989776_single-shaft-dc-motor-280---tinkro.png?alt=media&token=4305f5e3-b22b-4d6d-acea-cbd1a969c6a2",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1067",
+      "name": "Round Push Rocker Switch - 3A 250V",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "CWilK1VWDDfrURvSaGZ5",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FCWilK1VWDDfrURvSaGZ5%2F1787503921428_round-rocker-switch.png?alt=media&token=de504feb-0783-45aa-9e9b-911996e5bd2d",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1119",
+      "name": "Fuse Holder BF-020 Panel Mount for 5x20mm Fuses",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "CXSufWtJbxefzdxbA6nF",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FCXSufWtJbxefzdxbA6nF%2F1789062154886_fuse-holder.jpg?alt=media&token=669c0c2f-faef-42f0-af0d-40c83c7dd57d",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-042",
+      "name": "Mini Tube Water Pump (DC)",
+      "category": "Motors, Drivers & Actuators",
+      "icon": "📦",
+      "firebaseId": "DsgW19OdzhBM7QY4TGoE",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FDsgW19OdzhBM7QY4TGoE%2F1785951387228_water-pump-tube-tinkro.jpg?alt=media&token=e420eb2f-12f7-4125-a196-c1c24cd748c1",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1126",
+      "name": "Desoldering Pump Solder Sucker Spring-Loaded",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "E2K1EhNggQziA7zUA3Cw",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FE2K1EhNggQziA7zUA3Cw%2F1789064193105_desildering-pump.jpg?alt=media&token=81c21ac9-857b-4d11-9615-aef09e880fa6",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1078",
+      "name": "2.8 Inch TFT Touch Screen Display Module - SPI 240x320 with Stylus",
+      "category": "Displays & Indicators",
+      "icon": "📦",
+      "firebaseId": "E4GFVd7nDvNLchkeGaqy",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FE4GFVd7nDvNLchkeGaqy%2F1787456638488_2-8-tft-display-with-stylus-tinkro.png?alt=media&token=ee0f7d94-7a06-48c6-8c1e-e6a9be58f1bb",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1094",
+      "name": "PM2.5 Air Quality Sensor Module PMS5003 Laser Dust Sensor",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "EZ021icj1p3IS3e1ayDs",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FEZ021icj1p3IS3e1ayDs%2F1789063057889_pm2-5.jpg?alt=media&token=69207bc2-b494-491c-902d-552b898f027e",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1070",
+      "name": "Ribbon Cable / Multi-Strand Cable - 1 Meter",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "Ejuct4Dir9qPap6KYGwO",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FEjuct4Dir9qPap6KYGwO%2F1787462586827_ribben-cable-tinkro.png?alt=media&token=fd100479-9d20-42b4-8eef-e1787e9ba359",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-208",
+      "name": "SG90 Micro Servo Motor (Pack of 6)",
+      "category": "Motors, Drivers & Actuators",
+      "icon": "📦",
+      "firebaseId": "FHelDg0Qjk3Nkyfh6vEO",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FFHelDg0Qjk3Nkyfh6vEO%2F1785950841854_six-sg90-tinkro.webp?alt=media&token=b16efa23-864e-4134-b3e2-f1d1490ba155",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1075",
+      "name": "MQ-3 Gas Sensor Module for Alcohol Detection",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "GG2uDlJvvSuVA8CFrwWp",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FGG2uDlJvvSuVA8CFrwWp%2F1787463165914_mq3-tinkro.png?alt=media&token=05ae349a-42c7-4401-845e-767ca1d40a3a",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1122",
+      "name": "iMaxRC B3 Pro Compact LiPo Battery Balance Charger",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "HLNt8Lwh7P5PAIUhzbny",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FHLNt8Lwh7P5PAIUhzbny%2F1789063404734_b3-charger.jpg?alt=media&token=82763a92-33dd-4ba2-ab29-85d7c112fe39",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1059",
+      "name": "5mm White LED - High Brightness Through-Hole",
+      "category": "Displays & Indicators",
+      "icon": "📦",
+      "firebaseId": "HoyJerGXpaPEtJOdl2w5",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FHoyJerGXpaPEtJOdl2w5%2F1787457416090_white-light.jpg?alt=media&token=77ac4d99-e11b-407f-b3a4-17804289f3b1",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1083",
+      "name": "Universal 18650 / 16340 / 14500 Li-ion Battery Charger - EU Plug",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "IG5Rra62uImGu4hsXD0f",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FIG5Rra62uImGu4hsXD0f%2F1787463836406_charger.png?alt=media&token=aa1967db-ce6f-44e7-9d07-f74ba03d470b",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-218",
+      "name": "Mini Water Pump DIY Kit",
+      "category": "DIY Kits & Educational Kits",
+      "icon": "📦",
+      "firebaseId": "J2JLVAsUFTcLM8BXO9mF",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F02801b19-f45f-4a23-baa1-7548e0ff6d02%2F1776363560109_file_00000000b40c720692aebb6fc5fc4f40.png?alt=media&token=b3190c74-b2cf-4b8b-9d0c-a04b68dba84c",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1121",
+      "name": "MG995 Metal Gear High Torque Servo Motor",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "JfnHY1UuDX83SjtY95m0",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FJfnHY1UuDX83SjtY95m0%2F1789062925754_mg995aa.jpg?alt=media&token=19ea4277-e3ca-47b7-88e7-f86ab2c587fe",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1130",
+      "name": "1S BMS Battery Management System 3.7V Li-ion Protection Board",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "JgpzTFTZYToJDbU3tikm",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FJgpzTFTZYToJDbU3tikm%2F1789060149024_1s-bms-tinkro.png?alt=media&token=556e1637-afb0-449b-8a06-9e32ea6e5142",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1090",
+      "name": "Nylon Cable Zip Ties 100mm White Pack of 100",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "KGVZd7QXrOstE1ynNqV2",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FKGVZd7QXrOstE1ynNqV2%2F1789062624058_tie-cable.jpg?alt=media&token=577a3ef8-181f-4dbd-9f23-59e729588eff",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1051",
+      "name": "LM393 Sound Sensor Module - Microphone Detection",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "L1rdqMcVfs7wz3FPLHVG",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FL1rdqMcVfs7wz3FPLHVG%2F1787463100256_lm393-sound-sensor-tinkro.png?alt=media&token=f1cd4b5c-0884-4bdd-bbe1-d1718838e7b0",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1102",
+      "name": "1 Meter Red Silicone Tube Flexible Rubber Hose ID 1mm x 3mm OD",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "Ls7ntOPXYVk5hUmqypLj",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FLs7ntOPXYVk5hUmqypLj%2F1789059863316_1-meter-red-silicone-tube-flexible-rubber-hose-id-1mm-x-3mm-od.jpg?alt=media&token=032ab532-94e4-4c0b-b06b-04e5222ecd37",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1095",
+      "name": "Micro USB Cable for ESP32 ESP8266 Development Boards",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "MX0thu7mTjVLut6FV6uy",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FMX0thu7mTjVLut6FV6uy%2F1789063162479_usb-esp-32.webp?alt=media&token=cb7e1621-22d8-4eff-9e8d-9d3218e75847",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1131",
+      "name": "4S BMS Battery Management System 14.8V 16.8V Li-ion Protection Board",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "MxPGNF7aFGYC79H4MhbV",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FMxPGNF7aFGYC79H4MhbV%2F1789061104559_4s-bms.jpg?alt=media&token=82411f17-ffd6-42f6-bce5-0a10f45c59e8",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1060",
+      "name": "Load Cell 3KG - Weighing Sensor",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "Ncz5tj51sLsXMQPpJ9LG",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FNcz5tj51sLsXMQPpJ9LG%2F1787457792295_load-cell-3kg-tinkro.png?alt=media&token=9d4701f4-7e5a-4151-9ddf-8476f7b5b563",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1097",
+      "name": "Perfboard Single Sided 5x7cm Universal PCB",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "QFfSsaPEb4FyxWm0ZjYy",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FQFfSsaPEb4FyxWm0ZjYy%2F1789062330277_perfboard.jpg?alt=media&token=a4a00981-7e22-4c10-95dc-38b4271c8339",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1098",
+      "name": "Limit Switch WK1-G02 Micro Switch with Roller Lever",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "QPs3fU9IhJDmqqCkuGeD",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FQPs3fU9IhJDmqqCkuGeD%2F1789061773628_limit-switch-tinkro.jpg?alt=media&token=d091a74a-9542-40aa-b04d-002340db9e90",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1054",
+      "name": "12V DC Power Adapter (BNS)",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "Qo5NMCNJqq9kXS8lFJSi",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FQo5NMCNJqq9kXS8lFJSi%2F1787459626901_charger-tinkro.png?alt=media&token=c434e674-1b88-4527-af19-2943a6e40dec",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-009",
+      "name": "Rain Sensor Module",
+      "category": "Sensors & Modules",
+      "icon": "📦",
+      "firebaseId": "RI9CYUM1PCojQw655STU",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F8714f6e4-c3ff-46ce-82f6-2038a61b67f8%2F1776448155694_rain11%20(1).PNG?alt=media&token=3462b20d-ccd4-48a5-9bc3-32fc80f9d191",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1082",
+      "name": "SmartElex Speaker Module for Arduino",
+      "category": "Displays & Indicators",
+      "icon": "📦",
+      "firebaseId": "SGwH2mHuamF2nQ1r9zHE",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FSGwH2mHuamF2nQ1r9zHE%2F1787463430122_smart-elex-tinkro.png?alt=media&token=90002900-19ca-4705-aecd-012982175a09",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1040",
+      "name": "DIY 4 Wheel Robot Car Chassis Kit",
+      "category": "Robotics Parts & Mechanical Components",
+      "icon": "📦",
+      "firebaseId": "STAhkdEaDTHgtIdIR39j",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FSTAhkdEaDTHgtIdIR39j%2F1776279402761_4WD%20(1).PNG?alt=media&token=6a821e19-382a-45aa-890a-a350e9ee393c",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1120",
+      "name": "Solder Wire 60/40 Tin-Lead 1.0mm Rosin Core",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "SdnBr2hLNGp3nkXUfBvi",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FSdnBr2hLNGp3nkXUfBvi%2F1789062833498_soldering-wir-e.webp?alt=media&token=ace584c1-161b-4545-a861-d7e5dd139547",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1113",
+      "name": "2WD Mini Round Double-Deck Smart Robot Car Chassis DIY Kit",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "Sz28GwR3nhez9DYgiBsL",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FSz28GwR3nhez9DYgiBsL%2F1789060608063_round-chassis-car1.png?alt=media&token=db983262-2d5d-4969-bbe1-720c1aac997e",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1127",
+      "name": "Reed Switch 2x14mm Magnetic Control Switch Normally Open",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "UNI2OvvHYg34SttvOlB8",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FUNI2OvvHYg34SttvOlB8%2F1789064251011_reed-switch.jpg?alt=media&token=c801245d-4fdb-44da-a1b3-455889ad0b75",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1110",
+      "name": "Insulating Tape PVC Electrical Tape Black",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "UrXBgMAYvnUtMrGz3R54",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FUrXBgMAYvnUtMrGz3R54%2F1789062430099_tape.jpg?alt=media&token=f866a23d-e7ca-4e70-8c1d-b4cc09ec11a6",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1129",
+      "name": "PCB Mounted Active Buzzer 5V Electromagnetic",
+      "category": "Displays & Indicators",
+      "icon": "📦",
+      "firebaseId": "WBhAuYVQErmLpQ2DWbPU",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FWBhAuYVQErmLpQ2DWbPU%2F1789064452404_buzzer.jpg?alt=media&token=5e4d5409-876a-46c6-a5c7-6a323ca5ffa6",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1042",
+      "name": "LED Traffic Light Module - 5V",
+      "category": "Displays & Indicators",
+      "icon": "📦",
+      "firebaseId": "WKBOuIsgCTgckhMPdbsj",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FWKBOuIsgCTgckhMPdbsj%2F1787462320568_traffic-light-tinkro.png?alt=media&token=06046592-2e34-4b6d-a786-d12d53b16a6b",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1112",
+      "name": "Flux Soldering Paste 10g for PCB SMD Rework",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "WeRgVPx8NTl3DPuFGGlI",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FWeRgVPx8NTl3DPuFGGlI%2F1789062517662_flux-solderingpaste.jpg?alt=media&token=3d5477f0-c9c2-4a6c-aad9-6dd1654de40d",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-0015",
+      "name": "BO DC Motor",
+      "category": "Motors, Drivers & Actuators",
+      "icon": "📦",
+      "firebaseId": "ZEzpxaTSGXdUXvTMEALi",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F549c7af8-7038-4e16-889c-d869bd9d2015%2F1776000757769_Screenshot%202026-04-12%20190223.jpg?alt=media&token=265dc869-fbe5-4432-a42f-0da6591ddd71",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1118",
+      "name": "INMP441 MEMS High Precision Omnidirectional Microphone Module I2S",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "ZPWExEW5hQS1Y1v1eOXE",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FZPWExEW5hQS1Y1v1eOXE%2F1789061672572_chatgpt-image-sep-10-2026-11_02_55-pm.png?alt=media&token=7973ad41-5e8d-4b31-8dd6-59a48b18da13",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1069",
+      "name": "3-Pin PCB Mount Terminal Block (Screw Type) - 5mm Pitch",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "aDhP2IGHq87BxphDC0dW",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FaDhP2IGHq87BxphDC0dW%2F1787457261899_3-pin-pcb-mount-tinkro.png?alt=media&token=009f2de5-84d2-4fa7-802f-34541ca9c0f3",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1041",
+      "name": "28BYJ-48 Stepper Motor with ULN2003 Driver",
+      "category": "Motors, Drivers & Actuators",
+      "icon": "📦",
+      "firebaseId": "aeNNyiCi99a7iW63s3v9",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FaeNNyiCi99a7iW63s3v9%2F1785863713640_28ybj-48-stepper-motor-uln2003-motor-driver-module.jpg?alt=media&token=2a405d76-afc4-487f-bd85-0c9af3f40f68",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1050",
+      "name": "OV7670 Camera Module - VGA CMOS Image Sensor",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "coAynzUIQ3gTT4C8y0Ej",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FcoAynzUIQ3gTT4C8y0Ej%2F1787465892741_camera-module-tinkro.png?alt=media&token=5593be0c-cd11-42fb-a7a9-fa95bfd0fc0e",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1079",
+      "name": "Neodymium Disc Magnet 10x5mm - NdFeB Rare Earth",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "ddCMQXWTChjfuQD7Ju4j",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FddCMQXWTChjfuQD7Ju4j%2F1787504226826_neodymium-disc-magnet-10x5mm-ndfeb-rare-earth.png?alt=media&token=37b07eed-0a18-4fe3-af46-957cfc0b2b51",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1044",
+      "name": "2.8 inch TFT Touch Display (ILI9341)",
+      "category": "Displays & Indicators",
+      "icon": "📦",
+      "firebaseId": "etMRFsFU4Z1GsxtxSVH8",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FetMRFsFU4Z1GsxtxSVH8%2F1785869427497_2-8-tft-touch-display.png?alt=media&token=0b46aadb-5219-41d3-a1cd-af946ef16f9e",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1077",
+      "name": "DC Male Barrel Jack Power Connector with Wire",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "fIyE5gtyGSTU98O70qgS",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FfIyE5gtyGSTU98O70qgS%2F1787459403658_barrel-jack-connector-tinkro.jpg?alt=media&token=188ee684-7442-4538-b2b9-39f3675b36b3",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-213",
+      "name": "TINKRO Science Project Kit",
+      "category": "DIY Kits & Educational Kits",
+      "icon": "📦",
+      "firebaseId": "fgL81PAMeWodVYSVuhZH",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Faca5e541-4c15-455b-8574-5e6273ec1437%2F1776363266113_science%20project%20kit%20.png?alt=media&token=bc588148-c834-48c4-bb01-12a19eb1f102",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1081",
+      "name": "Encapsulated Vibration Motor - 8000±2000 RPM",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "fzWhSvhfa3LZMpdStICl",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FfzWhSvhfa3LZMpdStICl%2F1787456074552_encapsulated-vibration-motor-tinkro.png?alt=media&token=9072c2b0-24b4-4a55-945f-07fd017b5d4e",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-011",
+      "name": "PIR Motion Sensor",
+      "category": "Sensors & Modules",
+      "icon": "📦",
+      "firebaseId": "gWqzvox1zZjbiritF9Mt",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fe05ecc9c-f07a-4e18-8524-2bd0421b72cd%2F1776448686554_PIR%20(1).PNG?alt=media&token=e2ccc5bb-df4a-444a-a930-4738fce22e4c",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1063",
+      "name": "2mm Pitch 2-Pin JST Cable with Connector",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "gbu69ZiiWZsauaa8OIW3",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fgbu69ZiiWZsauaa8OIW3%2F1787457129223_2-pin-jst-cable-tinkro.png?alt=media&token=cd198676-a345-494f-a5ef-37ef76eefb93",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1106",
+      "name": "WOER HST Heat Shrink Sleeve 6mm Black",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "h7NDl5ZgChYrxe8036P2",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fh7NDl5ZgChYrxe8036P2%2F1789061908611_heat-shrink-tube.jpg?alt=media&token=bb6c018f-db30-4785-95b7-40f1e206a55a",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1049",
+      "name": "TCRT5000 Infrared Obstacle Avoidance Sensor Module",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "iGAAfVfCNGvZLoXzIH8U",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FiGAAfVfCNGvZLoXzIH8U%2F1787594018167_tcr-5000-ir-tinkro.png?alt=media&token=c1b893ab-c004-41c1-a078-d57a04a13f18",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1104",
+      "name": "DS18B20 Waterproof Temperature Sensor Probe with Cable",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "ig1UGwILZsjsZTjNv1rt",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fig1UGwILZsjsZTjNv1rt%2F1789063232673_waterproof-temperature-sensor.jpg?alt=media&token=11b660bd-fbe9-4793-aac6-a4c375eec1ac",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-60",
+      "name": "Raspberry Pi 4 Model B with 1GB RAM",
+      "category": "Microcontrollers & Development Boards",
+      "icon": "📦",
+      "firebaseId": "lwTHzgPFvrWwB9IJBbdv",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FlwTHzgPFvrWwB9IJBbdv%2F1776104229229_pi%20(1).PNG?alt=media&token=63e0bc64-fde8-4e1f-8d55-c25d34196ca7",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-209",
+      "name": "SG90 Micro Servo Motor (Pack of 5)",
+      "category": "Motors, Drivers & Actuators",
+      "icon": "📦",
+      "firebaseId": "mqoLsXJwHkPxyOMuA8AO",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FmqoLsXJwHkPxyOMuA8AO%2F1785868815107_images-38-.jpg?alt=media&token=c7fbf789-bb0c-4b61-b7c8-ff6016106867",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1058",
+      "name": "PH Sensor Module - Analog pH Meter Kit",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "nZr18OQcXlPvjPUfbmBR",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FnZr18OQcXlPvjPUfbmBR%2F1787504958230_ph-sensor.png?alt=media&token=c941a03b-c6cb-4363-bf0a-6ddd0de63b89",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1109",
+      "name": "XYEK500-5.0 XINYA 2 Pin Screw Terminal Block",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "nx2PfzFRjaMZnDnpme8X",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fnx2PfzFRjaMZnDnpme8X%2F1789062759021_2-pin-scew-terminals.jpg?alt=media&token=71475940-410c-40d8-aff6-358d3fa66032",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1111",
+      "name": "6 x 8 cm Universal PCB Prototype Board Double-Side",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "o2hkI9TLTkLv3uwGuVxx",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fo2hkI9TLTkLv3uwGuVxx%2F1789062223771_pcbb-tinkro.jpg?alt=media&token=9666d5dc-3796-45f8-aa90-606adada18ad",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1100",
+      "name": "IRF520 MOSFET Driver Module for Arduino ARM Raspberry Pi",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "r6gN8sSnldribbWqc5bg",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fr6gN8sSnldribbWqc5bg%2F1789149055797_mosfet.png?alt=media&token=2a81942a-0e85-432a-a05d-cc9843aee8bf",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1053",
+      "name": "ESP32-S3 Development Board - Dual-Core WiFi + BLE",
+      "category": "Microcontrollers & Development Boards",
+      "icon": "📦",
+      "firebaseId": "rS4RV1Zuq8SKUCAhYa3U",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FrS4RV1Zuq8SKUCAhYa3U%2F1787461010161_esp-32-s3-tinkro.png?alt=media&token=0d12e0d9-a648-4a21-af2c-44983211b1ea",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1074",
+      "name": "DHT22 Temperature and Humidity Sensor Module",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "sX6j0a1wkXiViwbO5Azn",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FsX6j0a1wkXiViwbO5Azn%2F1787460611975_dht22-humidity-sensor-tinkro.png?alt=media&token=9865164d-62e0-4e9c-93c7-d79688fca0c5",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1128",
+      "name": "HR202 Humidity Sensor Module with PCB",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "t3fUKFiMjdes6W9p3oZQ",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Ft3fUKFiMjdes6W9p3oZQ%2F1789064336548_h202.jpg?alt=media&token=e076c063-9eb5-441c-bf76-20ac7b51897f",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-004",
+      "name": "USB Programming Cable for Arduino UNO",
+      "category": "Microcontrollers & Development Boards",
+      "icon": "📦",
+      "firebaseId": "uDEAiXzMSsMFMwsHX2EU",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fcc13a98f-9a81-45e1-b600-5f17dfdbdb28%2F1776000514342_Screenshot%202026-04-12%20185801.jpg?alt=media&token=c28177f2-b3d1-4cc4-a0d1-467eca8e0381",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1056",
+      "name": "QTR-8RC Reflectance Sensor Array - 8-Channel Line Following Module",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "vpYry0lC67nfuRYbTmIu",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FvpYry0lC67nfuRYbTmIu%2F1787462760492_qtr-line-foloower-tinkro.png?alt=media&token=8c2b22cf-8180-4f99-9fe9-ec527fa9535f",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1066",
+      "name": "Illuminated Round Rocker Switch - 6A 250V (Red)",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "vzp1qtEGLk722OUgFoo0",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fvzp1qtEGLk722OUgFoo0%2F1787503756512_illuminated-round-rocker-switch-6a-250v-red-tinkro.png?alt=media&token=5c7e2fae-7411-415a-a8ac-2159047e4530",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1071",
+      "name": "Female DC Power Supply Connector / Barrel DC Jack",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "wGm8oITgE74swC8XfKpT",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FwGm8oITgE74swC8XfKpT%2F1787461157010_femal-dc-jack-tinkro.png?alt=media&token=6b9ff948-7540-4b9c-92c5-aa896b8563c7",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-007",
+      "name": "Ultrasonic Sensor (HC-SR04)",
+      "category": "Sensors & Modules",
+      "icon": "📦",
+      "firebaseId": "wLlDMTQwct3jzkhywVds",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F5fdb3838-0b24-467e-85a1-dbb14529c431%2F1776448923803_ULTRASONIC%20(1).PNG?alt=media&token=745401f3-e4bd-4697-9485-160d5f72e47f",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1048",
+      "name": "Water Level Sensor Module",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "x92FDP2qe0fYDGk7PIWS",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fx92FDP2qe0fYDGk7PIWS%2F1787464291065_water-sensor.png?alt=media&token=821a4fdd-9fd8-4f07-a2fa-226c81d80192",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-056",
+      "name": "9V Battery Connector Clip",
+      "category": "Power Supply & Batteries (very useful additio",
+      "icon": "📦",
+      "firebaseId": "y8L9wK4weZb0QfKeFXkD",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F22fd1ccc-42d1-4e45-b552-c9f1800f345d%2F1776276856767_images%20(14).jpg?alt=media&token=969c6313-6abe-435c-bc9f-7816f11de366",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-207",
+      "name": "SG90 Micro Servo Motor (Pack of 2)",
+      "category": "Motors, Drivers & Actuators",
+      "icon": "📦",
+      "firebaseId": "yzdCElExegwlp4v8qR17",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FyzdCElExegwlp4v8qR17%2F1785866148326_servo-motor-pack-of-2-tinkro.png?alt=media&token=437ab1b3-26b3-4092-85b3-f5ecf462cd7f",
+      "hasImage": true
+    },
+    {
+      "sku": "TKR-1125",
+      "name": "Water Flow Sensor YF-S201 Hall Effect 1-30 L/min",
+      "category": "STEM Products",
+      "icon": "📦",
+      "firebaseId": "zuyKGZx9zwMQHPsSIm4Y",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FzuyKGZx9zwMQHPsSIm4Y%2F1789063309656_water-flow-sensor.jpg?alt=media&token=eacd07aa-6ee0-4c72-960a-3cb77db36ce9",
+      "hasImage": true
+    }
+  ],
   "results": [
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-094",
       "name": "Arduino UNO R3",
       "matchType": "SKU",
@@ -77,6 +864,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FpabmgtSuvqosO6qONo9D%2F1785952493231_uno-r3-tinkro.jpg?alt=media&token=d90f5b58-a6b3-4520-9796-143f01a53fda"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-038",
       "name": "Arduino Nano",
       "matchType": "SKU",
@@ -86,6 +874,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F90f70520-2189-4f7f-9b8e-13817537ecad%2F1776273747682_arduino-nano-sumeetinstruments-550x550w%20(2).png?alt=media&token=cef42bd2-a908-443d-b022-09335c6fef0b"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-039",
       "name": "Arduino R4 WiFi",
       "matchType": "SKU",
@@ -95,24 +884,27 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FMQNU5Xa5DXOy8jXZKvII%2F1786035985837_ardiuno-r4-tinkro.png?alt=media&token=93019d50-7596-4db0-a65d-831fcc41b509"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-065",
       "name": "Arduino Mega 2560 R3",
       "matchType": "SKU",
       "firebaseId": "Zjzn0PwqksvV6YkJ7fFK",
       "firebaseSku": "TKR-065",
       "firebaseName": "Arduino Mega 2560 R3 Development Board",
-      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FZjzn0PwqksvV6YkJ7fFK%2F1776103212319_images%20(2)%20(1).jpg?alt=media&token=693e79fc-993c-45b7-814f-847607b78539"
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FZjzn0PwqksvV6YkJ7fFK%2F1787679513867_images-9-.jpg?alt=media&token=d48eaec5-1c60-42c4-bf0b-be8895869d5e"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-066",
       "name": "Raspberry Pi Pico",
       "matchType": "SKU",
       "firebaseId": "ZMWA0hCmCdB8l1Mv9Av3",
       "firebaseSku": "TKR-066",
       "firebaseName": "Raspberry Pi Pico (RP2040)",
-      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FZMWA0hCmCdB8l1Mv9Av3%2F1776102670530_bt%20module.PNG?alt=media&token=861a0ee8-8864-4d5b-9535-647573860369"
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FZMWA0hCmCdB8l1Mv9Av3%2F1789061211008_pico.jpg?alt=media&token=7e90cd7f-5414-4bf1-8709-e010cbb591eb"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-093",
       "name": "ESP32 C3 Mini",
       "matchType": "SKU",
@@ -122,6 +914,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FILUZKJFgccU7vuB1lvT6%2F1785951466035_esp-c3-mini-tinkro.jpg?alt=media&token=685d396e-3b2d-4813-bac5-10acd4b32da0"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1009",
       "name": "ESP32 – 30 Pin",
       "matchType": "SKU",
@@ -131,6 +924,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FGdE9d5TInCmE2hqxz1U7%2F1785952951581_esp-30-pin-tinkro.jpg?alt=media&token=fc62b8ab-61f9-4f95-9fab-3efc62ef78d3"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1010",
       "name": "ESP32 – 38 Pin",
       "matchType": "SKU",
@@ -140,6 +934,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Flw0DioIvgoDkOieKO6DH%2F1785950215296_1000328011.png?alt=media&token=e1edbd27-fdfc-41fd-806c-c0bdd21b761d"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1022",
       "name": "NodeMCU (ESP8266)",
       "matchType": "SKU",
@@ -149,8 +944,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FLIyRt1fQFFTpM8BAZJUi%2F1785951098278_esp-nodemcu-8266-tinkro.jpg?alt=media&token=c201ee54-7388-4895-8dee-85a64c47b1d1"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-075",
-      "name": "Nano Expansion Shield",
+      "name": "Arduino Nano Expansion Shield",
       "matchType": "SKU",
       "firebaseId": "iBAJzRfZRQYSa2A4nNck",
       "firebaseSku": "TKR-075",
@@ -158,8 +954,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FiBAJzRfZRQYSa2A4nNck%2F1785955115654_arduino-nano-expansion-board-tinkro.jpg?alt=media&token=86467b99-fcd4-48ab-8da0-493da69007e2"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-078",
-      "name": "Sensor Shield V5.0",
+      "name": "Arduino Sensor Shield V5.0",
       "matchType": "SKU",
       "firebaseId": "JhB8mU0ZkZzJR141uBv7",
       "firebaseSku": "TKR-078",
@@ -167,6 +964,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FJhB8mU0ZkZzJR141uBv7%2F1785952250342_uno-servo-sheild-tinkro.jpg?alt=media&token=589651af-95cd-4335-89d6-6567f2b88f7c"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-095",
       "name": "Arduino UNO Cable (USB-B)",
       "matchType": "SKU",
@@ -176,6 +974,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FVnI5kNcjfRiW8ko6Za6I%2F1785955411324_tcs3200-rgb-colour-sensor-module-tinkro.jpg?alt=media&token=95fa1094-593f-4680-a08b-1f08dda57152"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-058",
       "name": "Arduino Nano Cable (Mini USB)",
       "matchType": "SKU",
@@ -185,6 +984,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FFTWPSemZGDaChoxmzUuk%2F1785951541618_usb-cable-nano-tinkro.jpg?alt=media&token=16dbbbf9-e890-4f11-b3b4-47837b39d446"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1017",
       "name": "ST-Link V2 Programmer",
       "matchType": "SKU",
@@ -194,6 +994,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FICypfeT7t10IgaxuPhaW%2F1785865228696_tinkro-st-link-v2.png?alt=media&token=69554ed7-99a0-47b3-9a49-4b7288044400"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-100",
       "name": "SG90 Servo Motor (9g)",
       "matchType": "SKU",
@@ -203,6 +1004,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FvMEdC6cxLQbZ4Ls04nLH%2F1785952199585_sg90-tinkro.jpg?alt=media&token=420a7054-8a96-4ff2-bd17-679a48b951f2"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1007",
       "name": "MG90 Servo Motor",
       "matchType": "SKU",
@@ -212,6 +1014,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FK0cN9HP2qFYnubOahwHw%2F1785952101912_mg-90-metal-gear-servo-motor-tinkro.webp?alt=media&token=b3b9538c-dd94-4624-a3ba-d9ffa0b209e6"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1008",
       "name": "MG996R Servo Motor",
       "matchType": "SKU",
@@ -221,6 +1024,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FQVaD362DEQxgm3ujgpRa%2F1785955659876_mg996r-high-torque-servo-motor-tinkro.webp?alt=media&token=834d67e6-0377-4409-87f0-c3b8ec2f2568"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1001",
       "name": "BO Motor (Dual Shaft)",
       "matchType": "SKU",
@@ -230,6 +1034,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fj1kRsRX8IFOTvKg2aLuk%2F1785955030631_bo-gear-motor-3-6v-tinkro.jpg?alt=media&token=94fb550e-3f5d-4b61-bc14-0c5450c541f3"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-036",
       "name": "DC Motor with Fan Blade",
       "matchType": "SKU",
@@ -239,8 +1044,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FcSDA5lYLF5GJB7y6LUXn%2F1785956261995_tinkrokits.png?alt=media&token=cc501ee7-7484-491c-89ee-215a608b363b"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-041",
-      "name": "Coreless Motor + Propeller",
+      "name": "Coreless Motor with Propeller",
       "matchType": "SKU",
       "firebaseId": "U6EDsS5SedCpP32zbujc",
       "firebaseSku": "TKR-041",
@@ -248,6 +1054,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F55983d33-e875-4982-8e00-b0ffc14dbc4e%2F1776186201489_519lN1sC1xL._AC_UF1000%2C1000_QL80_%20(1).jpg?alt=media&token=897f8d3c-2c96-42ca-a705-821cf652121e"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-046",
       "name": "Stepper Motor (28BYJ-48)",
       "matchType": "SKU",
@@ -257,13 +1064,15 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F4461c623-8d39-4dd3-aa15-b7bff75b444b%2F1776275891346_stepper%20(1).PNG?alt=media&token=e245f3fa-8d33-4a43-ba89-c54f541b18bc"
     },
     {
+      "action": "EXISTING_NOT_MATCHED",
       "sku": "TKR-084",
-      "name": "Stepper Motor + ULN2003",
+      "name": "Stepper Motor + ULN2003 Driver",
       "matchType": null,
       "firebaseId": null,
       "imageUrl": null
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1027",
       "name": "A2212 1000KV BLDC Motor",
       "matchType": "SKU",
@@ -273,6 +1082,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F0Y34FONjeoDFqR2opFom%2F1785951270753_a2212-brushless-motor-tinkro.jpg?alt=media&token=4e5fa6ce-9482-4b4d-ab9c-e97bef0de817"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-082",
       "name": "Mini DC Vibration Motor",
       "matchType": "SKU",
@@ -282,6 +1092,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FMTI1vNdifgVwHvS0VI90%2F1785955774727_mini-dc-vibration-motor-tikro.jpg?alt=media&token=7b98d087-aa58-4625-9434-5df1d9fd4352"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-043",
       "name": "Servo Tester Module",
       "matchType": "SKU",
@@ -291,6 +1102,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F06476a2d-5eba-4625-a7bf-171be0a09c7f%2F1776276540108_images%20(12)%20(1).jpg?alt=media&token=52be7126-55bb-4660-9a77-1a58ef054b1f"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-018",
       "name": "Water Pump (5V Submersible)",
       "matchType": "SKU",
@@ -300,8 +1112,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fcdb2d4df-9c63-4641-b8e5-fb6f7a39f16c%2F1776277901341_pump.jpg?alt=media&token=d1afbb64-b49c-427a-b945-bdbb852fc8f0"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-014",
-      "name": "L298N Motor Driver",
+      "name": "L298N Motor Driver Module",
       "matchType": "SKU",
       "firebaseId": "qtHwr3Wn3rO8I1FGgAx9",
       "firebaseSku": "TKR-014",
@@ -309,6 +1122,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F0b27d7a3-6bfc-4d6f-a1af-496c27e2afba%2F1776001450027_WhatsApp%20Image%202026-02-12%20at%2011.30.40%20PM.jpeg?alt=media&token=065ff0f2-a54e-4102-bb00-abb3ae85afcc"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-077",
       "name": "PCA9685 16-Ch Servo Driver",
       "matchType": "SKU",
@@ -318,6 +1132,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F2Px6f90DidBcOqCtTtCa%2F1785949891715_1000297947.jpg?alt=media&token=0ceb32bb-5d1a-4d18-9d47-955cef3710da"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1029",
       "name": "A4988 Stepper Motor Driver",
       "matchType": "SKU",
@@ -327,6 +1142,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FqyKVbq3FKLEAEtcSEmpX%2F1785866984320_a4988-stepper-driver-tinkro.png?alt=media&token=0087dfc9-1893-432c-acf1-ed81ae1fb607"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-096",
       "name": "HC-SR04 Ultrasonic Sensor",
       "matchType": "SKU",
@@ -336,6 +1152,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FlXXvuCNSRdHEhXxqMVd7%2F1785953915621_spare3d_ultrasonic_sensor_hc_sr04.jpg?alt=media&token=861bef19-d2fd-44f6-9373-1156d1b601a8"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-049",
       "name": "IR Sensor (Obstacle Avoidance)",
       "matchType": "SKU",
@@ -345,6 +1162,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F6cee7529-3bc3-40ae-8925-48521e3ed2ec%2F1776449178207_IR%20(1).PNG?alt=media&token=417eed0c-9b8f-42ab-9a5f-4f40a96abc9e"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-099",
       "name": "PIR Motion Sensor",
       "matchType": "SKU",
@@ -354,6 +1172,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FtHu2PLggQQNWuzJHknQi%2F1785953650846_images-7-.jpg?alt=media&token=0a345245-d285-4f94-9e87-16129010063f"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-012",
       "name": "Soil Moisture Sensor",
       "matchType": "SKU",
@@ -363,6 +1182,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F0a43d4ad-2d1c-44bd-8ad3-6d04fa41ed3b%2F1776448425070_Soil-Moisture-Sensor-1000x1000-1%20(1).jpg?alt=media&token=7a15511e-7763-483d-b605-513024597e23"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-050",
       "name": "Flame Sensor Module",
       "matchType": "SKU",
@@ -372,17 +1192,19 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FAzcMneN8XWMdFF5nD9wO%2F1775977507826_IR-Sensor-Module_491b1f69-c09d-446d-80ba-db29e136f1bc.jpg?alt=media&token=e8af6d8a-47c1-40c3-9efb-4af29a32e045"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-097",
-      "name": "LDR Light Sensor",
+      "name": "LDR Light Sensor Module",
       "matchType": "SKU",
       "firebaseId": "S3Uzk1KChwEhdA8IizdG",
       "firebaseSku": "TKR-097",
-      "firebaseName": "LDR Photoresistor (Light Sensor)",
-      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FS3Uzk1KChwEhdA8IizdG%2F1786036666418_ldr-photo-resister.jpg?alt=media&token=c9ee9992-505b-4712-9e9a-0e442a3e5e6c"
+      "firebaseName": "LDR Photosensitive Sensor Module",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FS3Uzk1KChwEhdA8IizdG%2F1787681435519_ldr1.jpg?alt=media&token=2fdeb1e4-867f-465a-a1f9-4bc50be11594"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-098",
-      "name": "Rain Drop Sensor",
+      "name": "Rain Drop Sensor Module",
       "matchType": "SKU",
       "firebaseId": "fchTR1YxYo7J9Igh73kz",
       "firebaseSku": "TKR-098",
@@ -390,8 +1212,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FfchTR1YxYo7J9Igh73kz%2F1785867995557_raindrop-tinkro.png?alt=media&token=d6836b65-86c8-47b7-9fcf-974d47c3ce31"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-080",
-      "name": "DHT11 Temp & Humidity",
+      "name": "DHT11 Temp & Humidity Sensor",
       "matchType": "SKU",
       "firebaseId": "OUPx2htTRJMIpMmmU5jt",
       "firebaseSku": "TKR-080",
@@ -399,6 +1222,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FOUPx2htTRJMIpMmmU5jt%2F1785870377041_humidity-tinkro.jpg?alt=media&token=f3223fa9-2a27-4381-bd18-042d84695d71"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-060",
       "name": "MQ-2 Gas & Smoke Sensor",
       "matchType": "SKU",
@@ -408,15 +1232,17 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F48da119d-4d8f-4acf-bbbf-76819f09c224%2F1781717192690_51uqrWY%2BtUL._AC_UF1000%2C1000_QL80_.jpg?alt=media&token=422f88a9-7880-4d87-901f-6747c20d1495"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-062",
       "name": "Flex Sensor",
       "matchType": "SKU",
       "firebaseId": "nU1LhpG1105rTLJkQREf",
       "firebaseSku": "TKR-062",
       "firebaseName": "Flex / Bend Sensor (2.2 inch)",
-      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FnU1LhpG1105rTLJkQREf%2F1776103380065_images%20(3)%20(1).jpg?alt=media&token=f13195d8-72ef-413e-a197-0fe949312971"
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FnU1LhpG1105rTLJkQREf%2F1787770841007_chatgpt-image-aug-27-2026-12_29_51-am.png?alt=media&token=649b24f6-9aa4-4a0c-bce2-88976a3fb8f7"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-063",
       "name": "Capacitive Touch Sensor",
       "matchType": "SKU",
@@ -426,8 +1252,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FPQZ0yAgcobSjNkpW74Ws%2F1786036805529_touchh-sensor-module-tinkro.jpg?alt=media&token=ac8b7f3b-4685-4a14-9ab9-11aef6c594ec"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-076",
-      "name": "Metal Touch Sensor",
+      "name": "Metal Touch Sensor Module",
       "matchType": "SKU",
       "firebaseId": "bneFHaijmmP4K6vaRDVV",
       "firebaseSku": "TKR-076",
@@ -435,6 +1262,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FbneFHaijmmP4K6vaRDVV%2F1785955204591_metal-touch-sensor-module-ttp223-tinkro.jpg?alt=media&token=8f0a8c6b-7887-4833-b772-d02d1b1c59a5"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-085",
       "name": "TCS3200 RGB Color Sensor",
       "matchType": "SKU",
@@ -444,6 +1272,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FVq0viDKIfc1D71lYRNoP%2F1785955336622_tcs3200-rgb-colour-sensor-module-tinkro.jpg?alt=media&token=b9cf2e38-7255-49e8-990b-1002e1a00c8f"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1030",
       "name": "MPU6050 Gyro + Accelerometer",
       "matchType": "SKU",
@@ -453,6 +1282,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FNFoXFhcYhrS0Zj82vBAE%2F1785950584168_gyro-sensior-tinkro.png?alt=media&token=c6f50f64-606b-4abe-b277-02f2060d4671"
     },
     {
+      "action": "EXISTING_NOT_MATCHED",
       "sku": "TKR-1031",
       "name": "Pressure Sensor",
       "matchType": null,
@@ -460,6 +1290,7 @@
       "imageUrl": null
     },
     {
+      "action": "EXISTING_NOT_MATCHED",
       "sku": "TKR-1038",
       "name": "BMP280 Barometric Sensor",
       "matchType": null,
@@ -467,6 +1298,7 @@
       "imageUrl": null
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1015",
       "name": "EMG Sensor Module",
       "matchType": "SKU",
@@ -476,8 +1308,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FVU5sYnnhBIXTh4RGDtX1%2F1785955484559_emg-muscle-sensor-module-tinkro.jpg?alt=media&token=6ff7d7a1-32b3-4a84-8bf9-32db4159cca0"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1028",
-      "name": "5-Ch IR Array (Line Follower)",
+      "name": "5-Channel IR Array (Line Follower)",
       "matchType": "SKU",
       "firebaseId": "7NmaCU8nMVg8pe64MglL",
       "firebaseSku": "TKR-1028",
@@ -485,8 +1318,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F7NmaCU8nMVg8pe64MglL%2F1785950171341_5-cahnnel-ir-tinkro.jpg?alt=media&token=7b7b52b8-7d63-4cae-8b02-b25dcae4a769"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-089",
-      "name": "Ultrasonic Mounting Bracket",
+      "name": "Ultrasonic Sensor Mounting Bracket",
       "matchType": "SKU",
       "firebaseId": "zBReBbeLcP7aJkRyvHq0",
       "firebaseSku": "TKR-089",
@@ -494,6 +1328,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FzBReBbeLcP7aJkRyvHq0%2F1785950611130_1000307266.jpg?alt=media&token=230dd7cc-17a6-4484-843f-a93c30802617"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-030",
       "name": "16x2 LCD Display",
       "matchType": "SKU",
@@ -503,15 +1338,17 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F17nc1GXAwRrj01BPwufX%2F1785870434412_lcd-16x2-tinkro.png?alt=media&token=eab0b5b5-4c92-408e-b4cf-a25bb38f9a37"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-068",
       "name": "0.96\" OLED Display (I2C)",
       "matchType": "SKU",
       "firebaseId": "ycHFXOZ1CkvXdg18edbw",
       "firebaseSku": "TKR-068",
       "firebaseName": "0.96 inch OLED Display (I2C, SSD1306)",
-      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FycHFXOZ1CkvXdg18edbw%2F1786814146958_oled-0-96.jpg?alt=media&token=bf446bc3-fec6-4183-aaf0-ddafa1b5abfe"
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FycHFXOZ1CkvXdg18edbw%2F1787333550919_chatgpt-image-aug-21-2026-11_01_56-pm.png?alt=media&token=cbdb2c51-0665-4ad2-90f0-20de3b2508eb"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-069",
       "name": "1.3\" OLED Display",
       "matchType": "SKU",
@@ -521,6 +1358,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FWsf98SWhbyq9s56MAtIk%2F1786814092537_1-3-oled-display-tinkro.jpg?alt=media&token=8c6122db-9a53-4fa1-ae0d-e4dadb133c7e"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-070",
       "name": "1.8\" TFT Color Display",
       "matchType": "SKU",
@@ -530,6 +1368,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fl6Vs5r6MK2tor6UTShlb%2F1785869546271_1-8-tft-display-tinkro.jpg?alt=media&token=031941d0-b411-4673-b92c-02ce5f32561f"
     },
     {
+      "action": "EXISTING_NOT_MATCHED",
       "sku": "TKR-1018",
       "name": "2.8\" Touch TFT Display",
       "matchType": null,
@@ -537,8 +1376,9 @@
       "imageUrl": null
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-081",
-      "name": "8x8 LED Dot Matrix (MAX7219)",
+      "name": "MAX7219 8x8 LED Dot Matrix",
       "matchType": "SKU",
       "firebaseId": "xqrAIuWPbo3ayaO8xbOm",
       "firebaseSku": "TKR-081",
@@ -546,6 +1386,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FxqrAIuWPbo3ayaO8xbOm%2F1785951970622_8x8-dot-led-matrix-tinkro.webp?alt=media&token=d3e02a76-adb8-40e7-a643-4bcbb56fd1fb"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-074",
       "name": "4-Digit 7-Segment (TM1637)",
       "matchType": "SKU",
@@ -555,6 +1396,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FL9W5uc3nvIeADGhOO8u8%2F1785952855924_4-digit-display-tinkro.jpg?alt=media&token=64b53dfe-8dff-4165-b134-5f602ab824ea"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1019",
       "name": "I2C LCD Backpack Module",
       "matchType": "SKU",
@@ -564,6 +1406,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FFmGhbjv0RAMu3bEeLdaV%2F1785950710676_i2c-module-tinkro.jpg?alt=media&token=8b61d366-d435-4774-9724-82914212cdac"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-019",
       "name": "LED Red (5mm)",
       "matchType": "SKU",
@@ -573,6 +1416,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fdcb35d11-990a-4c8c-92b5-e62586b98612%2F1776277570379_red%20led.jpg?alt=media&token=ca123dcb-7998-4735-99f2-dc1b19a643dc"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-020",
       "name": "LED Blue (5mm)",
       "matchType": "SKU",
@@ -582,6 +1426,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F7f8b3987-d850-47d0-af89-a874b29601e2%2F1776277664236_blue%20led.jpg?alt=media&token=d0093be7-3c35-4c3a-9b05-fee21c33d892"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-021",
       "name": "LED Green (5mm)",
       "matchType": "SKU",
@@ -591,6 +1436,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fc887e7d2-8478-4456-8d61-a840c404fa77%2F1776277737885_green%20led.jpg?alt=media&token=1ff7e62a-846e-48f1-8940-efa470df8a46"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-048",
       "name": "LED Yellow (5mm)",
       "matchType": "SKU",
@@ -600,8 +1446,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fe4ee9bbf-9d62-4d31-ae5c-3eb373119482%2F1776277801821_yellow%20led.jpg?alt=media&token=88d5b28f-f3fb-4836-87b0-764d7840b8c9"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-040",
-      "name": "RGB LED",
+      "name": "RGB LED (Common Cathode)",
       "matchType": "SKU",
       "firebaseId": "NNDVOyfyxPcHEdWO4j5e",
       "firebaseSku": "TKR-040",
@@ -609,8 +1456,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F4267acae-ba01-4b89-891f-f6bf1a8d1dbd%2F1776276756707_images%20(13)%20(1).jpg?alt=media&token=40cb36cf-fc8d-4686-a086-82bd173f58b5"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-034",
-      "name": "Buzzer (5V Active)",
+      "name": "Buzzer Alarm (5V Active)",
       "matchType": "SKU",
       "firebaseId": "icgIcSFFfyEbOsAoi1sI",
       "firebaseSku": "TKR-034",
@@ -618,6 +1466,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F42c27860-3013-4f29-ad10-50141398935a%2F1776185734802_images%20(4)%20(1).jpg?alt=media&token=208e3875-6412-44d8-aecb-ef78aa4ec4e3"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-035",
       "name": "Mini Buzzer (5V Passive)",
       "matchType": "SKU",
@@ -627,8 +1476,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F68fa84b1-5abb-4d3e-bca4-e3ed8955f8a0%2F1776185648570_images%20(5)%20(1).jpg?alt=media&token=b418acb4-d1c7-413c-b515-3bbeb7ca1304"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-071",
-      "name": "Piezoelectric Buzzer",
+      "name": "Piezoelectric Buzzer Sensor",
       "matchType": "SKU",
       "firebaseId": "AcEZYtv7r1AY1sLtGuVE",
       "firebaseSku": "TKR-071",
@@ -636,8 +1486,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FAcEZYtv7r1AY1sLtGuVE%2F1786814847238_piezo-buzzer-sensor-module-passive-.jpg?alt=media&token=4b899783-5f1c-47ec-8ab0-0291323c9ecf"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-072",
-      "name": "Laser Diode (650nm)",
+      "name": "Laser Diode (650nm Red)",
       "matchType": "SKU",
       "firebaseId": "dvlFItOy5cJpHRiMjYW9",
       "firebaseSku": "TKR-072",
@@ -645,6 +1496,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FdvlFItOy5cJpHRiMjYW9%2F1785953196861_laser-light-tinkro.jpg?alt=media&token=75bc55b5-8ba9-43a5-bda1-60c55aea5485"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-073",
       "name": "KY-008 Laser Transmitter",
       "matchType": "SKU",
@@ -654,6 +1506,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F6IoDMBIvAIRbNwVWfdYK%2F1785953077213_ky-008-laser-module-tinkro.jpg?alt=media&token=ae7cc3d5-d2a5-4f51-8c0b-6b507474cf9a"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-057",
       "name": "9V Battery",
       "matchType": "SKU",
@@ -663,8 +1516,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FrSJUJEvlNh39eei1rhm5%2F1785955887214_mini-dc-vibration-motor-tinkro.webp?alt=media&token=0a03938a-f380-49a7-bf89-85e13b6a7411"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-037",
-      "name": "9V Battery + DC Connector",
+      "name": "9V Battery with DC Connector",
       "matchType": "SKU",
       "firebaseId": "f967cYLqvLNKIulTUchj",
       "firebaseSku": "TKR-037",
@@ -672,6 +1526,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Ff967cYLqvLNKIulTUchj%2F1785955870406_mini-dc-vibration-motor-tinkro.webp?alt=media&token=cd814c6e-e5cd-4194-9161-3534c6f4f7f8"
     },
     {
+      "action": "EXISTING_NOT_MATCHED",
       "sku": "TKR-1002",
       "name": "9V Battery Snap Connector",
       "matchType": null,
@@ -679,6 +1534,7 @@
       "imageUrl": null
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-023",
       "name": "18650 Li-Ion Cell (3.7V)",
       "matchType": "SKU",
@@ -688,8 +1544,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FqjHWLBs5vKPmFvXpb9Jy%2F1785953826187_li-on-battery-3-7-tinkro.jpg?alt=media&token=ac3c13dd-e77d-41c3-9cde-4257eb4e29fc"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-083",
-      "name": "11.1V 18650 Battery Pack",
+      "name": "11.1V 18650 Li-Ion Pack",
       "matchType": "SKU",
       "firebaseId": "wGbbvaAsiGAwu5p6tB3c",
       "firebaseSku": "TKR-083",
@@ -697,6 +1554,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FwGbbvaAsiGAwu5p6tB3c%2F1785953768083_battery-tinkro.jpg?alt=media&token=715ae718-4ae3-4ccc-84e8-2656e8998e2a"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-031",
       "name": "2-Cell AA Battery Holder",
       "matchType": "SKU",
@@ -706,8 +1564,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F1722d640-90cb-41e5-b0c3-807d60195a3b%2F1776277251067_images%20(16)%20(1).jpg?alt=media&token=d23e4778-6f1d-4e52-9757-cfc5629d4b5b"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-053",
-      "name": "TP4056 Charger (Type-C)",
+      "name": "TP4056 Charging Module (Type-C)",
       "matchType": "SKU",
       "firebaseId": "tIN5sItAIj6d7QQMqvYr",
       "firebaseSku": "TKR-053",
@@ -715,8 +1574,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FtIN5sItAIj6d7QQMqvYr%2F1785953460299_charging-module-c-type-tinkro.jpg?alt=media&token=9fb9761f-6c4e-4bd4-829c-e1f953901e11"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-064",
-      "name": "LM2596 Buck Converter",
+      "name": "LM2596 DC-DC Buck Converter",
       "matchType": "SKU",
       "firebaseId": "5IFRkY8zOoj2rSXN4ODX",
       "firebaseSku": "TKR-064",
@@ -724,6 +1584,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F5IFRkY8zOoj2rSXN4ODX%2F1786815813953_lm2596-buck-converter-tinkro.jpg?alt=media&token=b3ad896c-c64d-493f-b793-a67ad1a53b94"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-033",
       "name": "Mini Solar Panel (6V)",
       "matchType": "SKU",
@@ -733,6 +1594,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FrWg0oz0ladtcZarys7tH%2F1776276969345_images%20(15).jpg?alt=media&token=571ec4a4-406e-4e18-bdb1-0e75d1467a8d"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1023",
       "name": "3S 10A BMS Board",
       "matchType": "SKU",
@@ -742,6 +1604,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FxHWeYTfBzqGOh8KWGbUm%2F1785864494286_tinkro-3s-20-a-2-.png?alt=media&token=42ff417c-0769-420d-928f-a469bb42ec7a"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1024",
       "name": "5S 15A BMS Board",
       "matchType": "SKU",
@@ -751,6 +1614,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FWdMC28WtO9gDWAc0aRva%2F1785865160773_tinkkro-5s-bms.png?alt=media&token=2055b62d-26de-43c3-be75-2b7a34ff74fa"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1025",
       "name": "6S 12A BMS Board",
       "matchType": "SKU",
@@ -760,8 +1624,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FCmnEDj1z9JGJYglX82zo%2F1785951194397_6s-bms-tinkro.jpg?alt=media&token=f717dbf3-cce2-44f3-86f2-1079255cebf1"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-061",
-      "name": "Bluetooth HC-05",
+      "name": "Bluetooth HC-05 Module",
       "matchType": "SKU",
       "firebaseId": "QsF48Z5li0WzdGdKAMXn",
       "firebaseSku": "TKR-061",
@@ -769,8 +1634,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FQsF48Z5li0WzdGdKAMXn%2F1785956311154_bluetooth-tinkro.jpg?alt=media&token=eff99116-5f82-43ff-bf6b-9791ae52e24f"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-054",
-      "name": "RFID Module (RC522)",
+      "name": "RFID Module (RC522) + Card",
       "matchType": "SKU",
       "firebaseId": "GOttkeT2VE8Em5lGKLiM",
       "firebaseSku": "TKR-054",
@@ -778,6 +1644,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F03da9cbd-10ad-4cd1-af68-82295bf68c09%2F1776275172941_71mrf2GJN-S._AC_UF1000%2C1000_QL80_%20(1).jpg?alt=media&token=84643c84-6e3b-4499-a169-c677369b2f0e"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1011",
       "name": "NRF24L01 with Antenna",
       "matchType": "SKU",
@@ -787,6 +1654,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FgHlpguJEWGa7SslHlAhl%2F1785864306082_tinkro-nrf.png?alt=media&token=ad2f0649-27fb-4fd8-8472-c3cee2f12f6f"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1012",
       "name": "NRF24L01 without Antenna",
       "matchType": "SKU",
@@ -796,6 +1664,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FPolihQf6bJzWHHL5DnXe%2F1785866514541_nrf-pcb-anteena-tinkro.png?alt=media&token=9c1aa910-0733-4d9e-8a4a-c0c644d7dda9"
     },
     {
+      "action": "EXISTING_NOT_MATCHED",
       "sku": "TKR-1014",
       "name": "Camera Module (OV7670)",
       "matchType": null,
@@ -803,6 +1672,7 @@
       "imageUrl": null
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1016",
       "name": "ISD1820 Voice Recorder",
       "matchType": "SKU",
@@ -812,20 +1682,27 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FYU9T7x5VbIGflDlwMRDp%2F1785869903750_isd-1820-speaker-module-tinkro.png?alt=media&token=bdcc8bea-1758-4362-8db0-7bd3e0bc0957"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1020",
       "name": "GPS Module (NEO-6M)",
-      "matchType": null,
-      "firebaseId": null,
-      "imageUrl": null
+      "matchType": "SKU",
+      "firebaseId": "w96D57eDnBQ27JQG25nm",
+      "firebaseSku": "TKR-1020",
+      "firebaseName": "GPS Module (NEO-6M / Ublox)",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fw96D57eDnBQ27JQG25nm%2F1785865661471_tinkro-gps.png?alt=media&token=c3f3bfdf-6323-44ea-bf33-f45c0c6e6ec3"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1021",
       "name": "GSM Module (SIM800L)",
-      "matchType": null,
-      "firebaseId": null,
-      "imageUrl": null
+      "matchType": "SKU",
+      "firebaseId": "u6BCAXn8T5adBI8p5Oqy",
+      "firebaseSku": "TKR-1021",
+      "firebaseName": "SIM800L GSM/GPRS Module",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fu6BCAXn8T5adBI8p5Oqy%2F1785866741092_sim800l-gsmgprs-module-tinkro.png?alt=media&token=9c78b1ba-b6d1-4f0a-882a-0b5e39741af3"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-022",
       "name": "5V Single Channel Relay",
       "matchType": "SKU",
@@ -835,6 +1712,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F3Om3WF49slc7laLHys5w%2F1785954030432_civz5hzaz0m9bmkr-image-1708447520994.png?alt=media&token=1bff4c8b-ff9d-45ec-aa4c-4943007167a3"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-044",
       "name": "2-Channel Relay Module",
       "matchType": "SKU",
@@ -844,6 +1722,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F28cd5ca4-3678-4605-bde8-b38a88f0870b%2F1776276377771_images%20(11)%20(1).jpg?alt=media&token=1890e757-9fe0-470b-82ed-6e72c8adefa0"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-051",
       "name": "4-Channel Relay Module",
       "matchType": "SKU",
@@ -853,8 +1732,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F8Kryeka8jldoviJRDWFQ%2F1786814361694_4-channel-relay-tinkro-indore.jpg?alt=media&token=bd91a45d-b8bb-46bd-b401-a4f6ce6e2e1d"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-024",
-      "name": "Push Button (Tactile)",
+      "name": "Push Button (Tactile Switch)",
       "matchType": "SKU",
       "firebaseId": "62MgzCsZ3maewEWHYdHm",
       "firebaseSku": "TKR-024",
@@ -862,8 +1742,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F60aee75f-1457-4f6b-a4dd-409e27ad7b60%2F1776259782289_images%20(10)%20(1).jpg?alt=media&token=e365bf2c-e128-4be1-8d22-51f84ee3d37d"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-028",
-      "name": "Rocker Switch (On/Off)",
+      "name": "Red Rocker Switch (On/Off)",
       "matchType": "SKU",
       "firebaseId": "t2zl7Ff8pNDRa4F0NzSe",
       "firebaseSku": "TKR-028",
@@ -871,8 +1752,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fba678a40-e116-4e01-a173-a1f248ffa307%2F1776277405526_71KNjN5hK9L%20(1).jpg?alt=media&token=bf54714e-9656-4875-85c8-1a7a99a6068d"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-025",
-      "name": "Jumper Wires M-M (40pcs)",
+      "name": "Jumper Wires – M-M (40pcs)",
       "matchType": "SKU",
       "firebaseId": "goyIbbszKLAugA1hLYaF",
       "firebaseSku": "TKR-025",
@@ -880,8 +1762,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fe956fb33-d170-4929-987a-d89d0d1fec00%2F1776259327582_images%20(7)%20(1).jpg?alt=media&token=90673e0f-40d7-4d6e-b0b0-4470aaa3d20c"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-026",
-      "name": "Jumper Wires M-F (40pcs)",
+      "name": "Jumper Wires – M-F (40pcs)",
       "matchType": "SKU",
       "firebaseId": "a3GX09zy7pPAIRiw7WNq",
       "firebaseSku": "TKR-026",
@@ -889,8 +1772,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F4fb3b2a0-dc6f-4e09-90ea-41df425a9fec%2F1776259417050_images%20(8)%20(1).jpg?alt=media&token=1ef96774-c211-45a7-a425-e6a7cf36c357"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-027",
-      "name": "Jumper Wires F-F (40pcs)",
+      "name": "Jumper Wires – F-F (40pcs)",
       "matchType": "SKU",
       "firebaseId": "kaC33jAwPyi0yhLajhpC",
       "firebaseSku": "TKR-027",
@@ -898,6 +1782,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F057a9e3a-944b-4284-8909-dbd04f95cf6e%2F1776259488486_images%20(9)%20(1).jpg?alt=media&token=375e05ef-7d9d-4ffb-82ad-c94eb05ddf06"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1004",
       "name": "Alligator Clip Test Lead",
       "matchType": "SKU",
@@ -907,8 +1792,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FKVe2SYAAaPZ9ezDnwOgN%2F1785952765061_alligator-clip-tinkro.jpg?alt=media&token=13cbf9f1-f918-434e-b031-a7390b177577"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-079",
-      "name": "Berg Strip Header Pins",
+      "name": "Male Berg Strip Header Pins",
       "matchType": "SKU",
       "firebaseId": "4Y49fU1ysqoJRpRje9CE",
       "firebaseSku": "TKR-079",
@@ -916,6 +1802,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F4Y49fU1ysqoJRpRje9CE%2F1785953359970_male-berg-strip-tinkro.jpg?alt=media&token=b8aa28a5-3a9c-4b36-b17f-28f7a67368f4"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-087",
       "name": "Hook-Up Wire (Multi-color)",
       "matchType": "SKU",
@@ -925,6 +1812,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FHjY71J2wH7sC9397kZXq%2F1785952634156_hookup-wire-tinkro.jpg?alt=media&token=527da0ae-73f2-4be1-9dcc-9477992b0afb"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-052",
       "name": "Breadboard 830 Points",
       "matchType": "SKU",
@@ -934,6 +1822,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Ffb4ce834-66ba-4fe3-aa5a-6c8d297084b4%2F1776449639852_ETR-105-Breadboard-800-Points%20(1).png?alt=media&token=fd349c82-5f32-464c-bd7c-37973754eea5"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-055",
       "name": "Breadboard 400 Points",
       "matchType": "SKU",
@@ -943,8 +1832,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F5p7r0gWWNKqocLjCdEDv%2F1776057297063_images%20(1).jfif?alt=media&token=8c6f0447-6a70-4001-9df3-4fdefd06fab3"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1003",
-      "name": "PCB Board (5×7 cm)",
+      "name": "PCB Prototype Board (5×7 cm)",
       "matchType": "SKU",
       "firebaseId": "fA3wf94lwmazzCnT1J5W",
       "firebaseSku": "TKR-1003",
@@ -952,6 +1842,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FfA3wf94lwmazzCnT1J5W%2F1785868065814_71p5fwop5sl-_ac_uf1000-1000_ql80_.jpg?alt=media&token=8b22e22d-7507-4938-b5ca-2f2508d2c75b"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-029",
       "name": "Resistor Kit (Assorted)",
       "matchType": "SKU",
@@ -961,13 +1852,15 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F2VSaHfUNuuYnqpAqetM6%2F1785954336939_resister-set-tinkro.png?alt=media&token=03a17a60-6fd7-4d93-966d-be34a1b9d078"
     },
     {
+      "action": "EXISTING_NOT_MATCHED",
       "sku": "TKR-090",
-      "name": "Capacitor Kit",
+      "name": "Electrolytic Capacitor Kit",
       "matchType": null,
       "firebaseId": null,
       "imageUrl": null
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-092",
       "name": "555 Timer IC",
       "matchType": "SKU",
@@ -977,8 +1870,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fjzb3sFRlAWorKECnrOGz%2F1785954957405_555-timer-ic-tinkro.jpg?alt=media&token=c0aa34bb-980f-4c13-a898-499cdc857aed"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-016",
-      "name": "Robot Wheel 65mm",
+      "name": "Robot Wheel 65mm (BO Motor)",
       "matchType": "SKU",
       "firebaseId": "RUlEQu7gFNfmdDjtOKN3",
       "firebaseSku": "TKR-016",
@@ -986,6 +1880,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fa241aa89-652a-482b-b4a8-b142a92c594a%2F1776278806654_bo%20wheel.jpg?alt=media&token=ec7a193e-0ed0-4d99-8bcf-3880d155c528"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-017",
       "name": "Wheel – Small",
       "matchType": "SKU",
@@ -995,6 +1890,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F876222f3-23e8-41f6-be4a-3a4a872aef06%2F1776278978723_images%20(17).jpg?alt=media&token=ba141956-b8d1-4735-9981-1360a83d1959"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-091",
       "name": "Mecanum Wheels (Set of 4)",
       "matchType": "SKU",
@@ -1004,8 +1900,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FyWJv07NCXjuVsx6zm6yF%2F1785951795164_maccanum-wheel-tinkro.jpg?alt=media&token=08156429-5cfc-4d33-863e-133b3b939ce7"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1026",
-      "name": "Caster Wheel",
+      "name": "Caster Wheel (Swivel)",
       "matchType": "SKU",
       "firebaseId": "ZAUJRnDZ07ULtA0vFi7L",
       "firebaseSku": "TKR-1026",
@@ -1013,15 +1910,17 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FZAUJRnDZ07ULtA0vFi7L%2F1785868612107_caster-wheel-tinkro.jpg?alt=media&token=05b1b206-290f-43a7-84d3-697bb3ee7dc9"
     },
     {
+      "action": "EXISTING_NOT_MATCHED",
       "sku": "TKR-001",
-      "name": "4WD Robot Car Kit",
+      "name": "DIY 4-Wheel Robot Car Kit",
       "matchType": null,
       "firebaseId": null,
       "imageUrl": null
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-002",
-      "name": "2WD Robot Car Kit",
+      "name": "DIY 2-Wheel Robot Car Kit",
       "matchType": "SKU",
       "firebaseId": "fXww5ld6d4iyP7LWjjL8",
       "firebaseSku": "TKR-002",
@@ -1029,22 +1928,25 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FfXww5ld6d4iyP7LWjjL8%2F1776279324817_61nxRCDiFOL._AC_UF1000%2C1000_QL80_%20(1).jpg?alt=media&token=37f2192f-0e7a-4f37-a749-df7cac542581"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-059",
-      "name": "DIY Drone Kit",
+      "name": "DIY Drone Kit (Complete)",
       "matchType": "SKU",
-      "firebaseId": "2IDqjvKA8ddQpHH27nlJ",
+      "firebaseId": "dVNsylhDEurs1GYXip7F",
       "firebaseSku": "TKR-059",
-      "firebaseName": "Arduino Mega 2560",
-      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F2IDqjvKA8ddQpHH27nlJ%2F1776056894687_Arduino-Mega-2560-front%20(1).jpg?alt=media&token=e658c3f6-1710-4c3a-a4ae-539a5931f54b"
+      "firebaseName": "DIY Drone Kit - Build Your Own Quadcopter",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F0cfeac4b-28b3-42dc-a7b6-966d083e15c8%2F1785087149079_x7w-bZQzwGLPWnFZjSm6ec-sNPYDoqTUmkdbXp8GTjZAD17o7108uCxnkITLtuQ8QXXrOUO-G1W_6cIgSFjS_CbumfNw4IolsK1sZj_b3Nxyzqf1zOX-FE6nlZ9B760Bkgi_jluLb5acEAcjCDG2rwFzQhAlVREAE5uKTnqYqf8.jpg?alt=media&token=bf213edf-7679-4fdb-8ebb-3bae1d4bc00f"
     },
     {
+      "action": "EXISTING_NOT_MATCHED",
       "sku": "TKR-1006",
-      "name": "Propeller Blade",
+      "name": "DC Fan / Propeller Blade",
       "matchType": null,
       "firebaseId": null,
       "imageUrl": null
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-045",
       "name": "Digital Multimeter",
       "matchType": "SKU",
@@ -1054,15 +1956,19 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FRMML5CCigNvx6WBTbVmf%2F1786815439933_multimeter.png?alt=media&token=b77ed04e-764e-4475-a10a-dd162de2006f"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-047",
       "name": "4×4 Matrix Keypad",
-      "matchType": null,
-      "firebaseId": null,
-      "imageUrl": null
+      "matchType": "SKU",
+      "firebaseId": "vwttrH24zz65ggoOzsXP",
+      "firebaseSku": "TKR-047",
+      "firebaseName": "4x4 Matrix Membrane Keypad",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fa5bcde4a-4afd-461b-87f6-6b3ea0358440%2F1776000922755_images%20(3).jpg?alt=media&token=acc22bc6-c68e-4e6e-b740-a09aa560fae5"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-067",
-      "name": "Joystick Module",
+      "name": "Dual Axis Joystick Module",
       "matchType": "SKU",
       "firebaseId": "PFODHix3VWfvdOvzMmw8",
       "firebaseSku": "TKR-067",
@@ -1070,8 +1976,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FPFODHix3VWfvdOvzMmw8%2F1786814922448_joystick-tinkro.jpg?alt=media&token=ff4151ea-52f5-47d2-92e9-822573729b79"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1013",
-      "name": "USB Soldering Iron",
+      "name": "Mobile Soldering Iron (USB)",
       "matchType": "SKU",
       "firebaseId": "g38UxXnryAOqib7vnNzt",
       "firebaseSku": "TKR-1013",
@@ -1079,6 +1986,7 @@
       "imageUrl": null
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1032",
       "name": "Glue Gun (60W)",
       "matchType": "SKU",
@@ -1088,6 +1996,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FyLZCDxNpNu6SsBKDzbOk%2F1785867458427_hot-glue-gun-60-watt-tinkro.png?alt=media&token=cee182fb-4806-4f8f-aad6-b02ccd75e612"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1033",
       "name": "Glue Gun (100W)",
       "matchType": "SKU",
@@ -1097,8 +2006,9 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FTgqho36IBtvmTwQvbxqZ%2F1785867500202_hot-glue-gun-100-watt-tinkro.png?alt=media&token=fa3e769c-4ed3-461a-bb24-5bfdcd1b34a0"
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1034",
-      "name": "Glue Sticks (Pack)",
+      "name": "Glue Sticks (Pack of 10)",
       "matchType": "SKU",
       "firebaseId": "dCt7QG5DqepzMGfhiqAy",
       "firebaseSku": "TKR-1034",
@@ -1106,6 +2016,7 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FdCt7QG5DqepzMGfhiqAy%2F1785867229951_glue-stick-tinkro.png?alt=media&token=278ca453-7ebe-4f81-a393-1464e4f3adab"
     },
     {
+      "action": "EXISTING_NOT_MATCHED",
       "sku": "TKR-1035",
       "name": "Drill Bit Set",
       "matchType": null,
@@ -1113,8 +2024,9 @@
       "imageUrl": null
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1036",
-      "name": "2-in-1 Screwdriver",
+      "name": "2-in-1 Reversible Screwdriver",
       "matchType": "SKU",
       "firebaseId": "wtXTHrbmTc5f9w22TmgB",
       "firebaseSku": "TKR-1036",
@@ -1122,13 +2034,15 @@
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FwtXTHrbmTc5f9w22TmgB%2F1785868162138_screwdriver-tinkro.jpg?alt=media&token=a47b07db-1725-4145-88b4-5dfa3f17a124"
     },
     {
+      "action": "EXISTING_NOT_MATCHED",
       "sku": "TKR-1037",
-      "name": "Mini Screwdriver",
+      "name": "Mini Precision Screwdriver",
       "matchType": null,
       "firebaseId": null,
       "imageUrl": null
     },
     {
+      "action": "EXISTING_UPDATED",
       "sku": "TKR-1039",
       "name": "Spot Welding Machine",
       "matchType": "SKU",
@@ -1136,6 +2050,710 @@
       "firebaseSku": "TKR-1039",
       "firebaseName": "Spot Welding Machine (Portable, for 18650 Battery Packs)",
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FP3MOQkrETpeDhd1UCqp0%2F1785868462023_spot-welding-machine-tinkro.png?alt=media&token=71d26b9d-8f83-4425-9214-990ef9f32e78"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1005",
+      "name": "Self-Adhesive Mini Breadboard Proto Shield",
+      "category": "Prototyping & Tools",
+      "firebaseId": "1chy9XROrMiJovsmtCCM",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F1chy9XROrMiJovsmtCCM%2F1776056667248_self-adhesive-proto-shield%20(1).jpg?alt=media&token=4f3bdc15-8ae9-4c10-8142-e0fe646cbcb8"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "ARCHIVED-TKR-059",
+      "name": "Arduino Mega 2560",
+      "category": "Microcontrollers & Development Boards",
+      "firebaseId": "2IDqjvKA8ddQpHH27nlJ",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F2IDqjvKA8ddQpHH27nlJ%2F1776056894687_Arduino-Mega-2560-front%20(1).jpg?alt=media&token=e658c3f6-1710-4c3a-a4ae-539a5931f54b"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1117",
+      "name": "MAX4466 Electret Microphone Amplifier with Adjustable Gain Module",
+      "category": "STEM Products",
+      "firebaseId": "2kqAfiwGbr7dnp3jw8XI",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F2kqAfiwGbr7dnp3jw8XI%2F1789061460266_max4466-electret-microphone-amplifier-with-adjustable-gain-module.png?alt=media&token=2defc7c5-9e62-4d5f-b1ba-8afb117fdf13"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-206",
+      "name": "SG90 Micro Servo Motor (Pack of 4)",
+      "category": "Motors, Drivers & Actuators",
+      "firebaseId": "3gBiLmTipTMoqZLsZWJG",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F3gBiLmTipTMoqZLsZWJG%2F1785950088298_servo-4-tinkro.jpg?alt=media&token=c782bd63-d895-4bce-977e-7d55c8ffcdf9"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1124",
+      "name": "XH2.54mm 4P Bend Pin Header Connector Right Angle",
+      "category": "STEM Products",
+      "firebaseId": "4ZWTjjOqMxpLHRaWbxm3",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F4ZWTjjOqMxpLHRaWbxm3%2F1789063539072_4pin.jpg?alt=media&token=4e8c323c-2a54-4c1f-abec-13dc7ac9fcfb"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1073",
+      "name": "TCRT5000 Reflective IR Optical Sensor",
+      "category": "STEM Products",
+      "firebaseId": "4dW1MHk2RYGJjC72HJMz",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F4dW1MHk2RYGJjC72HJMz%2F1787593963968_tcrt5000-1.jpg?alt=media&token=5bd986c3-e7a0-4062-ba0a-2779a644ae4a"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1123",
+      "name": "Dual Battery Charger for 18650 Li-ion Batteries",
+      "category": "STEM Products",
+      "firebaseId": "6bfAVDkC7Wd0hpT5eg20",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F6bfAVDkC7Wd0hpT5eg20%2F1789063463564_dual-battery-charge.webp?alt=media&token=bb9fa73b-4cd8-4920-96df-7ebdedff8be2"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1064",
+      "name": "1.5-5V DC Vibration Motor - Mini Coin Type",
+      "category": "STEM Products",
+      "firebaseId": "77Fkj6f7cnUVbDBN7t1r",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F77Fkj6f7cnUVbDBN7t1r%2F1787455757255_vibration-module-tinkro.png?alt=media&token=dd6f9596-f061-4944-b279-b3fbe901d9a8"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1080",
+      "name": "L293D Motor Driver / Servo Shield for Arduino",
+      "category": "STEM Products",
+      "firebaseId": "7F96mVVnD2bQjlis3Idq",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F7F96mVVnD2bQjlis3Idq%2F1787462935958_chatgpt-image-aug-23-2026-10_32_42-am.png?alt=media&token=8781a03a-4fbe-4905-9fb9-ef301ca878e2"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1055",
+      "name": "IR Remote Control Module Kit - Transmitter + Receiver",
+      "category": "STEM Products",
+      "firebaseId": "8T7jZRqS1ero71z5xDLx",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F8T7jZRqS1ero71z5xDLx%2F1787462480229_ir-remotev-tinkro.png?alt=media&token=40544eb6-6d5e-467f-9785-2f9575c30b38"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1043",
+      "name": "LDR Photoresistor - Light Dependent Resistor",
+      "category": "STEM Products",
+      "firebaseId": "90hYWV51NecMW9lXFcjo",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F90hYWV51NecMW9lXFcjo%2F1787465544266_ldr-photo-resister.jpg?alt=media&token=804eb92a-30cd-4e98-9cb5-f3db3c02b7fa"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1076",
+      "name": "Eye Blink Sensor Module with Goggles",
+      "category": "STEM Products",
+      "firebaseId": "949GDusVrKst4d1Wqq6d",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F949GDusVrKst4d1Wqq6d%2F1787460391474_eye-blink-goggle-tinkro.png?alt=media&token=0b0004c9-6759-4f21-8615-36bbefcf20a1"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-032",
+      "name": "TP4056 Type-C Lithium Battery Charging Module",
+      "category": "Power Supply & Batteries (very useful additio",
+      "firebaseId": "9Ftik8q653M4nuunqGLf",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F20572b50-1eb6-4d57-8be8-7ea400be71f6%2F1776277134808_TP4056-TYPE-CChargingModule%20(1).webp?alt=media&token=67e53121-9855-465f-823e-81733c490285"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1065",
+      "name": "5A Glass Fuse - 5x20mm",
+      "category": "STEM Products",
+      "firebaseId": "9k6nDcgFIuwPQpxS87dm",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F9k6nDcgFIuwPQpxS87dm%2F1787457327415_fuse-tinkro.png?alt=media&token=cddd0bce-a39e-4ac3-a865-9eca9a3ac060"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1068",
+      "name": "5W LED Chip - High Power Cool White Star COB 300mA",
+      "category": "Displays & Indicators",
+      "firebaseId": "AilRke6RzLaNa0vco47b",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FAilRke6RzLaNa0vco47b%2F1787457625232_cob-light-tinkro.png?alt=media&token=979b84f3-ef42-46e6-b648-f4e3dfb3a8eb"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1099",
+      "name": "150mm Trapezoidal 4 Start Lead Screw 8mm Thread 2mm Pitch with Copper Nut",
+      "category": "STEM Products",
+      "firebaseId": "AnnOEU0qsOp0kamLhfgt",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FAnnOEU0qsOp0kamLhfgt%2F1789059687813_150mm-trapezoidal-4-start-lead-screw-8mm-thread-2mm-pitch-with-copper-nut.jpg?alt=media&token=5a3cb0fc-acfb-4cde-ac55-f371ea041b50"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-226",
+      "name": "Basic Electronics DIY Starter Kit",
+      "category": "DIY Kits & Educational Kits",
+      "firebaseId": "AuoJ3y6BV09WkR9kKBWx",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F7a57351a-c854-4455-b9f2-5baeef0230d7%2F1776362964377_kit1.png?alt=media&token=5ab54b99-5492-4147-bdd1-094aace6e8c1"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1057",
+      "name": "TDS Sensor Module - Analog Water Quality Meter",
+      "category": "STEM Products",
+      "firebaseId": "BFXTMuyDRQRR54ZoCHEc",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FBFXTMuyDRQRR54ZoCHEc%2F1787505721617_tds.png?alt=media&token=814eaf39-8251-42ec-8b54-46a02b14e449"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1061",
+      "name": "DC 5V 4010 Cooling Fan - 40x40x10mm",
+      "category": "STEM Products",
+      "firebaseId": "BOlYEn9mB52DVUNnQnF0",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FBOlYEn9mB52DVUNnQnF0%2F1787459715795_dc-cooling-fan.jpg?alt=media&token=7f861f2b-a200-4a74-92d4-914ffa076693"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1062",
+      "name": "2.54mm Pitch 2-Pin JST Cable with Connector",
+      "category": "STEM Products",
+      "firebaseId": "BjBZDiYY2j37ppcSaEFP",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FBjBZDiYY2j37ppcSaEFP%2F1787456886969_2-54mm-jst-cable-tinkro.png?alt=media&token=53796248-82b3-4023-8900-0a3766834fe5"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1052",
+      "name": "DC Motor - Single Shaft Flat 280 Type",
+      "category": "STEM Products",
+      "firebaseId": "BpSv142rZxtTBlOIb1jB",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FBpSv142rZxtTBlOIb1jB%2F1787459989776_single-shaft-dc-motor-280---tinkro.png?alt=media&token=4305f5e3-b22b-4d6d-acea-cbd1a969c6a2"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1067",
+      "name": "Round Push Rocker Switch - 3A 250V",
+      "category": "STEM Products",
+      "firebaseId": "CWilK1VWDDfrURvSaGZ5",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FCWilK1VWDDfrURvSaGZ5%2F1787503921428_round-rocker-switch.png?alt=media&token=de504feb-0783-45aa-9e9b-911996e5bd2d"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1119",
+      "name": "Fuse Holder BF-020 Panel Mount for 5x20mm Fuses",
+      "category": "STEM Products",
+      "firebaseId": "CXSufWtJbxefzdxbA6nF",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FCXSufWtJbxefzdxbA6nF%2F1789062154886_fuse-holder.jpg?alt=media&token=669c0c2f-faef-42f0-af0d-40c83c7dd57d"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-042",
+      "name": "Mini Tube Water Pump (DC)",
+      "category": "Motors, Drivers & Actuators",
+      "firebaseId": "DsgW19OdzhBM7QY4TGoE",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FDsgW19OdzhBM7QY4TGoE%2F1785951387228_water-pump-tube-tinkro.jpg?alt=media&token=e420eb2f-12f7-4125-a196-c1c24cd748c1"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1126",
+      "name": "Desoldering Pump Solder Sucker Spring-Loaded",
+      "category": "STEM Products",
+      "firebaseId": "E2K1EhNggQziA7zUA3Cw",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FE2K1EhNggQziA7zUA3Cw%2F1789064193105_desildering-pump.jpg?alt=media&token=81c21ac9-857b-4d11-9615-aef09e880fa6"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1078",
+      "name": "2.8 Inch TFT Touch Screen Display Module - SPI 240x320 with Stylus",
+      "category": "Displays & Indicators",
+      "firebaseId": "E4GFVd7nDvNLchkeGaqy",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FE4GFVd7nDvNLchkeGaqy%2F1787456638488_2-8-tft-display-with-stylus-tinkro.png?alt=media&token=ee0f7d94-7a06-48c6-8c1e-e6a9be58f1bb"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1094",
+      "name": "PM2.5 Air Quality Sensor Module PMS5003 Laser Dust Sensor",
+      "category": "STEM Products",
+      "firebaseId": "EZ021icj1p3IS3e1ayDs",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FEZ021icj1p3IS3e1ayDs%2F1789063057889_pm2-5.jpg?alt=media&token=69207bc2-b494-491c-902d-552b898f027e"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1070",
+      "name": "Ribbon Cable / Multi-Strand Cable - 1 Meter",
+      "category": "STEM Products",
+      "firebaseId": "Ejuct4Dir9qPap6KYGwO",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FEjuct4Dir9qPap6KYGwO%2F1787462586827_ribben-cable-tinkro.png?alt=media&token=fd100479-9d20-42b4-8eef-e1787e9ba359"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-208",
+      "name": "SG90 Micro Servo Motor (Pack of 6)",
+      "category": "Motors, Drivers & Actuators",
+      "firebaseId": "FHelDg0Qjk3Nkyfh6vEO",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FFHelDg0Qjk3Nkyfh6vEO%2F1785950841854_six-sg90-tinkro.webp?alt=media&token=b16efa23-864e-4134-b3e2-f1d1490ba155"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1075",
+      "name": "MQ-3 Gas Sensor Module for Alcohol Detection",
+      "category": "STEM Products",
+      "firebaseId": "GG2uDlJvvSuVA8CFrwWp",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FGG2uDlJvvSuVA8CFrwWp%2F1787463165914_mq3-tinkro.png?alt=media&token=05ae349a-42c7-4401-845e-767ca1d40a3a"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1122",
+      "name": "iMaxRC B3 Pro Compact LiPo Battery Balance Charger",
+      "category": "STEM Products",
+      "firebaseId": "HLNt8Lwh7P5PAIUhzbny",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FHLNt8Lwh7P5PAIUhzbny%2F1789063404734_b3-charger.jpg?alt=media&token=82763a92-33dd-4ba2-ab29-85d7c112fe39"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1059",
+      "name": "5mm White LED - High Brightness Through-Hole",
+      "category": "Displays & Indicators",
+      "firebaseId": "HoyJerGXpaPEtJOdl2w5",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FHoyJerGXpaPEtJOdl2w5%2F1787457416090_white-light.jpg?alt=media&token=77ac4d99-e11b-407f-b3a4-17804289f3b1"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1083",
+      "name": "Universal 18650 / 16340 / 14500 Li-ion Battery Charger - EU Plug",
+      "category": "STEM Products",
+      "firebaseId": "IG5Rra62uImGu4hsXD0f",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FIG5Rra62uImGu4hsXD0f%2F1787463836406_charger.png?alt=media&token=aa1967db-ce6f-44e7-9d07-f74ba03d470b"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-218",
+      "name": "Mini Water Pump DIY Kit",
+      "category": "DIY Kits & Educational Kits",
+      "firebaseId": "J2JLVAsUFTcLM8BXO9mF",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F02801b19-f45f-4a23-baa1-7548e0ff6d02%2F1776363560109_file_00000000b40c720692aebb6fc5fc4f40.png?alt=media&token=b3190c74-b2cf-4b8b-9d0c-a04b68dba84c"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1121",
+      "name": "MG995 Metal Gear High Torque Servo Motor",
+      "category": "STEM Products",
+      "firebaseId": "JfnHY1UuDX83SjtY95m0",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FJfnHY1UuDX83SjtY95m0%2F1789062925754_mg995aa.jpg?alt=media&token=19ea4277-e3ca-47b7-88e7-f86ab2c587fe"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1130",
+      "name": "1S BMS Battery Management System 3.7V Li-ion Protection Board",
+      "category": "STEM Products",
+      "firebaseId": "JgpzTFTZYToJDbU3tikm",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FJgpzTFTZYToJDbU3tikm%2F1789060149024_1s-bms-tinkro.png?alt=media&token=556e1637-afb0-449b-8a06-9e32ea6e5142"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1090",
+      "name": "Nylon Cable Zip Ties 100mm White Pack of 100",
+      "category": "STEM Products",
+      "firebaseId": "KGVZd7QXrOstE1ynNqV2",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FKGVZd7QXrOstE1ynNqV2%2F1789062624058_tie-cable.jpg?alt=media&token=577a3ef8-181f-4dbd-9f23-59e729588eff"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1051",
+      "name": "LM393 Sound Sensor Module - Microphone Detection",
+      "category": "STEM Products",
+      "firebaseId": "L1rdqMcVfs7wz3FPLHVG",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FL1rdqMcVfs7wz3FPLHVG%2F1787463100256_lm393-sound-sensor-tinkro.png?alt=media&token=f1cd4b5c-0884-4bdd-bbe1-d1718838e7b0"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1102",
+      "name": "1 Meter Red Silicone Tube Flexible Rubber Hose ID 1mm x 3mm OD",
+      "category": "STEM Products",
+      "firebaseId": "Ls7ntOPXYVk5hUmqypLj",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FLs7ntOPXYVk5hUmqypLj%2F1789059863316_1-meter-red-silicone-tube-flexible-rubber-hose-id-1mm-x-3mm-od.jpg?alt=media&token=032ab532-94e4-4c0b-b06b-04e5222ecd37"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1095",
+      "name": "Micro USB Cable for ESP32 ESP8266 Development Boards",
+      "category": "STEM Products",
+      "firebaseId": "MX0thu7mTjVLut6FV6uy",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FMX0thu7mTjVLut6FV6uy%2F1789063162479_usb-esp-32.webp?alt=media&token=cb7e1621-22d8-4eff-9e8d-9d3218e75847"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1131",
+      "name": "4S BMS Battery Management System 14.8V 16.8V Li-ion Protection Board",
+      "category": "STEM Products",
+      "firebaseId": "MxPGNF7aFGYC79H4MhbV",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FMxPGNF7aFGYC79H4MhbV%2F1789061104559_4s-bms.jpg?alt=media&token=82411f17-ffd6-42f6-bce5-0a10f45c59e8"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1060",
+      "name": "Load Cell 3KG - Weighing Sensor",
+      "category": "STEM Products",
+      "firebaseId": "Ncz5tj51sLsXMQPpJ9LG",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FNcz5tj51sLsXMQPpJ9LG%2F1787457792295_load-cell-3kg-tinkro.png?alt=media&token=9d4701f4-7e5a-4151-9ddf-8476f7b5b563"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1097",
+      "name": "Perfboard Single Sided 5x7cm Universal PCB",
+      "category": "STEM Products",
+      "firebaseId": "QFfSsaPEb4FyxWm0ZjYy",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FQFfSsaPEb4FyxWm0ZjYy%2F1789062330277_perfboard.jpg?alt=media&token=a4a00981-7e22-4c10-95dc-38b4271c8339"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1098",
+      "name": "Limit Switch WK1-G02 Micro Switch with Roller Lever",
+      "category": "STEM Products",
+      "firebaseId": "QPs3fU9IhJDmqqCkuGeD",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FQPs3fU9IhJDmqqCkuGeD%2F1789061773628_limit-switch-tinkro.jpg?alt=media&token=d091a74a-9542-40aa-b04d-002340db9e90"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1054",
+      "name": "12V DC Power Adapter (BNS)",
+      "category": "STEM Products",
+      "firebaseId": "Qo5NMCNJqq9kXS8lFJSi",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FQo5NMCNJqq9kXS8lFJSi%2F1787459626901_charger-tinkro.png?alt=media&token=c434e674-1b88-4527-af19-2943a6e40dec"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-009",
+      "name": "Rain Sensor Module",
+      "category": "Sensors & Modules",
+      "firebaseId": "RI9CYUM1PCojQw655STU",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F8714f6e4-c3ff-46ce-82f6-2038a61b67f8%2F1776448155694_rain11%20(1).PNG?alt=media&token=3462b20d-ccd4-48a5-9bc3-32fc80f9d191"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1082",
+      "name": "SmartElex Speaker Module for Arduino",
+      "category": "Displays & Indicators",
+      "firebaseId": "SGwH2mHuamF2nQ1r9zHE",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FSGwH2mHuamF2nQ1r9zHE%2F1787463430122_smart-elex-tinkro.png?alt=media&token=90002900-19ca-4705-aecd-012982175a09"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1040",
+      "name": "DIY 4 Wheel Robot Car Chassis Kit",
+      "category": "Robotics Parts & Mechanical Components",
+      "firebaseId": "STAhkdEaDTHgtIdIR39j",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FSTAhkdEaDTHgtIdIR39j%2F1776279402761_4WD%20(1).PNG?alt=media&token=6a821e19-382a-45aa-890a-a350e9ee393c"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1120",
+      "name": "Solder Wire 60/40 Tin-Lead 1.0mm Rosin Core",
+      "category": "STEM Products",
+      "firebaseId": "SdnBr2hLNGp3nkXUfBvi",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FSdnBr2hLNGp3nkXUfBvi%2F1789062833498_soldering-wir-e.webp?alt=media&token=ace584c1-161b-4545-a861-d7e5dd139547"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1113",
+      "name": "2WD Mini Round Double-Deck Smart Robot Car Chassis DIY Kit",
+      "category": "STEM Products",
+      "firebaseId": "Sz28GwR3nhez9DYgiBsL",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FSz28GwR3nhez9DYgiBsL%2F1789060608063_round-chassis-car1.png?alt=media&token=db983262-2d5d-4969-bbe1-720c1aac997e"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1127",
+      "name": "Reed Switch 2x14mm Magnetic Control Switch Normally Open",
+      "category": "STEM Products",
+      "firebaseId": "UNI2OvvHYg34SttvOlB8",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FUNI2OvvHYg34SttvOlB8%2F1789064251011_reed-switch.jpg?alt=media&token=c801245d-4fdb-44da-a1b3-455889ad0b75"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1110",
+      "name": "Insulating Tape PVC Electrical Tape Black",
+      "category": "STEM Products",
+      "firebaseId": "UrXBgMAYvnUtMrGz3R54",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FUrXBgMAYvnUtMrGz3R54%2F1789062430099_tape.jpg?alt=media&token=f866a23d-e7ca-4e70-8c1d-b4cc09ec11a6"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1129",
+      "name": "PCB Mounted Active Buzzer 5V Electromagnetic",
+      "category": "Displays & Indicators",
+      "firebaseId": "WBhAuYVQErmLpQ2DWbPU",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FWBhAuYVQErmLpQ2DWbPU%2F1789064452404_buzzer.jpg?alt=media&token=5e4d5409-876a-46c6-a5c7-6a323ca5ffa6"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1042",
+      "name": "LED Traffic Light Module - 5V",
+      "category": "Displays & Indicators",
+      "firebaseId": "WKBOuIsgCTgckhMPdbsj",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FWKBOuIsgCTgckhMPdbsj%2F1787462320568_traffic-light-tinkro.png?alt=media&token=06046592-2e34-4b6d-a786-d12d53b16a6b"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1112",
+      "name": "Flux Soldering Paste 10g for PCB SMD Rework",
+      "category": "STEM Products",
+      "firebaseId": "WeRgVPx8NTl3DPuFGGlI",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FWeRgVPx8NTl3DPuFGGlI%2F1789062517662_flux-solderingpaste.jpg?alt=media&token=3d5477f0-c9c2-4a6c-aad9-6dd1654de40d"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-0015",
+      "name": "BO DC Motor",
+      "category": "Motors, Drivers & Actuators",
+      "firebaseId": "ZEzpxaTSGXdUXvTMEALi",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F549c7af8-7038-4e16-889c-d869bd9d2015%2F1776000757769_Screenshot%202026-04-12%20190223.jpg?alt=media&token=265dc869-fbe5-4432-a42f-0da6591ddd71"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1118",
+      "name": "INMP441 MEMS High Precision Omnidirectional Microphone Module I2S",
+      "category": "STEM Products",
+      "firebaseId": "ZPWExEW5hQS1Y1v1eOXE",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FZPWExEW5hQS1Y1v1eOXE%2F1789061672572_chatgpt-image-sep-10-2026-11_02_55-pm.png?alt=media&token=7973ad41-5e8d-4b31-8dd6-59a48b18da13"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1069",
+      "name": "3-Pin PCB Mount Terminal Block (Screw Type) - 5mm Pitch",
+      "category": "STEM Products",
+      "firebaseId": "aDhP2IGHq87BxphDC0dW",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FaDhP2IGHq87BxphDC0dW%2F1787457261899_3-pin-pcb-mount-tinkro.png?alt=media&token=009f2de5-84d2-4fa7-802f-34541ca9c0f3"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1041",
+      "name": "28BYJ-48 Stepper Motor with ULN2003 Driver",
+      "category": "Motors, Drivers & Actuators",
+      "firebaseId": "aeNNyiCi99a7iW63s3v9",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FaeNNyiCi99a7iW63s3v9%2F1785863713640_28ybj-48-stepper-motor-uln2003-motor-driver-module.jpg?alt=media&token=2a405d76-afc4-487f-bd85-0c9af3f40f68"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1050",
+      "name": "OV7670 Camera Module - VGA CMOS Image Sensor",
+      "category": "STEM Products",
+      "firebaseId": "coAynzUIQ3gTT4C8y0Ej",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FcoAynzUIQ3gTT4C8y0Ej%2F1787465892741_camera-module-tinkro.png?alt=media&token=5593be0c-cd11-42fb-a7a9-fa95bfd0fc0e"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1079",
+      "name": "Neodymium Disc Magnet 10x5mm - NdFeB Rare Earth",
+      "category": "STEM Products",
+      "firebaseId": "ddCMQXWTChjfuQD7Ju4j",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FddCMQXWTChjfuQD7Ju4j%2F1787504226826_neodymium-disc-magnet-10x5mm-ndfeb-rare-earth.png?alt=media&token=37b07eed-0a18-4fe3-af46-957cfc0b2b51"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1044",
+      "name": "2.8 inch TFT Touch Display (ILI9341)",
+      "category": "Displays & Indicators",
+      "firebaseId": "etMRFsFU4Z1GsxtxSVH8",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FetMRFsFU4Z1GsxtxSVH8%2F1785869427497_2-8-tft-touch-display.png?alt=media&token=0b46aadb-5219-41d3-a1cd-af946ef16f9e"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1077",
+      "name": "DC Male Barrel Jack Power Connector with Wire",
+      "category": "STEM Products",
+      "firebaseId": "fIyE5gtyGSTU98O70qgS",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FfIyE5gtyGSTU98O70qgS%2F1787459403658_barrel-jack-connector-tinkro.jpg?alt=media&token=188ee684-7442-4538-b2b9-39f3675b36b3"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-213",
+      "name": "TINKRO Science Project Kit",
+      "category": "DIY Kits & Educational Kits",
+      "firebaseId": "fgL81PAMeWodVYSVuhZH",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Faca5e541-4c15-455b-8574-5e6273ec1437%2F1776363266113_science%20project%20kit%20.png?alt=media&token=bc588148-c834-48c4-bb01-12a19eb1f102"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1081",
+      "name": "Encapsulated Vibration Motor - 8000±2000 RPM",
+      "category": "STEM Products",
+      "firebaseId": "fzWhSvhfa3LZMpdStICl",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FfzWhSvhfa3LZMpdStICl%2F1787456074552_encapsulated-vibration-motor-tinkro.png?alt=media&token=9072c2b0-24b4-4a55-945f-07fd017b5d4e"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-011",
+      "name": "PIR Motion Sensor",
+      "category": "Sensors & Modules",
+      "firebaseId": "gWqzvox1zZjbiritF9Mt",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fe05ecc9c-f07a-4e18-8524-2bd0421b72cd%2F1776448686554_PIR%20(1).PNG?alt=media&token=e2ccc5bb-df4a-444a-a930-4738fce22e4c"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1063",
+      "name": "2mm Pitch 2-Pin JST Cable with Connector",
+      "category": "STEM Products",
+      "firebaseId": "gbu69ZiiWZsauaa8OIW3",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fgbu69ZiiWZsauaa8OIW3%2F1787457129223_2-pin-jst-cable-tinkro.png?alt=media&token=cd198676-a345-494f-a5ef-37ef76eefb93"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1106",
+      "name": "WOER HST Heat Shrink Sleeve 6mm Black",
+      "category": "STEM Products",
+      "firebaseId": "h7NDl5ZgChYrxe8036P2",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fh7NDl5ZgChYrxe8036P2%2F1789061908611_heat-shrink-tube.jpg?alt=media&token=bb6c018f-db30-4785-95b7-40f1e206a55a"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1049",
+      "name": "TCRT5000 Infrared Obstacle Avoidance Sensor Module",
+      "category": "STEM Products",
+      "firebaseId": "iGAAfVfCNGvZLoXzIH8U",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FiGAAfVfCNGvZLoXzIH8U%2F1787594018167_tcr-5000-ir-tinkro.png?alt=media&token=c1b893ab-c004-41c1-a078-d57a04a13f18"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1104",
+      "name": "DS18B20 Waterproof Temperature Sensor Probe with Cable",
+      "category": "STEM Products",
+      "firebaseId": "ig1UGwILZsjsZTjNv1rt",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fig1UGwILZsjsZTjNv1rt%2F1789063232673_waterproof-temperature-sensor.jpg?alt=media&token=11b660bd-fbe9-4793-aac6-a4c375eec1ac"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-60",
+      "name": "Raspberry Pi 4 Model B with 1GB RAM",
+      "category": "Microcontrollers & Development Boards",
+      "firebaseId": "lwTHzgPFvrWwB9IJBbdv",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FlwTHzgPFvrWwB9IJBbdv%2F1776104229229_pi%20(1).PNG?alt=media&token=63e0bc64-fde8-4e1f-8d55-c25d34196ca7"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-209",
+      "name": "SG90 Micro Servo Motor (Pack of 5)",
+      "category": "Motors, Drivers & Actuators",
+      "firebaseId": "mqoLsXJwHkPxyOMuA8AO",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FmqoLsXJwHkPxyOMuA8AO%2F1785868815107_images-38-.jpg?alt=media&token=c7fbf789-bb0c-4b61-b7c8-ff6016106867"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1058",
+      "name": "PH Sensor Module - Analog pH Meter Kit",
+      "category": "STEM Products",
+      "firebaseId": "nZr18OQcXlPvjPUfbmBR",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FnZr18OQcXlPvjPUfbmBR%2F1787504958230_ph-sensor.png?alt=media&token=c941a03b-c6cb-4363-bf0a-6ddd0de63b89"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1109",
+      "name": "XYEK500-5.0 XINYA 2 Pin Screw Terminal Block",
+      "category": "STEM Products",
+      "firebaseId": "nx2PfzFRjaMZnDnpme8X",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fnx2PfzFRjaMZnDnpme8X%2F1789062759021_2-pin-scew-terminals.jpg?alt=media&token=71475940-410c-40d8-aff6-358d3fa66032"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1111",
+      "name": "6 x 8 cm Universal PCB Prototype Board Double-Side",
+      "category": "STEM Products",
+      "firebaseId": "o2hkI9TLTkLv3uwGuVxx",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fo2hkI9TLTkLv3uwGuVxx%2F1789062223771_pcbb-tinkro.jpg?alt=media&token=9666d5dc-3796-45f8-aa90-606adada18ad"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1100",
+      "name": "IRF520 MOSFET Driver Module for Arduino ARM Raspberry Pi",
+      "category": "STEM Products",
+      "firebaseId": "r6gN8sSnldribbWqc5bg",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fr6gN8sSnldribbWqc5bg%2F1789149055797_mosfet.png?alt=media&token=2a81942a-0e85-432a-a05d-cc9843aee8bf"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1053",
+      "name": "ESP32-S3 Development Board - Dual-Core WiFi + BLE",
+      "category": "Microcontrollers & Development Boards",
+      "firebaseId": "rS4RV1Zuq8SKUCAhYa3U",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FrS4RV1Zuq8SKUCAhYa3U%2F1787461010161_esp-32-s3-tinkro.png?alt=media&token=0d12e0d9-a648-4a21-af2c-44983211b1ea"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1074",
+      "name": "DHT22 Temperature and Humidity Sensor Module",
+      "category": "STEM Products",
+      "firebaseId": "sX6j0a1wkXiViwbO5Azn",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FsX6j0a1wkXiViwbO5Azn%2F1787460611975_dht22-humidity-sensor-tinkro.png?alt=media&token=9865164d-62e0-4e9c-93c7-d79688fca0c5"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1128",
+      "name": "HR202 Humidity Sensor Module with PCB",
+      "category": "STEM Products",
+      "firebaseId": "t3fUKFiMjdes6W9p3oZQ",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Ft3fUKFiMjdes6W9p3oZQ%2F1789064336548_h202.jpg?alt=media&token=e076c063-9eb5-441c-bf76-20ac7b51897f"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-004",
+      "name": "USB Programming Cable for Arduino UNO",
+      "category": "Microcontrollers & Development Boards",
+      "firebaseId": "uDEAiXzMSsMFMwsHX2EU",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fcc13a98f-9a81-45e1-b600-5f17dfdbdb28%2F1776000514342_Screenshot%202026-04-12%20185801.jpg?alt=media&token=c28177f2-b3d1-4cc4-a0d1-467eca8e0381"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1056",
+      "name": "QTR-8RC Reflectance Sensor Array - 8-Channel Line Following Module",
+      "category": "STEM Products",
+      "firebaseId": "vpYry0lC67nfuRYbTmIu",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FvpYry0lC67nfuRYbTmIu%2F1787462760492_qtr-line-foloower-tinkro.png?alt=media&token=8c2b22cf-8180-4f99-9fe9-ec527fa9535f"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1066",
+      "name": "Illuminated Round Rocker Switch - 6A 250V (Red)",
+      "category": "STEM Products",
+      "firebaseId": "vzp1qtEGLk722OUgFoo0",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fvzp1qtEGLk722OUgFoo0%2F1787503756512_illuminated-round-rocker-switch-6a-250v-red-tinkro.png?alt=media&token=5c7e2fae-7411-415a-a8ac-2159047e4530"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1071",
+      "name": "Female DC Power Supply Connector / Barrel DC Jack",
+      "category": "STEM Products",
+      "firebaseId": "wGm8oITgE74swC8XfKpT",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FwGm8oITgE74swC8XfKpT%2F1787461157010_femal-dc-jack-tinkro.png?alt=media&token=6b9ff948-7540-4b9c-92c5-aa896b8563c7"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-007",
+      "name": "Ultrasonic Sensor (HC-SR04)",
+      "category": "Sensors & Modules",
+      "firebaseId": "wLlDMTQwct3jzkhywVds",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F5fdb3838-0b24-467e-85a1-dbb14529c431%2F1776448923803_ULTRASONIC%20(1).PNG?alt=media&token=745401f3-e4bd-4697-9485-160d5f72e47f"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1048",
+      "name": "Water Level Sensor Module",
+      "category": "STEM Products",
+      "firebaseId": "x92FDP2qe0fYDGk7PIWS",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2Fx92FDP2qe0fYDGk7PIWS%2F1787464291065_water-sensor.png?alt=media&token=821a4fdd-9fd8-4f07-a2fa-226c81d80192"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-056",
+      "name": "9V Battery Connector Clip",
+      "category": "Power Supply & Batteries (very useful additio",
+      "firebaseId": "y8L9wK4weZb0QfKeFXkD",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2F22fd1ccc-42d1-4e45-b552-c9f1800f345d%2F1776276856767_images%20(14).jpg?alt=media&token=969c6313-6abe-435c-bc9f-7816f11de366"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-207",
+      "name": "SG90 Micro Servo Motor (Pack of 2)",
+      "category": "Motors, Drivers & Actuators",
+      "firebaseId": "yzdCElExegwlp4v8qR17",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FyzdCElExegwlp4v8qR17%2F1785866148326_servo-motor-pack-of-2-tinkro.png?alt=media&token=437ab1b3-26b3-4092-85b3-f5ecf462cd7f"
+    },
+    {
+      "action": "NEW_PRODUCT_ADDED",
+      "sku": "TKR-1125",
+      "name": "Water Flow Sensor YF-S201 Hall Effect 1-30 L/min",
+      "category": "STEM Products",
+      "firebaseId": "zuyKGZx9zwMQHPsSIm4Y",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/tinkro-robotics.firebasestorage.app/o/products%2FzuyKGZx9zwMQHPsSIm4Y%2F1789063309656_water-flow-sensor.jpg?alt=media&token=eacd07aa-6ee0-4c72-960a-3cb77db36ce9"
     }
   ]
 }

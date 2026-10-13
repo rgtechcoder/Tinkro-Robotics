@@ -5,9 +5,30 @@ import { fileURLToPath } from "node:url";
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 
+/* =========================================================
+   TINKRO CATALOG AUTO SYNC
+   ---------------------------------------------------------
+   What this script does:
+
+   1. Reads current Admin + Customer catalog HTML
+   2. Reads ALL Firebase products
+   3. Matches existing catalog products by SKU
+   4. Falls back to exact name
+   5. Falls back to very safe fuzzy name match
+   6. Updates images of existing products
+   7. AUTOMATICALLY ADDS Firebase products missing
+      from the catalog
+   8. Preserves the rest of the HTML/Admin system
+   9. Creates a detailed report
+   ========================================================= */
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, "..");
+
+/* =========================================================
+   FILE PATHS
+   ========================================================= */
 
 const INPUT_HTML = path.join(
   ROOT,
@@ -27,13 +48,13 @@ const REPORT_FILE = path.join(
   "catalog-image-match-report.json"
 );
 
-/* -------------------------------------------------------
-   Read VITE_* values directly from the existing .env
-------------------------------------------------------- */
+/* =========================================================
+   ENV LOADER
+   ========================================================= */
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) {
-    throw new Error(`.env file not found: ${filePath}`);
+    throw new Error(`.env file not found:\n${filePath}`);
   }
 
   const text = fs.readFileSync(filePath, "utf8");
@@ -42,13 +63,17 @@ function loadEnvFile(filePath) {
   for (const line of text.split(/\r?\n/)) {
     const trimmed = line.trim();
 
-    if (!trimmed || trimmed.startsWith("#")) continue;
+    if (!trimmed || trimmed.startsWith("#")) {
+      continue;
+    }
 
     const match = trimmed.match(
       /^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/
     );
 
-    if (!match) continue;
+    if (!match) {
+      continue;
+    }
 
     let value = match[2].trim();
 
@@ -65,7 +90,13 @@ function loadEnvFile(filePath) {
   return env;
 }
 
-const env = loadEnvFile(path.join(ROOT, ".env"));
+const env = loadEnvFile(
+  path.join(ROOT, ".env")
+);
+
+/* =========================================================
+   REQUIRED FIREBASE ENV
+   ========================================================= */
 
 const requiredEnv = [
   "VITE_FIREBASE_API_KEY",
@@ -76,7 +107,9 @@ const requiredEnv = [
   "VITE_FIREBASE_APP_ID",
 ];
 
-const missingEnv = requiredEnv.filter((key) => !env[key]);
+const missingEnv = requiredEnv.filter(
+  (key) => !env[key]
+);
 
 if (missingEnv.length) {
   throw new Error(
@@ -84,9 +117,9 @@ if (missingEnv.length) {
   );
 }
 
-/* -------------------------------------------------------
-   Firebase
-------------------------------------------------------- */
+/* =========================================================
+   FIREBASE
+   ========================================================= */
 
 const firebaseConfig = {
   apiKey: env.VITE_FIREBASE_API_KEY,
@@ -95,17 +128,21 @@ const firebaseConfig = {
   storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: env.VITE_FIREBASE_APP_ID,
+
   ...(env.VITE_FIREBASE_MEASUREMENT_ID
-    ? { measurementId: env.VITE_FIREBASE_MEASUREMENT_ID }
+    ? {
+        measurementId:
+          env.VITE_FIREBASE_MEASUREMENT_ID,
+      }
     : {}),
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* -------------------------------------------------------
-   Helpers
-------------------------------------------------------- */
+/* =========================================================
+   HELPERS
+   ========================================================= */
 
 function cleanString(value) {
   return String(value ?? "")
@@ -132,7 +169,13 @@ function normalizeName(value) {
     .trim();
 }
 
+/* =========================================================
+   FIREBASE IMAGE
+   ========================================================= */
+
 function getProductImage(product) {
+  /* Preferred: first image from images[] */
+
   if (
     Array.isArray(product.images) &&
     typeof product.images[0] === "string" &&
@@ -141,59 +184,111 @@ function getProductImage(product) {
     return product.images[0].trim();
   }
 
-  if (typeof product.image === "string" && product.image.trim()) {
+  /* Fallback: single image field */
+
+  if (
+    typeof product.image === "string" &&
+    product.image.trim()
+  ) {
     return product.image.trim();
   }
 
   return "";
 }
 
-/* -------------------------------------------------------
-   Read products array from HTML
-------------------------------------------------------- */
+/* =========================================================
+   FIREBASE CATEGORY
+   ========================================================= */
+
+function getProductCategory(product) {
+  const possibleFields = [
+    product.category,
+    product.cat,
+    product.categoryName,
+    product.productCategory,
+    product.type,
+  ];
+
+  for (const value of possibleFields) {
+    if (
+      typeof value === "string" &&
+      value.trim()
+    ) {
+      return value.trim();
+    }
+  }
+
+  return "Other";
+}
+
+/* =========================================================
+   CATEGORY ICON
+   ========================================================= */
+
+function getCategoryIcon(category) {
+  const icons = {
+    "Microcontrollers & Boards": "🔲",
+    "Motors & Actuators": "⚙️",
+    "Motor Drivers": "🎛️",
+    "Sensors": "📡",
+    "Displays": "📟",
+    "LEDs & Indicators": "💡",
+    "Power & Batteries": "🔋",
+    "Connectivity": "📶",
+    "Switches & Relays": "🔘",
+    "Wires & Connectors": "🔗",
+    "Prototyping": "🧩",
+    "Wheels & Chassis": "🛞",
+    "DIY Kits": "🚗",
+    "Tools & Accessories": "🔧",
+  };
+
+  return icons[category] || "📦";
+}
+
+/* =========================================================
+   EXTRACT PRODUCTS ARRAY
+   ---------------------------------------------------------
+   Important:
+   The HTML also contains another "products" string inside
+   buildCleanHTML(). Therefore we specifically locate the
+   REAL:
+       const products = [
+   ========================================================= */
 
 function extractProductsArray(html) {
-  /*
-    IMPORTANT:
+  const markerRegex =
+    /\bconst\s+products\s*=\s*\[/;
 
-    The Admin catalog contains TWO "products" references:
-
-    1. The real catalog:
-       const products = [
-         {...}
-       ];
-
-    2. Another "const products=" inside buildCleanHTML().
-
-    We MUST select the real top-level catalog array.
-  */
-
-  const markerRegex = /\bconst\s+products\s*=\s*\[/;
   const match = markerRegex.exec(html);
 
   if (!match) {
     throw new Error(
-      'Could not find "const products = [" in the catalog HTML.'
+      'Could not find "const products = [" in catalog HTML.'
     );
   }
 
-  const arrayStart = html.indexOf("[", match.index);
+  const arrayStart = html.indexOf(
+    "[",
+    match.index
+  );
 
   if (arrayStart === -1) {
-    throw new Error("Could not find products array start.");
+    throw new Error(
+      "Could not find products array start."
+    );
   }
 
   let depth = 0;
   let quote = null;
   let escaped = false;
 
-  for (let i = arrayStart; i < html.length; i++) {
+  for (
+    let i = arrayStart;
+    i < html.length;
+    i++
+  ) {
     const char = html[i];
-
-    /*
-      Handle strings so brackets inside strings don't
-      accidentally affect array depth.
-    */
 
     if (quote) {
       if (escaped) {
@@ -239,72 +334,124 @@ function extractProductsArray(html) {
   );
 }
 
-/* -------------------------------------------------------
-   Main
-------------------------------------------------------- */
+/* =========================================================
+   SAFE ARRAY PARSER
+   ========================================================= */
+
+function parseCatalogProducts(source) {
+  try {
+    return Function(
+      `"use strict"; return (${source});`
+    )();
+  } catch (error) {
+    throw new Error(
+      `Could not parse catalog products array:\n${error.message}`
+    );
+  }
+}
+
+/* =========================================================
+   SIMILARITY
+   ========================================================= */
+
+function similarityScore(a, b) {
+  if (a === b) {
+    return 1;
+  }
+
+  const aTokens = new Set(
+    a.split(" ").filter(Boolean)
+  );
+
+  const bTokens = new Set(
+    b.split(" ").filter(Boolean)
+  );
+
+  if (
+    !aTokens.size ||
+    !bTokens.size
+  ) {
+    return 0;
+  }
+
+  let intersection = 0;
+
+  for (const token of aTokens) {
+    if (bTokens.has(token)) {
+      intersection++;
+    }
+  }
+
+  const union = new Set([
+    ...aTokens,
+    ...bTokens,
+  ]).size;
+
+  const jaccard =
+    intersection / union;
+
+  const lengthRatio =
+    Math.min(a.length, b.length) /
+    Math.max(a.length, b.length);
+
+  return (
+    jaccard * 0.75 +
+    lengthRatio * 0.25
+  );
+}
+
+/* =========================================================
+   MAIN
+   ========================================================= */
 
 async function main() {
   console.log("");
-  console.log("==============================================");
-  console.log(" TINKRO CATALOG IMAGE UPDATER");
-  console.log("==============================================");
+  console.log(
+    "=============================================="
+  );
+  console.log(
+    " TINKRO CATALOG AUTO SYNC"
+  );
+  console.log(
+    "=============================================="
+  );
   console.log("");
+
+  /* -------------------------------------------------------
+     CHECK INPUT
+     ------------------------------------------------------- */
 
   if (!fs.existsSync(INPUT_HTML)) {
     throw new Error(
-      `Catalog HTML not found:\n${INPUT_HTML}`
+      `Catalog HTML not found:\n${INPUT_HTML}\n\n` +
+      `Make sure your latest Admin catalog is named:\n` +
+      `Tinkro_Catalog_Admin.html`
     );
   }
 
-  const html = fs.readFileSync(
-    INPUT_HTML,
-    "utf8"
-  );
+  /* -------------------------------------------------------
+     READ HTML
+     ------------------------------------------------------- */
+
+  const html =
+    fs.readFileSync(
+      INPUT_HTML,
+      "utf8"
+    );
 
   const extracted =
     extractProductsArray(html);
 
-  let catalogProducts;
-
-  try {
-    /*
-      IMPORTANT:
-
-      The catalog uses JavaScript objects:
-
-      {
-        sku:"TKR-094",
-        name:"Arduino UNO R3",
-        ...
-      }
-
-      This is valid JavaScript but NOT strict JSON.
-
-      Therefore JSON.parse() cannot be used.
-
-      Function() evaluates ONLY the isolated
-      products array extracted above.
-    */
-
-    catalogProducts = Function(
-      `"use strict"; return (${extracted.source});`
-    )();
-  } catch (error) {
-    throw new Error(
-      `Could not parse the catalog products array: ${error.message}`
+  let catalogProducts =
+    parseCatalogProducts(
+      extracted.source
     );
-  }
 
   if (!Array.isArray(catalogProducts)) {
     throw new Error(
       "Catalog products is not an array."
     );
   }
-
-  /*
-    Safety check:
-    Make sure we really extracted product objects.
-  */
 
   if (
     catalogProducts.length > 0 &&
@@ -316,52 +463,58 @@ async function main() {
     )
   ) {
     throw new Error(
-      "The extracted products array does not contain the expected catalog product objects."
+      "Catalog products array contains unexpected data."
     );
   }
 
+  const originalCatalogCount =
+    catalogProducts.length;
+
   console.log(
-    `Catalog products found: ${catalogProducts.length}`
+    `Catalog products found: ${originalCatalogCount}`
   );
+
+  /* -------------------------------------------------------
+     FIREBASE
+     ------------------------------------------------------- */
 
   console.log("");
   console.log(
     "Reading Firebase products..."
   );
 
-  const snapshot = await getDocs(
-    collection(db, "products")
-  );
+  const snapshot =
+    await getDocs(
+      collection(db, "products")
+    );
 
   const firebaseProducts =
-    snapshot.docs.map((docSnap) => ({
-      id: docSnap.id,
-      ...docSnap.data(),
-    }));
+    snapshot.docs.map(
+      (docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      })
+    );
 
   console.log(
     `Firebase products found: ${firebaseProducts.length}`
   );
 
-  /* ---------------------------------------------
-     Build lookup maps
-  --------------------------------------------- */
+  /* -------------------------------------------------------
+     LOOKUP MAPS
+     ------------------------------------------------------- */
 
   const bySku = new Map();
   const byName = new Map();
 
-  for (const product of firebaseProducts) {
-    const sku = normalizeSku(
-      product.sku
-    );
+  for (
+    const product of firebaseProducts
+  ) {
+    const sku =
+      normalizeSku(product.sku);
 
-    const name = normalizeName(
-      product.name
-    );
-
-    /*
-      SKU map
-    */
+    const name =
+      normalizeName(product.name);
 
     if (sku) {
       if (!bySku.has(sku)) {
@@ -372,10 +525,6 @@ async function main() {
         .get(sku)
         .push(product);
     }
-
-    /*
-      Name map
-    */
 
     if (name) {
       if (!byName.has(name)) {
@@ -388,44 +537,58 @@ async function main() {
     }
   }
 
-  /* ---------------------------------------------
-     Report
-  --------------------------------------------- */
+  /* -------------------------------------------------------
+     REPORT
+     ------------------------------------------------------- */
 
   const report = {
     generatedAt:
       new Date().toISOString(),
 
-    catalogProductCount:
-      catalogProducts.length,
+    originalCatalogProductCount:
+      originalCatalogCount,
+
+    finalCatalogProductCount: 0,
 
     firebaseProductCount:
       firebaseProducts.length,
 
     matchedBySku: 0,
-
     matchedByName: 0,
-
     matchedBySafeFuzzyName: 0,
 
-    matchedWithImage: 0,
+    existingImagesAdded: 0,
 
     matchedWithoutImage: 0,
 
-    unmatched: [],
+    newProductsAdded: 0,
+
+    newProductsWithImage: 0,
+
+    newProductsWithoutImage: 0,
+
+    unmatchedExistingCatalogProducts: [],
 
     ambiguous: [],
+
+    newlyAddedProducts: [],
 
     results: [],
   };
 
-  /* ---------------------------------------------
-     Match every catalog product
-  --------------------------------------------- */
+  /* =======================================================
+     TRACK FIREBASE PRODUCTS ALREADY USED
+     ======================================================= */
+
+  const matchedFirebaseIds =
+    new Set();
+
+  /* =======================================================
+     MATCH EXISTING CATALOG PRODUCTS
+     ======================================================= */
 
   for (
-    const catalogProduct
-    of catalogProducts
+    const catalogProduct of catalogProducts
   ) {
     const catalogSku =
       normalizeSku(
@@ -440,10 +603,9 @@ async function main() {
     let match = null;
     let matchType = null;
 
-    /* -----------------------------------------
+    /* -----------------------------------------------------
        1. SKU MATCH
-       SKU is strongest match
-    ----------------------------------------- */
+       ----------------------------------------------------- */
 
     if (
       catalogSku &&
@@ -455,7 +617,9 @@ async function main() {
       if (
         skuMatches.length === 1
       ) {
-        match = skuMatches[0];
+        match =
+          skuMatches[0];
+
         matchType = "SKU";
       } else {
         report.ambiguous.push({
@@ -471,9 +635,9 @@ async function main() {
       }
     }
 
-    /* -----------------------------------------
-       2. EXACT NAME MATCH
-    ----------------------------------------- */
+    /* -----------------------------------------------------
+       2. EXACT NAME
+       ----------------------------------------------------- */
 
     if (
       !match &&
@@ -486,7 +650,9 @@ async function main() {
       if (
         nameMatches.length === 1
       ) {
-        match = nameMatches[0];
+        match =
+          nameMatches[0];
+
         matchType = "NAME";
       } else {
         report.ambiguous.push({
@@ -502,15 +668,9 @@ async function main() {
       }
     }
 
-    /* -----------------------------------------
-       3. SAFE FUZZY NAME MATCH
-
-       Only accept when:
-
-       - high similarity
-       - unique best candidate
-       - enough difference from second result
-    ----------------------------------------- */
+    /* -----------------------------------------------------
+       3. SAFE FUZZY NAME
+       ----------------------------------------------------- */
 
     if (
       !match &&
@@ -518,13 +678,15 @@ async function main() {
     ) {
       const candidates =
         firebaseProducts
-          .map((product) => ({
-            product,
-            name:
-              normalizeName(
-                product.name
-              ),
-          }))
+          .map(
+            (product) => ({
+              product,
+              name:
+                normalizeName(
+                  product.name
+                ),
+            })
+          )
           .filter(
             (item) =>
               item.name.length >= 8
@@ -532,14 +694,16 @@ async function main() {
 
       const scored =
         candidates
-          .map((item) => ({
-            ...item,
-            score:
-              similarityScore(
-                catalogName,
-                item.name
-              ),
-          }))
+          .map(
+            (item) => ({
+              ...item,
+              score:
+                similarityScore(
+                  catalogName,
+                  item.name
+                ),
+            })
+          )
           .sort(
             (a, b) =>
               b.score - a.score
@@ -569,50 +733,46 @@ async function main() {
       }
     }
 
-    /* -----------------------------------------
+    /* -----------------------------------------------------
        NO MATCH
-    ----------------------------------------- */
+       ----------------------------------------------------- */
 
     if (!match) {
-      report.unmatched.push({
-        sku:
-          catalogProduct.sku,
-
-        name:
-          catalogProduct.name,
-      });
+      report
+        .unmatchedExistingCatalogProducts
+        .push({
+          sku:
+            catalogProduct.sku,
+          name:
+            catalogProduct.name,
+        });
 
       report.results.push({
+        action: "EXISTING_NOT_MATCHED",
         sku:
           catalogProduct.sku,
-
         name:
           catalogProduct.name,
-
         matchType: null,
-
         firebaseId: null,
-
         imageUrl: null,
       });
 
       continue;
     }
 
-    /* -----------------------------------------
-       GET FIRST FIREBASE IMAGE
-    ----------------------------------------- */
+    /* -----------------------------------------------------
+       MATCHED
+       ----------------------------------------------------- */
+
+    matchedFirebaseIds.add(
+      match.id
+    );
 
     const imageUrl =
       getProductImage(match);
 
-    /* -----------------------------------------
-       MATCH COUNTERS
-    ----------------------------------------- */
-
-    if (
-      matchType === "SKU"
-    ) {
+    if (matchType === "SKU") {
       report.matchedBySku++;
     } else if (
       matchType === "NAME"
@@ -625,24 +785,23 @@ async function main() {
       report.matchedBySafeFuzzyName++;
     }
 
+    /* -----------------------------------------------------
+       UPDATE EXISTING IMAGE
+       ----------------------------------------------------- */
+
     if (imageUrl) {
-      report.matchedWithImage++;
+      catalogProduct.img =
+        imageUrl;
+
+      report.existingImagesAdded++;
     } else {
       report.matchedWithoutImage++;
     }
 
-    /* -----------------------------------------
-       PUT IMAGE INTO HTML PRODUCT
-    ----------------------------------------- */
-
-    catalogProduct.img =
-      imageUrl;
-
-    /* -----------------------------------------
-       SAVE RESULT
-    ----------------------------------------- */
-
     report.results.push({
+      action:
+        "EXISTING_UPDATED",
+
       sku:
         catalogProduct.sku,
 
@@ -665,23 +824,188 @@ async function main() {
     });
   }
 
-  /* ---------------------------------------------
-     Replace ONLY products array.
+  /* =======================================================
+     ADD NEW FIREBASE PRODUCTS
+     -------------------------------------------------------
+     THIS IS THE IMPORTANT NEW PART.
+     ======================================================= */
 
-     EVERYTHING ELSE in HTML stays unchanged.
+  console.log("");
+  console.log(
+    "Checking for new Firebase products..."
+  );
 
-     This preserves:
+  const newFirebaseProducts =
+    firebaseProducts.filter(
+      (product) =>
+        !matchedFirebaseIds.has(
+          product.id
+        )
+    );
 
-     - Admin Section
-     - Customer Catalog
-     - CSS
-     - Buttons
-     - Admin Password
-     - Order Form
-     - WhatsApp
-     - Export Customer Catalog
-     - All other functions
-  --------------------------------------------- */
+  console.log(
+    `New Firebase products to add: ${newFirebaseProducts.length}`
+  );
+
+  /* -------------------------------------------------------
+     ADD EACH NEW PRODUCT
+     ------------------------------------------------------- */
+
+  for (
+    const firebaseProduct of
+      newFirebaseProducts
+  ) {
+    const sku =
+      cleanString(
+        firebaseProduct.sku
+      );
+
+    const name =
+      cleanString(
+        firebaseProduct.name
+      );
+
+    /* -----------------------------------------------------
+       SAFETY CHECK
+       ----------------------------------------------------- */
+
+    if (!sku || !name) {
+      report.results.push({
+        action:
+          "NEW_PRODUCT_SKIPPED",
+
+        sku: sku || "",
+
+        name: name || "",
+
+        firebaseId:
+          firebaseProduct.id,
+
+        reason:
+          "Firebase product does not have both SKU and Name.",
+      });
+
+      continue;
+    }
+
+    /* -----------------------------------------------------
+       FINAL DUPLICATE SAFETY
+       ----------------------------------------------------- */
+
+    const alreadyExists =
+      catalogProducts.some(
+        (p) =>
+          normalizeSku(p.sku) ===
+          normalizeSku(sku)
+      );
+
+    if (alreadyExists) {
+      report.results.push({
+        action:
+          "NEW_PRODUCT_SKIPPED_DUPLICATE",
+
+        sku,
+
+        name,
+
+        firebaseId:
+          firebaseProduct.id,
+
+        reason:
+          "SKU already exists in catalog.",
+      });
+
+      continue;
+    }
+
+    /* -----------------------------------------------------
+       CATEGORY
+       ----------------------------------------------------- */
+
+    const category =
+      getProductCategory(
+        firebaseProduct
+      );
+
+    /* -----------------------------------------------------
+       IMAGE
+       ----------------------------------------------------- */
+
+    const imageUrl =
+      getProductImage(
+        firebaseProduct
+      );
+
+    /* -----------------------------------------------------
+       ICON
+       ----------------------------------------------------- */
+
+    const icon =
+      getCategoryIcon(
+        category
+      );
+
+    /* -----------------------------------------------------
+       CREATE CATALOG PRODUCT
+       ----------------------------------------------------- */
+
+    const newCatalogProduct = {
+      sku,
+      name,
+      cat: category,
+      icon,
+      img: imageUrl,
+    };
+
+    catalogProducts.push(
+      newCatalogProduct
+    );
+
+    report.newProductsAdded++;
+
+    if (imageUrl) {
+      report.newProductsWithImage++;
+    } else {
+      report.newProductsWithoutImage++;
+    }
+
+    report.newlyAddedProducts.push({
+      sku,
+      name,
+      category,
+      icon,
+      firebaseId:
+        firebaseProduct.id,
+      imageUrl:
+        imageUrl || null,
+      hasImage:
+        Boolean(imageUrl),
+    });
+
+    report.results.push({
+      action:
+        "NEW_PRODUCT_ADDED",
+
+      sku,
+
+      name,
+
+      category,
+
+      firebaseId:
+        firebaseProduct.id,
+
+      imageUrl:
+        imageUrl || null,
+    });
+  }
+
+  /* =======================================================
+     FINAL HTML
+     -------------------------------------------------------
+     Only the REAL products array is replaced.
+     Admin functionality remains untouched.
+     ======================================================= */
 
   const newProductsJson =
     JSON.stringify(
@@ -698,9 +1022,16 @@ async function main() {
       extracted.end
     );
 
-  /* ---------------------------------------------
-     Write FINAL HTML
-  --------------------------------------------- */
+  /* =======================================================
+     FINAL COUNTS
+     ======================================================= */
+
+  report.finalCatalogProductCount =
+    catalogProducts.length;
+
+  /* =======================================================
+     WRITE FINAL HTML
+     ======================================================= */
 
   fs.writeFileSync(
     OUTPUT_HTML,
@@ -708,9 +1039,9 @@ async function main() {
     "utf8"
   );
 
-  /* ---------------------------------------------
-     Write REPORT
-  --------------------------------------------- */
+  /* =======================================================
+     WRITE REPORT
+     ======================================================= */
 
   fs.writeFileSync(
     REPORT_FILE,
@@ -722,26 +1053,24 @@ async function main() {
     "utf8"
   );
 
-  /* ---------------------------------------------
-     FINAL TERMINAL REPORT
-  --------------------------------------------- */
+  /* =======================================================
+     CONSOLE RESULT
+     ======================================================= */
 
   console.log("");
-
   console.log(
     "=============================================="
   );
-
-  console.log(" DONE");
-
+  console.log(
+    " DONE"
+  );
   console.log(
     "=============================================="
   );
-
   console.log("");
 
   console.log(
-    `HTML products:          ${report.catalogProductCount}`
+    `Original catalog:       ${report.originalCatalogProductCount}`
   );
 
   console.log(
@@ -761,19 +1090,35 @@ async function main() {
   );
 
   console.log(
-    `Images added:           ${report.matchedWithImage}`
+    `Existing images added:  ${report.existingImagesAdded}`
   );
 
   console.log(
-    `Matched but no image:   ${report.matchedWithoutImage}`
+    `Matched no image:       ${report.matchedWithoutImage}`
   );
 
   console.log(
-    `Not matched:            ${report.unmatched.length}`
+    `NEW products added:     ${report.newProductsAdded}`
+  );
+
+  console.log(
+    `New products w/image:   ${report.newProductsWithImage}`
+  );
+
+  console.log(
+    `New products no image:  ${report.newProductsWithoutImage}`
+  );
+
+  console.log(
+    `Existing not matched:   ${report.unmatchedExistingCatalogProducts.length}`
   );
 
   console.log(
     `Ambiguous:              ${report.ambiguous.length}`
+  );
+
+  console.log(
+    `FINAL CATALOG PRODUCTS: ${report.finalCatalogProductCount}`
   );
 
   console.log("");
@@ -799,102 +1144,30 @@ async function main() {
   console.log("");
 }
 
-/* -------------------------------------------------------
-   Similarity helper
-------------------------------------------------------- */
+/* =========================================================
+   RUN
+   ========================================================= */
 
-function similarityScore(a, b) {
-  if (a === b) {
-    return 1;
-  }
-
-  const aTokens =
-    new Set(
-      a
-        .split(" ")
-        .filter(Boolean)
+main().catch(
+  (error) => {
+    console.error("");
+    console.error(
+      "=============================================="
     );
-
-  const bTokens =
-    new Set(
-      b
-        .split(" ")
-        .filter(Boolean)
+    console.error(
+      " ERROR"
     );
-
-  if (
-    !aTokens.size ||
-    !bTokens.size
-  ) {
-    return 0;
-  }
-
-  let intersection = 0;
-
-  for (
-    const token of aTokens
-  ) {
-    if (
-      bTokens.has(token)
-    ) {
-      intersection++;
-    }
-  }
-
-  const union =
-    new Set([
-      ...aTokens,
-      ...bTokens,
-    ]).size;
-
-  const jaccard =
-    intersection /
-    union;
-
-  const lengthRatio =
-    Math.min(
-      a.length,
-      b.length
-    ) /
-    Math.max(
-      a.length,
-      b.length
+    console.error(
+      "=============================================="
     );
+    console.error("");
+    console.error(
+      error?.stack ||
+        error?.message ||
+        error
+    );
+    console.error("");
 
-  return (
-    jaccard * 0.75 +
-    lengthRatio * 0.25
-  );
-}
-
-/* -------------------------------------------------------
-   ERROR HANDLER
-------------------------------------------------------- */
-
-main().catch((error) => {
-  console.error("");
-
-  console.error(
-    "=============================================="
-  );
-
-  console.error(
-    " ERROR"
-  );
-
-  console.error(
-    "=============================================="
-  );
-
-  console.error("");
-
-  console.error(
-    error?.stack ||
-    error?.message ||
-    error
-  );
-
-  console.error("");
-
-  process.exit(1);
-});
+    process.exit(1);
+  }
+);

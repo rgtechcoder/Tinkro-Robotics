@@ -136,6 +136,7 @@ export interface UseCase {
 
 export interface CartItem {
   productId: string;
+  sku?: string;
   name: string;
   image: string;
   price: number;
@@ -210,6 +211,7 @@ export interface CartStore {
     product: Pick<
       CartItem,
       | "productId"
+      | "sku"
       | "name"
       | "image"
       | "price"

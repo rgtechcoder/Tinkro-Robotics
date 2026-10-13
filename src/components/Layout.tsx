@@ -41,7 +41,7 @@ export function Layout({ children }: LayoutProps) {
       <div className="min-h-screen flex flex-col bg-background">
         {showPublicChrome && <BannerTicker />}
         {showPublicChrome && (
-          <Navbar key={`${location.pathname}${location.search}`} />
+          <Navbar />
         )}
         <main
           className={`flex-1 bg-background ${

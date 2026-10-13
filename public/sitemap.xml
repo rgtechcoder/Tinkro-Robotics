@@ -71,7 +71,17 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/1-5-5v-dc-vibration-motor-mini-coin-type</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/1-8-inch-tft-lcd-display-st7735</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/1-meter-red-silicone-tube-flexible-rubber-hose-id-1mm-x-3mm-od</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -81,12 +91,37 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/12v-dc-power-adapter-bns</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/150mm-trapezoidal-4-start-lead-screw-8mm-thread-2mm-pitch-with-copper-nut</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/16x2-lcd-display-hd44780</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/1s-bms-battery-management-system-3-7v-li-ion-protection-board</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/2-54mm-pitch-2-pin-jst-cable-with-connector</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/2-8-inch-tft-touch-display-ili9341</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/2-8-inch-tft-touch-screen-display-module-spi-240x320-with-stylus</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -111,7 +146,22 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/2mm-pitch-2-pin-jst-cable-with-connector</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/2wd-mini-round-double-deck-smart-robot-car-chassis-diy-kit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/3-7v-2000mah-18650-li-ion-cell</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/3-pin-pcb-mount-terminal-block-screw-type-5mm-pitch</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -126,12 +176,22 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/4s-bms-battery-management-system-14-8v-16-8v-li-ion-protection-board</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/4x4-matrix-membrane-keypad</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://tinkro.in/product/5-channel-ir-line-tracking-sensor-array</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/5a-glass-fuse-5x20mm</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -156,6 +216,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/5mm-white-led-high-brightness-through-hole</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/5mm-yellow-led-pack-of-100</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -167,6 +232,16 @@
   </url>
   <url>
     <loc>https://tinkro.in/product/5v-single-channel-relay-module</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/5w-led-chip-high-power-cool-white-star-cob-300ma</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/6-x-8-cm-universal-pcb-prototype-board-double-side</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -246,11 +321,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://tinkro.in/product/arduino-uno-compatible-board-atmega328p</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://tinkro.in/product/arduino-uno-r3-atmega328p</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -316,12 +386,37 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/dc-5v-4010-cooling-fan-40x40x10mm</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/dc-male-barrel-jack-power-connector-with-wire</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/dc-motor-single-shaft-flat-280-type</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/dc-motor-with-fan-blade-3-6v</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/desoldering-pump-solder-sucker-spring-loaded</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/dht11-temperature-humidity-sensor-module</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/dht22-temperature-and-humidity-sensor-module</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -346,12 +441,27 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/ds18b20-waterproof-temperature-sensor-probe-with-cable</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/dual-axis-joystick-module</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/dual-battery-charger-for-18650-li-ion-batteries</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/emg-muscle-sensor-module</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/encapsulated-vibration-motor-8000-2000-rpm</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -371,6 +481,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/esp32-s3-development-board-dual-core-wifi-ble</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/eye-blink-sensor-module-with-goggles</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/female-dc-power-supply-connector-barrel-dc-jack</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/female-to-female-jumper-wires-40pcs</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -382,6 +507,16 @@
   </url>
   <url>
     <loc>https://tinkro.in/product/flex-bend-sensor-2-2-inch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/flux-soldering-paste-10g-for-pcb-smd-rework</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/fuse-holder-bf-020-panel-mount-for-5x20mm-fuses</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -426,12 +561,47 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/hr202-humidity-sensor-module-with-pcb</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/i2c-lcd-adapter-module-pcf8574</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/illuminated-round-rocker-switch-6a-250v-red</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/imaxrc-b3-pro-compact-lipo-battery-balance-charger</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/inmp441-mems-high-precision-omnidirectional-microphone-module-i2s</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/insulating-tape-pvc-electrical-tape-black</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/ir-infrared-obstacle-avoidance-sensor</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/ir-remote-control-module-kit-transmitter-receiver</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/irf520-mosfet-driver-module-for-arduino-arm-raspberry-pi</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -446,12 +616,17 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/l293d-motor-driver-servo-shield-for-arduino</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/l298n-dual-h-bridge-motor-driver-module</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://tinkro.in/product/ldr-photoresistor-light-sensor</loc>
+    <loc>https://tinkro.in/product/ldr-photoresistor-light-dependent-resistor</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -461,7 +636,27 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/led-traffic-light-module-5v</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/limit-switch-wk1-g02-micro-switch-with-roller-lever</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/lm2596-dc-dc-buck-converter-module</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/lm393-sound-sensor-module-microphone-detection</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/load-cell-3kg-weighing-sensor</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -477,6 +672,11 @@
   </url>
   <url>
     <loc>https://tinkro.in/product/male-to-male-jumper-wires-40pcs</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/max4466-electret-microphone-amplifier-with-adjustable-gain-module</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -501,7 +701,17 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/mg995-metal-gear-high-torque-servo-motor</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/mg996r-high-torque-servo-motor</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/micro-usb-cable-for-esp32-esp8266-development-boards</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -546,7 +756,17 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/mq-3-gas-sensor-module-for-alcohol-detection</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/ne555-timer-ic</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/neodymium-disc-magnet-10x5mm-ndfeb-rare-earth</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -566,7 +786,32 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/nylon-cable-zip-ties-100mm-white-pack-of-100</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/ov7670-camera-module-vga-cmos-image-sensor</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/pca9685-16-channel-servo-driver-module</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/pcb-mounted-active-buzzer-5v-electromagnetic</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/perfboard-single-sided-5x7cm-universal-pcb</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/ph-sensor-module-analog-ph-meter-kit</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -581,7 +826,17 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/pm2-5-air-quality-sensor-module-pms5003-laser-dust-sensor</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/portable-soldering-iron-usb-battery-powered</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/qtr-8rc-reflectance-sensor-array-8-channel-line-following-module</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -611,6 +866,16 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/reed-switch-2x14mm-magnetic-control-switch-normally-open</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/ribbon-cable-multi-strand-cable-1-meter</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/robot-wheel-large-65mm-for-bo-motor</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -622,6 +887,11 @@
   </url>
   <url>
     <loc>https://tinkro.in/product/rocker-switch-on-off</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/round-push-rocker-switch-3a-250v</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -666,7 +936,17 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/smartelex-speaker-module-for-arduino</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/soil-moisture-sensor-module</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/solder-wire-60-40-tin-lead-1-0mm-rosin-core</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -691,7 +971,22 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/tcrt5000-infrared-obstacle-avoidance-sensor-module</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/tcrt5000-reflective-ir-optical-sensor</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/tcs3200-rgb-colour-sensor-module</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/tds-sensor-module-analog-water-quality-meter</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -726,7 +1021,37 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinkro.in/product/universal-18650-16340-14500-li-ion-battery-charger-eu-plug</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinkro.in/product/usb-programming-cable-for-arduino-uno</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/water-flow-sensor-yf-s201-hall-effect-1-30-l-min</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/water-level-sensor-module</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/woer-hst-heat-shrink-sleeve-6mm-black</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/xh2-54mm-4p-bend-pin-header-connector-right-angle</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinkro.in/product/xyek500-5-0-xinya-2-pin-screw-terminal-block</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

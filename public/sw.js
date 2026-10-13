@@ -77,6 +77,58 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Open the admin orders screen when an order notification is tapped.
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  event.waitUntil(
+    (async () => {
+      let payload;
+      try {
+        payload = event.data.json();
+      } catch {
+        payload = { notification: { body: event.data.text() } };
+      }
+
+      const notification = payload.notification || {};
+      const data = payload.data || {};
+      const title = notification.title || data.title || "New Tinkro order";
+      const body =
+        notification.body || data.body || "A new order has been placed.";
+      const url = data.url || payload.fcmOptions?.link || "/admin/orders";
+
+      await self.registration.showNotification(title, {
+        body,
+        icon: notification.icon || "/tinkro-favicon.png",
+        badge: notification.badge || "/tinkro-favicon.png",
+        tag: data.orderId ? `tinkro-order-${data.orderId}` : "tinkro-order",
+        data: { url },
+      });
+    })(),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = new URL(
+    event.notification.data?.url || "/admin/orders",
+    self.location.origin,
+  ).href;
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      const existingClient = clients.find((client) =>
+        client.url.startsWith(self.location.origin),
+      );
+      if (existingClient) {
+        if ("navigate" in existingClient) existingClient.navigate(targetUrl);
+        return existingClient.focus();
+      }
+      return self.clients.openWindow(targetUrl);
+    }),
+  );
+});
+
 // Fetch: cache strategies
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);

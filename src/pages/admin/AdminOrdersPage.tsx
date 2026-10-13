@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { subscribeToAllOrders, updateOrderStatus } from "@/lib/adminService";
+import { db } from "@/lib/firebase";
 import type { AdminOrder } from "@/types/admin";
 import type { OrderStatus } from "@/types/index";
 import {
@@ -29,12 +30,17 @@ import {
   XCircle,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { doc, getDoc } from "firebase/firestore";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type AllStatus = OrderStatus | "processing" | "all";
+type ProductSkuData = {
+  sku?: string;
+  variants?: Array<{ id: string; sku?: string }>;
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -54,6 +60,19 @@ function formatCurrency(n: number) {
 
 function truncateId(id: string) {
   return id.length > 12 ? `#${id.slice(0, 8)}…` : `#${id}`;
+}
+
+function resolveItemSku(
+  item: AdminOrder["items"][number],
+  productsById: Record<string, ProductSkuData>,
+) {
+  const product = productsById[item.productId];
+  return (
+    item.sku ||
+    product?.variants?.find((variant) => variant.id === item.variantId)?.sku ||
+    product?.sku ||
+    "—"
+  );
 }
 
 const STATUS_CONFIG: Record<
@@ -252,6 +271,53 @@ function OrderDetailDrawer({ order, onClose }: DrawerProps) {
   const [estimatedDelivery, setEstimatedDelivery] = useState("");
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [savingTracking, setSavingTracking] = useState(false);
+  const [productSkuData, setProductSkuData] = useState<
+    Record<string, ProductSkuData>
+  >({});
+
+  useEffect(() => {
+    if (!order) return;
+
+    const productIds = Array.from(
+      new Set(
+        order.items
+          .filter(
+            (item) =>
+              !item.sku &&
+              item.productId &&
+              !(item.productId in productSkuData),
+          )
+          .map((item) => item.productId),
+      ),
+    );
+    if (productIds.length === 0) return;
+
+    let active = true;
+    void Promise.all(
+      productIds.map(async (productId) => {
+        try {
+          const snapshot = await getDoc(doc(db, "products", productId));
+          const data = snapshot.exists()
+            ? (snapshot.data() as ProductSkuData)
+            : {};
+          return [productId, data] as const;
+        } catch {
+          return [productId, {}] as const;
+        }
+      }),
+    ).then((entries) => {
+      if (active) {
+        setProductSkuData((current) => ({
+          ...current,
+          ...Object.fromEntries(entries),
+        }));
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [order, productSkuData]);
 
   // Reset local state when order changes
   const orderId = order?.id;
@@ -421,7 +487,7 @@ function OrderDetailDrawer({ order, onClose }: DrawerProps) {
                 <div className="space-y-2">
                   {order.items.map((item) => (
                     <div
-                      key={item.productId}
+                      key={`${item.productId}-${item.variantId ?? "default"}`}
                       className="flex items-center gap-3 py-1.5"
                     >
                       <img
@@ -440,8 +506,11 @@ function OrderDetailDrawer({ order, onClose }: DrawerProps) {
                         <p className="text-xs text-white/80 font-medium truncate">
                           {item.name}
                         </p>
+                        <p className="text-[11px] text-white/45">
+                          SKU: {resolveItemSku(item, productSkuData)}
+                        </p>
                         <p className="text-[11px] text-white/35">
-                          {formatCurrency(item.price)} × {item.quantity}
+                          Unit {formatCurrency(item.price)} · Qty {item.quantity}
                         </p>
                       </div>
                       <span

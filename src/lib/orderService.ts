@@ -34,8 +34,33 @@ const normalizeDates = <T>(data: T, keys: Array<keyof T>) => {
 };
 
 export async function saveOrder(order: SaveOrderData): Promise<string> {
+  const items = await Promise.all(
+    order.items.map(async (item) => {
+      if (item.sku || !item.productId) return item;
+
+      try {
+        const productSnap = await getDoc(doc(db, "products", item.productId));
+        if (!productSnap.exists()) return item;
+
+        const product = productSnap.data() as {
+          sku?: string;
+          variants?: Array<{ id: string; sku?: string }>;
+        };
+        const variantSku = item.variantId
+          ? product.variants?.find((variant) => variant.id === item.variantId)?.sku
+          : undefined;
+        const sku = variantSku || product.sku;
+        return sku ? { ...item, sku } : item;
+      } catch (error) {
+        console.warn(`Could not load SKU for product ${item.productId}`, error);
+        return item;
+      }
+    }),
+  );
+
   const docRef = await addDoc(collection(db, "orders"), {
     ...order,
+    items,
     createdAt: serverTimestamp(),
   });
   return docRef.id;
